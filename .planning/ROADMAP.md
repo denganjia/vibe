@@ -3,7 +3,7 @@
 ## Phases
 
 - [x] **Phase 1: Terminal Orchestration Foundation** - Implement core abstraction for Wezterm/Tmux with cross-platform CLI detection.
-- [ ] **Phase 2: Monorepo Transition** - Refactor the project into a Rust Workspace to support modular growth and core logic sharing.
+- [x] **Phase 2: Monorepo Transition** - Refactor the project into a Rust Workspace with dedicated apps/ and crates/ directories.
 - [ ] **Phase 3: State Persistence & IPC Layer** - Build infrastructure for tracking tasks and cross-pane communication via unified UDS.
 - [ ] **Phase 4: Intent Injection & Human-in-the-Loop** - Enable Master to delegate tasks to Workers with safety controls.
 - [ ] **Phase 5: Output Monitoring & Lifecycle Safety** - Capture output and ensure robust process cleanup (Windows Job Objects).
@@ -14,31 +14,13 @@
 
 ### Phase 1: Terminal Orchestration Foundation
 **Goal**: Users can programmatically control terminal layouts across Wezterm and Tmux with cross-platform support.
-**Depends on**: Nothing
 **Requirements**: ORCH-01, SAFE-02
-**Success Criteria** (what must be TRUE):
-  1. User can create vertical and horizontal splits using `vibe split`.
-  2. User can resize and close specific panes via unique IDs.
-  3. User can instantly terminate all active `vibe` panes using a "kill switch" command.
-  4. System correctly detects and calls `wezterm.exe` on Windows and `wezterm` on Unix.
-  5. Configuration and state paths are resolved correctly using platform-specific standards (e.g., `AppData` vs `~/.local/share`).
-**Plans**: 3 plans
-- [x] 01-01-PLAN.md — 初始化项目结构与终端适配器抽象
-- [x] 01-02-PLAN.md — 实现 WezTerm 与 Tmux 的具体适配器及 Windows 进程安全机制
-- [x] 01-03-PLAN.md — 实现 SQLite 持久化层与核心 CLI 指令
+**Status**: Completed
 
 ### Phase 2: Monorepo Transition
-**Goal**: Refactor the project into a Rust Workspace to enable better modularity and prepare for Skill development.
-**Depends on**: Phase 1
-**Requirements**: (Structural refactoring)
-**Success Criteria** (what must be TRUE):
-  1. Project root contains a `Cargo.toml` with `[workspace]` configuration.
-  2. Core logic (Traits, Error, Env, OS, State) is extracted into `crates/vibe-core`.
-  3. Main CLI logic is moved to `apps/vibe-cli`, which depends on `vibe-core`.
-  4. Directory structure includes `skills/` and `docs/` placeholders.
-  5. Project builds successfully with `cargo build --workspace`.
-**Plans**: 1 plan
-- [ ] 02-01-PLAN.md — 重构项目为 Rust Workspace 结构，提取核心库与应用逻辑
+**Goal**: Refactor the project into a Rust Workspace to support future modularity.
+**Requirements**: Structural refactoring.
+**Status**: Completed
 
 ### Phase 3: State Persistence & IPC Layer
 **Goal**: The system maintains a reliable record of the AI team's state and enables real-time coordination via a unified IPC layer.
@@ -48,7 +30,11 @@
   1. After a terminal restart, `vibe` can re-attach to existing panes and resume tracking by querying the local SQLite database.
   2. Worker processes can send "heartbeats" and status updates to the Master via Unix Domain Sockets (UDS).
   3. Master server successfully binds to UDS on both Windows (AF_UNIX) and Unix, with automatic cleanup of stale socket files on Windows.
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 03-01-PLAN.md — Define the messaging protocol (NDJSON) and centralized database actor.
+- [ ] 03-02-PLAN.md — Implement cross-platform daemonization and the Master UDS server.
+- [ ] 03-03-PLAN.md — Implement the Worker client and the vibe run subcommand.
+- [ ] 03-04-PLAN.md — Validate the system with multi-worker concurrency and master recovery tests.
 
 ### Phase 4: Intent Injection & Human-in-the-Loop
 **Goal**: Master AI can safely delegate tasks to Workers with full context.
@@ -95,9 +81,9 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Terminal Orchestration Foundation | 3/3 | Completed | 2026-04-14 |
-| 2. Monorepo Transition | 0/1 | In Progress | - |
-| 3. State Persistence & IPC Layer | 0/0 | Not started | - |
+| 1. Terminal Orchestration | 3/3 | Completed | 2026-04-14 |
+| 2. Monorepo Transition | 1/1 | Completed | 2026-04-14 |
+| 3. State Persistence & IPC Layer | 0/4 | Not started | - |
 | 4. Intent Injection & Human-in-the-Loop | 0/0 | Not started | - |
 | 5. Output Monitoring & Lifecycle Safety | 0/0 | Not started | - |
 | 6. Status Dashboard & UX | 0/0 | Not started | - |
