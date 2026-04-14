@@ -16,6 +16,9 @@ pub struct TerminalMetadata {
 
 pub type VibeID = String;
 
+pub mod wezterm;
+pub use wezterm::WezTermAdapter;
+
 pub trait TerminalAdapter: Send + Sync {
     /// Split the current pane into a new one.
     fn split(&self, direction: SplitDirection, size: Option<u32>) -> Result<VibeID>;
