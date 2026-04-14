@@ -20,6 +20,9 @@ pub enum VibeError {
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
+    #[error("Internal error: {0}")]
+    Internal(String),
+
     #[error("Unexpected error: {0}")]
     Unexpected(String),
 }

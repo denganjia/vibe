@@ -15,3 +15,6 @@ which = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { workspace = true }
+
+[target."cfg(not(windows))".dependencies]
+daemonize = "0.5.0"
