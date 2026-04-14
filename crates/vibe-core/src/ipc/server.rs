@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tokio::net::{UnixListener, UnixStream};
 use tokio_util::codec::{Framed, LinesCodec};
 use futures::{StreamExt, SinkExt};
@@ -8,7 +8,6 @@ use crate::error::{Result, VibeError};
 use crate::ipc::protocol::Message;
 use crate::state::db::DbHandle;
 use tokio::sync::mpsc;
-use std::sync::Arc;
 
 pub struct MasterServer {
     socket_path: PathBuf,
@@ -113,6 +112,13 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                     }
                     Message::Heartbeat(info) => {
                         db.update_heartbeat(info.vibe_id, info.status).await?;
+                        let ack = serde_json::to_string(&Message::Ack)?;
+                        framed.send(ack).await
+                            .map_err(|e| VibeError::Internal(e.to_string()))?;
+                    }
+                    Message::ExitStatus(info) => {
+                        let status = format!("exited:{}", info.code);
+                        db.update_heartbeat(info.vibe_id, status).await?;
                         let ack = serde_json::to_string(&Message::Ack)?;
                         framed.send(ack).await
                             .map_err(|e| VibeError::Internal(e.to_string()))?;

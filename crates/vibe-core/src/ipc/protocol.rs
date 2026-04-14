@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum Message {
     Register(RegisterInfo),
     Heartbeat(HeartbeatInfo),
+    ExitStatus(ExitStatusInfo),
     Ack,
 }
 
@@ -21,6 +22,12 @@ pub struct RegisterInfo {
 pub struct HeartbeatInfo {
     pub vibe_id: String,
     pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct ExitStatusInfo {
+    pub vibe_id: String,
+    pub code: i32,
 }
 
 impl Message {
