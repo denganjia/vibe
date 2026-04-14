@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase**: 3 - State Persistence & IPC Layer
-**Plan**: 03-01-SUMMARY.md
-**Status**: Wave 1 Complete
-**Progress**: [▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░] 55%
+**Plan**: 03-02-SUMMARY.md
+**Status**: Wave 2 Complete
+**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░] 65%
 
 ## Performance Metrics
 
@@ -33,8 +33,10 @@
 - Windows Job Objects integrated for reliable process cleanup.
 - SQLite used for persistent logical-to-physical pane ID mapping.
 - Project refactored into a Rust Workspace (Monorepo) with `apps/vibe-cli` and `crates/vibe-core`.
-- **[New]** NDJSON protocol defined for Master-Worker communication.
-- **[New]** Serialized DB Actor implemented to handle state updates via mpsc.
+- NDJSON protocol defined for Master-Worker communication.
+- Serialized DB Actor implemented to handle state updates via mpsc.
+- **[New]** Cross-platform daemonization implemented for Master server.
+- **[New]** Master UDS server implemented with idle timeout (10 mins).
 
 ### Todos
 - [x] Initialize Rust project structure (Wave 1).
@@ -47,7 +49,7 @@
 - [x] Implement core CLI commands: split, list, kill (Wave 3).
 - [x] Refactor into Rust Workspace (Phase 2).
 - [x] Define NDJSON protocol and serialized DB actor (Wave 3-1).
-- [ ] Implement daemonization and Master UDS server (Wave 3-2).
+- [x] Implement daemonization and Master UDS server (Wave 3-2).
 - [ ] Implement Worker client and vibe run command (Wave 3-3).
 
 ### Blockers

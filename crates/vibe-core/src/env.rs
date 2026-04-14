@@ -34,6 +34,12 @@ pub fn resolve_state_dir() -> Result<PathBuf> {
     Ok(path)
 }
 
+pub fn resolve_socket_path() -> Result<PathBuf> {
+    let mut path = resolve_state_dir()?;
+    path.push("vibe.sock");
+    Ok(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -7,6 +7,7 @@ use tokio::time;
 use crate::error::{Result, VibeError};
 use crate::ipc::protocol::{Message, RegisterInfo, HeartbeatInfo, ExitStatusInfo};
 
+#[derive(Clone)]
 pub struct WorkerClient {
     socket_path: PathBuf,
     vibe_id: String,

@@ -64,6 +64,17 @@ impl StateStore {
         }
     }
 
+    pub fn get_vibe_id_by_physical_id(&self, physical_id: &str) -> Result<Option<VibeID>> {
+        let mut stmt = self.conn.prepare("SELECT vibe_id FROM panes WHERE physical_id = ?1")?;
+        let mut rows = stmt.query(params![physical_id])?;
+        
+        if let Some(row) = rows.next()? {
+            Ok(Some(row.get(0)?))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String)>> {
         let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type FROM panes")?;
         let rows = stmt.query_map([], |row| {
