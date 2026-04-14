@@ -1,0 +1,9 @@
+[package]
+name = "vibe-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+vibe-core.workspace = true
+clap.workspace = true
+anyhow.workspace = true
