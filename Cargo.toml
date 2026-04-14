@@ -13,3 +13,10 @@ anyhow = "1.0"
 dirs = "5.0"
 which = "6.0"
 clap = { version = "4.5", features = ["derive"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_System_JobObjects",
+    "Win32_System_Threading",
+] }

@@ -1,6 +1,7 @@
 mod adapter;
 mod error;
 mod env;
+mod os;
 
 use clap::Parser;
 use crate::env::{detect_current_terminal, resolve_config_dir, resolve_state_dir};
