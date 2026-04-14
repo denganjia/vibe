@@ -7,6 +7,7 @@
 - [ ] **Phase 3: Intent Injection & Human-in-the-Loop** - Enable Master to delegate tasks to Workers with safety controls.
 - [ ] **Phase 4: Output Monitoring & Lifecycle Safety** - Capture output and ensure robust process cleanup (Windows Job Objects).
 - [ ] **Phase 5: Status Dashboard & UX** - Provide visibility into the entire AI team's status via TUI.
+- [ ] **Phase 6: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
 
 ## Phase Details
 
@@ -20,7 +21,10 @@
   3. User can instantly terminate all active `vibe` panes using a "kill switch" command.
   4. System correctly detects and calls `wezterm.exe` on Windows and `wezterm` on Unix.
   5. Configuration and state paths are resolved correctly using platform-specific standards (e.g., `AppData` vs `~/.local/share`).
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 01-01-PLAN.md — 初始化项目结构与终端适配器抽象
+- [ ] 01-02-PLAN.md — 实现 WezTerm 与 Tmux 的具体适配器及 Windows 进程安全机制
+- [ ] 01-03-PLAN.md — 实现 SQLite 持久化层与核心 CLI 指令
 
 ### Phase 2: State Persistence & IPC Layer
 **Goal**: The system maintains a reliable record of the AI team's state and enables real-time coordination via a unified IPC layer.
@@ -37,7 +41,7 @@
 **Depends on**: Phase 2
 **Requirements**: INJ-01, INJ-02, SAFE-01
 **Success Criteria** (what must be TRUE):
-  1. Master can launch a command in a new pane that inherits the current shell's `PATH` and environment variables.
+  1. Master can launch a command in a new window/pane that inherits the current shell's `PATH` and environment variables.
   2. Worker panes block execution of Agent-generated commands until the user provides manual confirmation via a `y/N` prompt.
 **Plans**: TBD
 **UI hint**: yes
@@ -63,12 +67,23 @@
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 6: AI Skill Integration & Release
+**Goal**: Make vibe-cli natively discoverable and usable by AI models as a professional toolset.
+**Depends on**: Phase 5
+**Requirements**: SKILL-01, SKILL-02
+**Success Criteria** (what must be TRUE):
+  1. Deployment of an MCP (Model Context Protocol) server or JSON tool definition for vibe-cli.
+  2. Documentation/System prompts provided for Claude/GPT to trigger vibe actions autonomously.
+  3. Final binary packaging (v0.1.0) and installation script validation across platforms.
+**Plans**: TBD
+
 ## Progress Table
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Terminal Orchestration Foundation | 0/0 | Not started | - |
+| 1. Terminal Orchestration Foundation | 0/3 | Not started | - |
 | 2. State Persistence & IPC Layer | 0/0 | Not started | - |
 | 3. Intent Injection & Human-in-the-Loop | 0/0 | Not started | - |
 | 4. Output Monitoring & Lifecycle Safety | 0/0 | Not started | - |
 | 5. Status Dashboard & UX | 0/0 | Not started | - |
+| 6. AI Skill Integration & Release | 0/0 | Not started | - |
