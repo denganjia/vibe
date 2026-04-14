@@ -1,8 +1,11 @@
 use crate::adapter::VibeID;
 use crate::env::resolve_state_dir;
 use crate::error::Result;
+use crate::ipc::protocol::RegisterInfo;
 use rusqlite::{params, Connection};
 use std::fs;
+
+pub mod db;
 
 pub struct StateStore {
     conn: Connection,
@@ -22,10 +25,30 @@ impl StateStore {
         Ok(Self { conn })
     }
 
+    pub fn from_conn(conn: Connection) -> Self {
+        Self { conn }
+    }
+
     pub fn save_pane(&self, vibe_id: &VibeID, physical_id: &str, terminal_type: &str) -> Result<()> {
         self.conn.execute(
             "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type) VALUES (?1, ?2, ?3)",
             params![vibe_id, physical_id, terminal_type],
+        )?;
+        Ok(())
+    }
+
+    pub fn register_pane(&self, info: &RegisterInfo) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type, role, pid, status) VALUES (?1, ?2, ?3, ?4, ?5, 'registered')",
+            params![info.vibe_id, info.physical_id, info.terminal_type, info.role, info.pid],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_heartbeat(&self, vibe_id: &str, status: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE panes SET status = ?1, last_heartbeat_at = CURRENT_TIMESTAMP WHERE vibe_id = ?2",
+            params![status, vibe_id],
         )?;
         Ok(())
     }
