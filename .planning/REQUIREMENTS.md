@@ -23,6 +23,10 @@
 - [ ] **SAFE-01**: 确认网关 (Confirmation Gate)。默认要求用户手动确认 (`y/N`) Agent 生成的命令执行。
 - [ ] **SAFE-02**: 一键清理 (Kill Switch)。提供命令一键安全终止所有 Worker 进程并关闭对应窗格。
 
+### AI Skill 集成 (AI Integration)
+- [ ] **SKILL-01**: 构建 AI Skill/Tool 定义。支持以 MCP (Model Context Protocol) 或 JSON Tool 定义的形式，向 AI 模型暴露 `vibe-cli` 的核心调度能力。
+- [ ] **SKILL-02**: 引导提示词 (System Prompting)。提供针对不同模型的引导词建议，确保模型知道何时以及如何正确调用 `vibe` 技能。
+
 ## v2 Requirements (Deferred)
 
 - [ ] **AUTO-01**: 复杂的自主闭环。Master 根据 Worker 产出自动触发迭代修正，无需用户每步干预。
@@ -38,17 +42,19 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ORCH-01     | Phase 1 | Pending |
-| ORCH-02     | Phase 4 | Pending |
-| INJ-01      | Phase 3 | Pending |
-| INJ-02      | Phase 3 | Pending |
-| MON-01      | Phase 4 | Pending |
-| MON-02      | Phase 5 | Pending |
-| MON-03      | Phase 4 | Pending |
-| STAT-01     | Phase 2 | Pending |
-| STAT-02     | Phase 2 | Pending |
-| SAFE-01     | Phase 3 | Pending |
-| SAFE-02     | Phase 1 | Pending |
+| ORCH-01     | Phase 1 | Done |
+| ORCH-02     | Phase 5 | Pending |
+| INJ-01      | Phase 4 | Pending |
+| INJ-02      | Phase 4 | Pending |
+| MON-01      | Phase 5 | Pending |
+| MON-02      | Phase 6 | Pending |
+| MON-03      | Phase 5 | Pending |
+| STAT-01     | Phase 3 | Pending |
+| STAT-02     | Phase 3 | Pending |
+| SAFE-01     | Phase 4 | Pending |
+| SAFE-02     | Phase 1 | Done |
+| SKILL-01    | Phase 7 | Pending |
+| SKILL-02    | Phase 7 | Pending |
 
 ---
-*Last updated: 2026-04-14 after Roadmap Creation*
+*Last updated: 2026-04-14 after Roadmap Revision (Monorepo Transition)*

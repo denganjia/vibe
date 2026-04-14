@@ -14,9 +14,12 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
 anyhow = "1.0"
+futures = "0.3"
 dirs = "5.0"
 which = "6.0"
+tokio-util = { version = "0.7", features = ["codec"] }
 clap = { version = "4.5", features = ["derive"] }
+tempfile = "3.10"
 vibe-core = { path = "crates/vibe-core" }
 windows-sys = { version = "0.59", features = [
     "Win32_Foundation",

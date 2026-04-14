@@ -83,7 +83,8 @@
 |-------|----------------|--------|-----------|
 | 1. Terminal Orchestration | 3/3 | Completed | 2026-04-14 |
 | 2. Monorepo Transition | 1/1 | Completed | 2026-04-14 |
-| 3. State Persistence & IPC Layer | 0/4 | Not started | - |
+| 3. State Persistence & IPC Layer | 1/4 | In progress | - |
+
 | 4. Intent Injection & Human-in-the-Loop | 0/0 | Not started | - |
 | 5. Output Monitoring & Lifecycle Safety | 0/0 | Not started | - |
 | 6. Status Dashboard & UX | 0/0 | Not started | - |
