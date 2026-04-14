@@ -17,7 +17,7 @@
 
 ### 状态与上下文管理 (State)
 - [ ] **STAT-01**: 持久化状态 (Persistent State)。使用 SQLite 数据库存储“任务 ID <-> 角色 <-> 窗格 ID”的映射关系，支持会话恢复。
-- [ ] **STAT-02**: 跨窗格同步 (Cross-Pane Sync)。实现基于 Unix Domain Sockets (UDS) 的实时状态同步机制。
+- [ ] **STAT-02**: 实现基于 Unix Domain Sockets (UDS) 的实时状态同步机制。
 
 ### 安全与人工干预 (Safety)
 - [ ] **SAFE-01**: 确认网关 (Confirmation Gate)。默认要求用户手动确认 (`y/N`) Agent 生成的命令执行。
@@ -36,19 +36,19 @@
 
 ## Traceability
 
-| REQ-ID | Phase | Status |
-|--------|-------|--------|
-| ORCH-01| — | Pending |
-| ORCH-02| — | Pending |
-| INJ-01 | — | Pending |
-| INJ-02 | — | Pending |
-| MON-01 | — | Pending |
-| MON-02 | — | Pending |
-| MON-03 | — | Pending |
-| STAT-01| — | Pending |
-| STAT-02| — | Pending |
-| SAFE-01| — | Pending |
-| SAFE-02| — | Pending |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| ORCH-01     | Phase 1 | Pending |
+| ORCH-02     | Phase 4 | Pending |
+| INJ-01      | Phase 3 | Pending |
+| INJ-02      | Phase 3 | Pending |
+| MON-01      | Phase 4 | Pending |
+| MON-02      | Phase 5 | Pending |
+| MON-03      | Phase 4 | Pending |
+| STAT-01     | Phase 2 | Pending |
+| STAT-02     | Phase 2 | Pending |
+| SAFE-01     | Phase 3 | Pending |
+| SAFE-02     | Phase 1 | Pending |
 
 ---
-*Last updated: 2026-04-14 after Requirements Scoping*
+*Last updated: 2026-04-14 after Roadmap Creation*
