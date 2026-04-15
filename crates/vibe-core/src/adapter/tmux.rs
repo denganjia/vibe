@@ -96,4 +96,19 @@ impl TerminalAdapter for TmuxAdapter {
             current_pane_id
         )))
     }
+
+    fn focus(&self, target_id: &VibeID) -> Result<()> {
+        let output = Command::new("tmux")
+            .args(["select-pane", "-t", target_id])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(VibeError::TerminalDetectionFailed(format!(
+                "Tmux select-pane failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+
+        Ok(())
+    }
 }

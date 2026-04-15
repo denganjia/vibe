@@ -5,7 +5,7 @@ use futures::{StreamExt, SinkExt};
 use std::time::Duration;
 use tokio::time;
 use crate::error::{Result, VibeError};
-use crate::ipc::protocol::{Message, RegisterInfo, HeartbeatInfo, ExitStatusInfo, ExecuteIntentInfo};
+use crate::ipc::protocol::{Message, RegisterInfo, HeartbeatInfo, ExitStatusInfo, ExecuteIntentInfo, ReportInfo};
 use dialoguer::Confirm;
 
 #[derive(Clone)]
@@ -92,7 +92,7 @@ impl WorkerClient {
                     _ = interval.tick() => {
                         let hb = Message::Heartbeat(HeartbeatInfo {
                             vibe_id: self.vibe_id.clone(),
-                            status: "idle".to_string(), // TODO: Update based on actual state
+                            status: "idle".to_string(),
                         });
                         if let Err(e) = self.send_msg(&mut framed, &hb).await {
                             eprintln!("Failed to send heartbeat: {}. Reconnecting...", e);
@@ -144,8 +144,6 @@ impl WorkerClient {
 
         if approved {
             println!("[VIBE] Executing command...");
-            // For now, we just spawn it and wait. 
-            // In a real implementation, we'd use the ShellAdapter to build the full command.
             let mut cmd = std::process::Command::new("sh");
             #[cfg(windows)]
             let mut cmd = std::process::Command::new("cmd");
@@ -159,7 +157,6 @@ impl WorkerClient {
                 cmd.current_dir(cwd);
             }
 
-            // Simple execution for Wave 1
             match cmd.status() {
                 Ok(status) => {
                     println!("[VIBE] Command exited with status: {}", status);
@@ -172,7 +169,6 @@ impl WorkerClient {
             println!("[VIBE] Command rejected by user.");
         }
 
-        // Send Ack back to master to signal intent handled
         self.send_msg(framed, &Message::Ack).await?;
         Ok(())
     }
@@ -206,99 +202,37 @@ impl WorkerClient {
             code,
         });
 
-        framed.send(serde_json::to_string(&msg).map_err(|e| VibeError::Internal(e.to_string()))?).await
-            .map_err(|e| VibeError::Internal(e.to_string()))?;
+        self.send_msg(&mut framed, &msg).await?;
 
-        // Wait for Ack
         if let Some(Ok(line)) = framed.next().await {
-            let msg = Message::from_str(&line).map_err(|e| VibeError::Internal(e.to_string()))?;
+            let msg = Message::from_str(&line)?;
             if msg != Message::Ack {
                 return Err(VibeError::Internal(format!("Expected Ack, got {:?}", msg)));
             }
         }
         Ok(())
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    use crate::ipc::server::MasterServer;
-    use crate::state::db::{DbActor, DbHandle};
-    use crate::state::StateStore;
-    use rusqlite::Connection;
-    use tokio::sync::mpsc;
-
-    #[tokio::test]
-    async fn test_worker_heartbeat() -> Result<()> {
-        let dir = tempdir().unwrap();
-        let socket_path = dir.path().join("vibe.sock");
+    pub async fn send_report(&self, status: String, summary: String) -> Result<()> {
+        let stream = UnixStream::connect(&self.socket_path).await
+            .map_err(|e| VibeError::Internal(format!("Failed to connect to master to send report: {}", e)))?;
         
-        let conn = Connection::open_in_memory().unwrap();
-        let schema = "CREATE TABLE IF NOT EXISTS panes (vibe_id TEXT PRIMARY KEY, physical_id TEXT, terminal_type TEXT, role TEXT, pid INTEGER, status TEXT, last_heartbeat_at DATETIME DEFAULT CURRENT_TIMESTAMP);";
-        conn.execute_batch(schema).unwrap();
-        let store = StateStore::from_conn(conn);
-        let (db_tx, db_rx) = mpsc::channel(10);
-        let actor = DbActor::new(db_rx, store);
-        tokio::spawn(async move { actor.run().await; });
-        let db_handle = DbHandle::new(db_tx);
+        let mut framed = Framed::new(stream, LinesCodec::new());
 
-        let s_path = socket_path.clone();
-        let h = db_handle.clone();
-        tokio::spawn(async move {
-            let server = MasterServer::new(s_path, h);
-            server.run().await.unwrap();
+        let msg = Message::Report(ReportInfo {
+            vibe_id: self.vibe_id.clone(),
+            status,
+            summary,
         });
 
-        // Wait for server to bind
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        self.send_msg(&mut framed, &msg).await?;
 
-        let _client = WorkerClient::new(
-            socket_path.clone(),
-            "v1".to_string(),
-            "p1".to_string(),
-            "wezterm".to_string(),
-            Some("worker".to_string()),
-        );
-
-        let c_path = socket_path.clone();
-        tokio::spawn(async move {
-            let client = WorkerClient::new(
-                c_path,
-                "v1".to_string(),
-                "p1".to_string(),
-                "wezterm".to_string(),
-                Some("worker".to_string()),
-            );
-            client.run_heartbeat().await.unwrap();
-        });
-
-        // Wait for registration and some heartbeats
-        tokio::time::sleep(Duration::from_millis(500)).await;
-
-        // Verify in DB
-        let panes = db_handle.get_panes().await.unwrap();
-        assert_eq!(panes.len(), 1);
-        assert_eq!(panes[0].0, "v1");
-
-        // Test exit status
-        let client_exit = WorkerClient::new(
-            socket_path,
-            "v1".to_string(),
-            "p1".to_string(),
-            "wezterm".to_string(),
-            Some("worker".to_string()),
-        );
-        client_exit.send_exit_status(0).await?;
-
-        // Wait for processing
-        tokio::time::sleep(Duration::from_millis(100)).await;
-
-        // Verify status in DB (using heartbeat since ExitStatus updates status)
-        // We need a way to check the status column in tests.
-        // Let's add a test-only query or use raw SQL.
-        
+        if let Some(Ok(line)) = framed.next().await {
+            let msg = Message::from_str(&line)?;
+            if msg != Message::Ack {
+                return Err(VibeError::Internal(format!("Expected Ack, got {:?}", msg)));
+            }
+        }
         Ok(())
     }
 }

@@ -44,14 +44,14 @@
 |-------------|-------|--------|
 | ORCH-01     | Phase 1 | Done |
 | ORCH-02     | Phase 5 | Pending |
-| INJ-01      | Phase 4 | Pending |
-| INJ-02      | Phase 4 | Pending |
+| INJ-01      | Phase 4 | Done |
+| INJ-02      | Phase 4 | Done |
 | MON-01      | Phase 5 | Pending |
 | MON-02      | Phase 6 | Pending |
 | MON-03      | Phase 5 | Pending |
 | STAT-01     | Phase 3 | Done |
 | STAT-02     | Phase 3 | Done |
-| SAFE-01     | Phase 4 | Pending |
+| SAFE-01     | Phase 4 | Done |
 
 | SAFE-02     | Phase 1 | Done |
 | SKILL-01    | Phase 7 | Pending |

@@ -34,4 +34,7 @@ pub trait TerminalAdapter: Send + Sync {
 
     /// Get current terminal metadata.
     fn get_metadata(&self) -> Result<TerminalMetadata>;
+
+    /// Focus the specified pane.
+    fn focus(&self, target_id: &VibeID) -> Result<()>;
 }

@@ -10,6 +10,14 @@ pub enum Message {
     ExecuteIntent(ExecuteIntentInfo),
     GateRequest(GateRequestInfo),
     GateResponse(GateResponseInfo),
+    Report(ReportInfo),
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct ReportInfo {
+    pub vibe_id: String,
+    pub status: String,
+    pub summary: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]

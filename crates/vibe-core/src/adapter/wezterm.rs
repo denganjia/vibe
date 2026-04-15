@@ -111,4 +111,19 @@ impl TerminalAdapter for WezTermAdapter {
             session_id: pane.workspace.clone(),
         })
     }
+
+    fn focus(&self, target_id: &VibeID) -> Result<()> {
+        let output = Command::new("wezterm")
+            .args(["cli", "activate-pane", "--pane-id", target_id])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(VibeError::TerminalDetectionFailed(format!(
+                "WezTerm activate-pane failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+
+        Ok(())
+    }
 }

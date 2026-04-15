@@ -3,14 +3,14 @@
 ## Project Reference
 
 **Core Value**: Break the "dimensional wall" between AI and the local dev environment by turning the terminal into a physical orchestration room.
-**Current Focus**: Monorepo structure finalized. Moving towards IPC and Master-Worker synchronization.
+**Current Focus**: Intent injection and HITL gate implemented. Moving towards output monitoring and lifecycle safety.
 
 ## Current Position
 
-**Phase**: 3 - State Persistence & IPC Layer
-**Plan**: 03-04-SUMMARY.md
-**Status**: Phase 3 Complete ✓
-**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░] 80%
+**Phase**: 4 - Intent Injection & Human-in-the-Loop
+**Plan**: 04-01-SUMMARY.md
+**Status**: Phase 4 Complete ✓
+**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░] 90%
 
 ## Performance Metrics
 
@@ -33,13 +33,16 @@
 - Windows Job Objects integrated for reliable process cleanup.
 - SQLite used for persistent logical-to-physical pane ID mapping.
 - Project refactored into a Rust Workspace (Monorepo) with `apps/vibe-cli` and `crates/vibe-core`.
-- **[New]** NDJSON protocol defined for Master-Worker communication.
-- **[New]** Serialized DB Actor implemented to handle state updates via mpsc.
-- **[New]** Cross-platform daemonization implemented for Master server.
-- **[New]** Master UDS server implemented with idle timeout (10 mins).
-- **[New]** Worker IPC client implemented with 5s heartbeat loop.
-- **[New]** `vibe run` subcommand with automatic Master startup implemented.
-- **[New]** Robustness verified via multi-worker concurrency and crash recovery tests.
+- NDJSON protocol defined for Master-Worker communication.
+- Serialized DB Actor implemented to handle state updates via mpsc.
+- Cross-platform daemonization implemented for Master server.
+- Master UDS server implemented with idle timeout (10 mins).
+- Worker IPC client implemented with 5s heartbeat loop.
+- `vibe run` subcommand with automatic Master startup implemented.
+- Robustness verified via multi-worker concurrency and crash recovery tests.
+- **[New]** Local confirmation gate (HITL) implemented in Worker panes using `dialoguer`.
+- **[New]** Hybrid injection mode: UDS structured messages preferred, routing handled by Master.
+- **[New]** Cross-shell syntax adaptation for Bash, PowerShell, and CMD.
 
 ### Todos
 - [x] Initialize Rust project structure (Wave 1).
@@ -55,6 +58,9 @@
 - [x] Implement daemonization and Master UDS server (Wave 3-2).
 - [x] Implement Worker client and vibe run command (Wave 3-3).
 - [x] Validate multi-worker concurrency and recovery (Wave 3-4).
+- [x] Implement intent injection protocol and routing (Phase 4).
+- [x] Implement blocking confirmation gate [VIBE GATE] (Phase 4).
+- [x] Implement cross-platform shell adapter (Phase 4).
 
 ### Blockers
 - None.
@@ -62,8 +68,8 @@
 ## Session Continuity
 
 ### Current Intent
-Phase 2 Complete. Preparing for Phase 3: State Persistence & IPC Layer.
+Phase 4 Complete. Preparing for Phase 5: Output Monitoring & Lifecycle Safety.
 
 ### Next Steps
-1. Discuss Phase 3 technical details (UDS, Master server, Worker heartbeat).
-2. Create Phase 3 plan.
+1. Discuss Phase 5 technical details (ANSI filtering, output capture, log summarization).
+2. Create Phase 5 plan.

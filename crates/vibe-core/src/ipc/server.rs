@@ -145,6 +145,22 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                         });
                         return Ok(()); // Connection now handled by the forwarding task
                     }
+                    Message::Heartbeat(info) => {
+                        db.update_heartbeat(info.vibe_id, info.status).await?;
+                        let ack = serde_json::to_string(&Message::Ack)?;
+                        framed.send(ack).await?;
+                    }
+                    Message::ExitStatus(info) => {
+                        let status = format!("exited:{}", info.code);
+                        db.update_heartbeat(info.vibe_id, status).await?;
+                        let ack = serde_json::to_string(&Message::Ack)?;
+                        framed.send(ack).await?;
+                    }
+                    Message::Report(info) => {
+                        db.update_report(info.vibe_id, info.status, info.summary).await?;
+                        let ack = serde_json::to_string(&Message::Ack)?;
+                        framed.send(ack).await?;
+                    }
                     Message::ExecuteIntent(intent) => {
                         let target_id = intent.target_vibe_id.clone();
                         let w = workers.lock().await;
@@ -160,6 +176,7 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                             return Err(VibeError::Internal(format!("Worker {} not found", target_id)));
                         }
                     }
+                    Message::Ack => {}
                     _ => {
                         let ack = serde_json::to_string(&Message::Ack)?;
                         framed.send(ack).await?;
@@ -195,7 +212,7 @@ mod tests {
         
         let conn = Connection::open_in_memory().unwrap();
         // Load schema
-        let schema = "CREATE TABLE IF NOT EXISTS panes (vibe_id TEXT PRIMARY KEY, physical_id TEXT, terminal_type TEXT, role TEXT, pid INTEGER, status TEXT, last_heartbeat_at DATETIME DEFAULT CURRENT_TIMESTAMP);";
+        let schema = include_str!("../state/schema.sql");
         conn.execute_batch(schema).unwrap();
         let store = StateStore::from_conn(conn);
         let (db_tx, db_rx) = mpsc::channel(10);
@@ -223,7 +240,7 @@ mod tests {
         let socket_path = dir.path().join("vibe.sock");
         
         let conn = Connection::open_in_memory().unwrap();
-        let schema = "CREATE TABLE IF NOT EXISTS panes (vibe_id TEXT PRIMARY KEY, physical_id TEXT, terminal_type TEXT, role TEXT, pid INTEGER, status TEXT, last_heartbeat_at DATETIME DEFAULT CURRENT_TIMESTAMP);";
+        let schema = include_str!("../state/schema.sql");
         conn.execute_batch(schema).unwrap();
         let store = StateStore::from_conn(conn);
         let (db_tx, db_rx) = mpsc::channel(10);

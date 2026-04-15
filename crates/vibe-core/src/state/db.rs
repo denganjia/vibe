@@ -7,7 +7,8 @@ use tokio::sync::{mpsc, oneshot};
 pub enum DbRequest {
     RegisterPane(RegisterInfo, oneshot::Sender<Result<()>>),
     UpdateHeartbeat(String, String, oneshot::Sender<Result<()>>), // vibe_id, status
-    GetPanes(oneshot::Sender<Result<Vec<(VibeID, String, String, Option<String>)>>>),
+    UpdateReport(String, String, String, oneshot::Sender<Result<()>>), // vibe_id, status, summary
+    GetPanes(oneshot::Sender<Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>)>>>),
 }
 
 pub struct DbActor {
@@ -34,6 +35,10 @@ impl DbActor {
             }
             DbRequest::UpdateHeartbeat(vibe_id, status, res_tx) => {
                 let res = self.store.update_heartbeat(&vibe_id, &status);
+                let _ = res_tx.send(res);
+            }
+            DbRequest::UpdateReport(vibe_id, status, summary, res_tx) => {
+                let res = self.store.update_report(&vibe_id, &status, &summary);
                 let _ = res_tx.send(res);
             }
             DbRequest::GetPanes(res_tx) => {
@@ -72,7 +77,16 @@ impl DbHandle {
         rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
     }
 
-    pub async fn get_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>)>> {
+    pub async fn update_report(&self, vibe_id: String, status: String, summary: String) -> Result<()> {
+        let (tx, rx) = oneshot::channel();
+        self.sender
+            .send(DbRequest::UpdateReport(vibe_id, status, summary, tx))
+            .await
+            .map_err(|e| crate::error::VibeError::Internal(format!("Failed to send request: {}", e)))?;
+        rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
+    }
+
+    pub async fn get_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>)>> {
         let (tx, rx) = oneshot::channel();
         self.sender
             .send(DbRequest::GetPanes(tx))

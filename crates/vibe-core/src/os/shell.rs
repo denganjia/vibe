@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use regex::Regex;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShellType {
@@ -74,9 +75,23 @@ impl ShellAdapter {
     }
 }
 
+pub fn strip_ansi(input: &str) -> String {
+    let re = Regex::new(r"[\u001b\u009b][\[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]").unwrap();
+    re.replace_all(input, "").to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_ansi_stripping() {
+        let input = "\x1b[31mHello\x1b[0m World";
+        assert_eq!(strip_ansi(input), "Hello World");
+
+        let input2 = "\x1b[1;32mGreen Bold\x1b[0m";
+        assert_eq!(strip_ansi(input2), "Green Bold");
+    }
 
     #[test]
     fn test_shell_adapter_env_bash() {

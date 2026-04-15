@@ -21,6 +21,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 clap = { version = "4.5", features = ["derive"] }
 dialoguer = "0.11"
 tempfile = "3.10"
+regex = "1"
 vibe-core = { path = "crates/vibe-core" }
 windows-sys = { version = "0.59", features = [
     "Win32_Foundation",

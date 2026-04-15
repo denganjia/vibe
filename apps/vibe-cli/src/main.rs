@@ -70,6 +70,21 @@ enum Commands {
         #[arg(short, long)]
         yes: bool,
     },
+    /// Focus a specific vibe pane
+    Focus {
+        /// Target vibe ID
+        vibe_id: String,
+    },
+    /// Report task summary back to master
+    Report {
+        /// Status (success, failed, running)
+        #[arg(short, long)]
+        status: String,
+
+        /// Summary message
+        #[arg(short, long)]
+        message: String,
+    },
 }
 
 #[tokio::main]
@@ -102,9 +117,11 @@ async fn main() -> anyhow::Result<()> {
                 println!("No active vibe panes.");
             } else {
                 println!("Active Vibe Panes:");
-                for (v_id, p_id, t_type, role) in panes {
+                for (v_id, p_id, t_type, role, status, summary) in panes {
                     let role_str = role.map(|r| format!(", Role: {}", r)).unwrap_or_default();
-                    println!("- {}: (Physical ID: {}, Terminal: {}{})", v_id, p_id, t_type, role_str);
+                    let status_str = status.map(|s| format!(", Status: {}", s)).unwrap_or_default();
+                    let summary_str = summary.map(|s| format!("\n    Summary: {}", s)).unwrap_or_default();
+                    println!("- {}: (Physical ID: {}, Terminal: {}{}{}){}", v_id, p_id, t_type, role_str, status_str, summary_str);
                 }
             }
         }
@@ -116,7 +133,7 @@ async fn main() -> anyhow::Result<()> {
             };
             let store = StateStore::new()?;
             let panes = store.list_active_panes()?;
-            for (v_id, _p_id, _t_type, _role) in panes {
+            for (v_id, _p_id, _t_type, _role, _status, _summary) in panes {
                 println!("Killing pane: {}", v_id);
                 if let Err(e) = adapter.close(&v_id) {
                     eprintln!("Failed to close pane {}: {}", v_id, e);
@@ -187,7 +204,7 @@ async fn main() -> anyhow::Result<()> {
             // 3. Setup worker client
             let mut worker = WorkerClient::new(
                 socket_path,
-                vibe_id,
+                vibe_id.clone(),
                 physical_id,
                 term_type_str,
                 Some("worker".to_string()),
@@ -208,13 +225,55 @@ async fn main() -> anyhow::Result<()> {
                 });
 
                 // Execute the initial command
+                let logs_dir = vibe_core::env::resolve_logs_dir()?;
+                let log_path = logs_dir.join(format!("{}.log", vibe_id));
+                tokio::fs::create_dir_all(&logs_dir).await?;
+                
+                let log_file = tokio::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(log_path)
+                    .await?;
+                let log_file = std::sync::Arc::new(tokio::sync::Mutex::new(log_file));
+
                 let mut child = Command::new(&command[0])
                     .args(&command[1..])
-                    .stdout(Stdio::inherit())
-                    .stderr(Stdio::inherit())
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
                     .spawn()?;
 
+                let stdout = child.stdout.take().unwrap();
+                let stderr = child.stderr.take().unwrap();
+
+                let log_f1 = log_file.clone();
+                let t1 = tokio::spawn(async move {
+                    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+                    let mut reader = BufReader::new(stdout).lines();
+                    while let Ok(Some(line)) = reader.next_line().await {
+                        println!("{}", line);
+                        let stripped = vibe_core::os::shell::strip_ansi(&line);
+                        let mut f = log_f1.lock().await;
+                        let _ = f.write_all(stripped.as_bytes()).await;
+                        let _ = f.write_all(b"\n").await;
+                    }
+                });
+
+                let log_f2 = log_file.clone();
+                let t2 = tokio::spawn(async move {
+                    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+                    let mut reader = BufReader::new(stderr).lines();
+                    while let Ok(Some(line)) = reader.next_line().await {
+                        eprintln!("{}", line);
+                        let stripped = vibe_core::os::shell::strip_ansi(&line);
+                        let mut f = log_f2.lock().await;
+                        let _ = f.write_all(stripped.as_bytes()).await;
+                        let _ = f.write_all(b"\n").await;
+                    }
+                });
+
                 let status = child.wait().await?;
+                let _ = t1.await;
+                let _ = t2.await;
                 let code = status.code().unwrap_or(1);
 
                 if let Err(e) = worker.send_exit_status(code).await {
@@ -251,6 +310,47 @@ async fn main() -> anyhow::Result<()> {
             } else {
                 anyhow::bail!("Master disconnected unexpectedly.");
             }
+        }
+        Commands::Focus { vibe_id } => {
+            let store = StateStore::new()?;
+            let physical_id = store.get_pane(&vibe_id)?
+                .ok_or_else(|| anyhow::anyhow!("Vibe ID {} not found in database", vibe_id))?;
+            
+            let terminal_type = detect_current_terminal()?;
+            let adapter: Box<dyn TerminalAdapter> = match terminal_type {
+                TerminalType::WezTerm => Box::new(WezTermAdapter),
+                TerminalType::Tmux => Box::new(TmuxAdapter),
+            };
+            
+            adapter.focus(&physical_id)?;
+            println!("Focused physical pane: {}", physical_id);
+        }
+        Commands::Report { status, message } => {
+            let socket_path = resolve_socket_path()?;
+            
+            // Identify current environment to get our vibe_id
+            let terminal_type = detect_current_terminal()?;
+            let physical_id = match terminal_type {
+                TerminalType::WezTerm => WezTermAdapter.get_metadata()?.pane_id,
+                TerminalType::Tmux => TmuxAdapter.get_metadata()?.pane_id,
+            };
+
+            let vibe_id = {
+                let store = StateStore::new()?;
+                store.get_vibe_id_by_physical_id(&physical_id)?
+                    .ok_or_else(|| anyhow::anyhow!("Could not identify Vibe ID for current pane"))?
+            };
+
+            let worker = WorkerClient::new(
+                socket_path,
+                vibe_id.clone(),
+                physical_id,
+                format!("{:?}", terminal_type),
+                None,
+            );
+
+            worker.send_report(status, message).await?;
+            println!("Report submitted for worker {}.", vibe_id);
         }
     }
 

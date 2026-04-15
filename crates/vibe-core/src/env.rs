@@ -40,6 +40,15 @@ pub fn resolve_socket_path() -> Result<PathBuf> {
     Ok(path)
 }
 
+pub fn resolve_logs_dir() -> Result<PathBuf> {
+    let mut path = resolve_state_dir()?;
+    path.push("logs");
+    if !path.exists() {
+        let _ = std::fs::create_dir_all(&path);
+    }
+    Ok(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

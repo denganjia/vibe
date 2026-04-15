@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS panes (
     terminal_type TEXT NOT NULL,
     role TEXT,
     status TEXT,
+    summary TEXT,
     pid INTEGER,
     last_heartbeat_at DATETIME,
     metadata TEXT,

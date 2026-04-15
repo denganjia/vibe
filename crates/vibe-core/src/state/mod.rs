@@ -53,6 +53,14 @@ impl StateStore {
         Ok(())
     }
 
+    pub fn update_report(&self, vibe_id: &str, status: &str, summary: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE panes SET status = ?1, summary = ?2, last_heartbeat_at = CURRENT_TIMESTAMP WHERE vibe_id = ?3",
+            params![status, summary, vibe_id],
+        )?;
+        Ok(())
+    }
+
     pub fn get_pane(&self, vibe_id: &VibeID) -> Result<Option<String>> {
         let mut stmt = self.conn.prepare("SELECT physical_id FROM panes WHERE vibe_id = ?1")?;
         let mut rows = stmt.query(params![vibe_id])?;
@@ -75,10 +83,10 @@ impl StateStore {
         }
     }
 
-    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>)>> {
-        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, last_heartbeat_at FROM panes")?;
+    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>)>> {
+        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, role, status, summary FROM panes")?;
         let rows = stmt.query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
         })?;
         
         let mut results = Vec::new();
