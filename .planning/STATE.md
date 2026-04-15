@@ -3,14 +3,14 @@
 ## Project Reference
 
 **Core Value**: Break the "dimensional wall" between AI and the local dev environment by turning the terminal into a physical orchestration room.
-**Current Focus**: Intent injection and HITL gate implemented. Moving towards output monitoring and lifecycle safety.
+**Current Focus**: Output monitoring and lifecycle safety implemented. Moving towards TUI Status Dashboard.
 
 ## Current Position
 
-**Phase**: 4 - Intent Injection & Human-in-the-Loop
-**Plan**: 04-01-SUMMARY.md
-**Status**: Phase 4 Complete ✓
-**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░] 90%
+**Phase**: 6 - Status Dashboard & UX Enhancement
+**Plan**: 06-01-SUMMARY.md
+**Status**: Phase 6 Complete ✓
+**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
 
 ## Performance Metrics
 
@@ -18,7 +18,7 @@
 |--------|-------|---------|--------|
 | Task Autonomy | 0% | 100% | 80% |
 | Pane Sync Latency | - | < 50ms | < 100ms |
-| Log Compression Ratio | - | - | 5:1 |
+| Log Compression Ratio | - | 10:1 (est) | 5:1 |
 
 ## Accumulated Context
 
@@ -27,7 +27,7 @@
 - Initial MVP will rely on CLI wrappers (`wezterm cli`, `tmux`) to accelerate development.
 - Adopting a Master-Worker architecture.
 - Support Windows (10+) and Unix via unified IPC (UDS) and platform-specific process management (Job Objects vs Process Groups).
-- TerminalAdapter trait defined with core methods (split, send_keys, close, get_metadata).
+- TerminalAdapter trait defined with core methods (split, send_keys, close, get_metadata, focus).
 - Environment detection implemented via `WEZTERM_PANE` and `TMUX` variables.
 - Concrete adapters for WezTerm and Tmux implemented.
 - Windows Job Objects integrated for reliable process cleanup.
@@ -40,9 +40,11 @@
 - Worker IPC client implemented with 5s heartbeat loop.
 - `vibe run` subcommand with automatic Master startup implemented.
 - Robustness verified via multi-worker concurrency and crash recovery tests.
-- **[New]** Local confirmation gate (HITL) implemented in Worker panes using `dialoguer`.
-- **[New]** Hybrid injection mode: UDS structured messages preferred, routing handled by Master.
-- **[New]** Cross-shell syntax adaptation for Bash, PowerShell, and CMD.
+- Local confirmation gate (HITL) implemented in Worker panes using `dialoguer`.
+- Hybrid injection mode: UDS structured messages preferred, routing handled by Master.
+- Cross-shell syntax adaptation for Bash, PowerShell, and CMD.
+- **[New]** Skill-driven reporting: AI skills explicitly call `report` and `focus` instead of the core guessing state.
+- **[New]** Passive capture: Local log files are kept clean by stripping ANSI codes at write-time.
 
 ### Todos
 - [x] Initialize Rust project structure (Wave 1).
@@ -61,6 +63,11 @@
 - [x] Implement intent injection protocol and routing (Phase 4).
 - [x] Implement blocking confirmation gate [VIBE GATE] (Phase 4).
 - [x] Implement cross-platform shell adapter (Phase 4).
+- [x] Implement real-time log capture with ANSI stripping (Phase 5).
+- [x] Implement `vibe focus` for terminal window control (Phase 5).
+- [x] Implement `vibe report` for structured task feedback (Phase 5).
+- [x] Implement `vibe status` (TUI dashboard) with UDS broadcasting (Phase 6).
+- [x] Integrated hotkeys (f/k/Enter) for physical orchestration (Phase 6).
 
 ### Blockers
 - None.
@@ -68,8 +75,8 @@
 ## Session Continuity
 
 ### Current Intent
-Phase 4 Complete. Preparing for Phase 5: Output Monitoring & Lifecycle Safety.
+Phase 5 Complete. Preparing for Phase 6: Status Dashboard & UX.
 
 ### Next Steps
-1. Discuss Phase 5 technical details (ANSI filtering, output capture, log summarization).
-2. Create Phase 5 plan.
+1. Discuss Phase 6 technical details (TUI framework choice, real-time update strategy).
+2. Create Phase 6 plan.

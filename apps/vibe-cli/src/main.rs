@@ -15,6 +15,8 @@ use vibe_core::ipc::protocol::{Message, ExecuteIntentInfo};
 use std::collections::HashMap;
 use std::time::Duration;
 
+mod tui;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -36,6 +38,8 @@ enum Commands {
     },
     /// List active vibe panes
     List,
+    /// Interactive dashboard
+    Status,
     /// Kill all active vibe panes
     Kill,
     /// Start the master server
@@ -124,6 +128,9 @@ async fn main() -> anyhow::Result<()> {
                     println!("- {}: (Physical ID: {}, Terminal: {}{}{}){}", v_id, p_id, t_type, role_str, status_str, summary_str);
                 }
             }
+        }
+        Commands::Status => {
+            tui::run_status_tui().await?;
         }
         Commands::Kill => {
             let terminal_type = detect_current_terminal()?;

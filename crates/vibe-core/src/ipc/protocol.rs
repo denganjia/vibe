@@ -11,6 +11,21 @@ pub enum Message {
     GateRequest(GateRequestInfo),
     GateResponse(GateResponseInfo),
     Report(ReportInfo),
+    Subscribe,
+    Broadcast {
+        states: Vec<WorkerState>,
+    },
+    KillRequest(String),
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct WorkerState {
+    pub vibe_id: String,
+    pub physical_id: String,
+    pub role: Option<String>,
+    pub status: String,
+    pub summary: String,
+    pub last_seen: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]

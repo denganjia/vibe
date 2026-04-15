@@ -14,12 +14,14 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 type WorkerMap = Arc<Mutex<HashMap<String, mpsc::Sender<String>>>>;
+type SubscriberMap = Arc<Mutex<Vec<mpsc::Sender<String>>>>;
 
 pub struct MasterServer {
     socket_path: PathBuf,
     db_handle: DbHandle,
     idle_timeout: Duration,
     workers: WorkerMap,
+    subscribers: SubscriberMap,
 }
 
 impl MasterServer {
@@ -29,6 +31,7 @@ impl MasterServer {
             db_handle,
             idle_timeout: Duration::from_secs(600), // 10 minutes
             workers: Arc::new(Mutex::new(HashMap::new())),
+            subscribers: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -65,9 +68,10 @@ impl MasterServer {
                             let a_tx = activity_tx.clone();
                             let d_tx = disconnect_tx.clone();
                             let workers = self.workers.clone();
+                            let subscribers = self.subscribers.clone();
                             tokio::spawn(async move {
                                 let _ = a_tx.send(()).await;
-                                if let Err(e) = handle_connection(stream, db, a_tx, workers).await {
+                                if let Err(e) = handle_connection(stream, db, a_tx, workers, subscribers).await {
                                     eprintln!("Connection error: {}", e);
                                 }
                                 let _ = d_tx.send(()).await;
@@ -104,7 +108,39 @@ impl MasterServer {
     }
 }
 
-async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::Sender<()>, workers: WorkerMap) -> Result<()> {
+async fn broadcast_states(db: &DbHandle, subscribers: &SubscriberMap) -> Result<()> {
+    let panes = db.get_panes().await?;
+    let states = panes.into_iter().map(|(id, phys, _term, role, status, summary)| {
+        crate::ipc::protocol::WorkerState {
+            vibe_id: id,
+            physical_id: phys,
+            role,
+            status: status.unwrap_or_default(),
+            summary: summary.unwrap_or_default(),
+            last_seen: "".to_string(), // TODO: add last_heartbeat_at
+        }
+    }).collect::<Vec<_>>();
+
+    let msg = Message::Broadcast { states };
+    let json = serde_json::to_string(&msg).map_err(|e| VibeError::Internal(e.to_string()))? + "\n";
+
+    let mut subs = subscribers.lock().await;
+    let mut to_remove = Vec::new();
+
+    for (i, sub) in subs.iter().enumerate() {
+        if let Err(_) = sub.send(json.clone()).await {
+            to_remove.push(i);
+        }
+    }
+
+    for i in to_remove.into_iter().rev() {
+        subs.remove(i);
+    }
+
+    Ok(())
+}
+
+async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::Sender<()>, workers: WorkerMap, subscribers: SubscriberMap) -> Result<()> {
     let mut framed = Framed::new(stream, LinesCodec::new());
     let mut _current_vibe_id: Option<String> = None;
 
@@ -130,6 +166,9 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                         let ack = serde_json::to_string(&Message::Ack)?;
                         framed.send(ack).await?;
 
+                        // Trigger broadcast
+                        let _ = broadcast_states(&db, &subscribers).await;
+
                         // Spawn a task to forward messages from the channel to the socket
                         tokio::spawn(async move {
                             while let Some(json) = rx.recv().await {
@@ -138,28 +177,51 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                                     break;
                                 }
                                 // Wait for Ack from worker after intent
-                                if let Some(Ok(_)) = framed.next().await {
-                                    // Worker acknowledged execution
-                                }
+                                // For broadcast messages, we might not get an Ack if it's a one-way street,
+                                // but the protocol currently expects Ack for everything except Ack.
+                                // Actually, broadcast doesn't expect Ack.
                             }
                         });
                         return Ok(()); // Connection now handled by the forwarding task
+                    }
+                    Message::Subscribe => {
+                        let (tx, mut rx) = mpsc::channel::<String>(100);
+                        {
+                            let mut s = subscribers.lock().await;
+                            s.push(tx);
+                        }
+
+                        // Immediate first broadcast
+                        let _ = broadcast_states(&db, &subscribers).await;
+
+                        // Spawn a task to forward broadcast messages to the subscriber
+                        tokio::spawn(async move {
+                            while let Some(json) = rx.recv().await {
+                                if let Err(_) = framed.send(json).await {
+                                    break;
+                                }
+                            }
+                        });
+                        return Ok(());
                     }
                     Message::Heartbeat(info) => {
                         db.update_heartbeat(info.vibe_id, info.status).await?;
                         let ack = serde_json::to_string(&Message::Ack)?;
                         framed.send(ack).await?;
+                        let _ = broadcast_states(&db, &subscribers).await;
                     }
                     Message::ExitStatus(info) => {
                         let status = format!("exited:{}", info.code);
                         db.update_heartbeat(info.vibe_id, status).await?;
                         let ack = serde_json::to_string(&Message::Ack)?;
                         framed.send(ack).await?;
+                        let _ = broadcast_states(&db, &subscribers).await;
                     }
                     Message::Report(info) => {
                         db.update_report(info.vibe_id, info.status, info.summary).await?;
                         let ack = serde_json::to_string(&Message::Ack)?;
                         framed.send(ack).await?;
+                        let _ = broadcast_states(&db, &subscribers).await;
                     }
                     Message::ExecuteIntent(intent) => {
                         let target_id = intent.target_vibe_id.clone();
@@ -225,6 +287,7 @@ mod tests {
             db_handle,
             idle_timeout: Duration::from_millis(500),
             workers: Arc::new(Mutex::new(HashMap::new())),
+            subscribers: Arc::new(Mutex::new(Vec::new())),
         };
 
         let start = Instant::now();
@@ -256,6 +319,7 @@ mod tests {
                 db_handle: h,
                 idle_timeout: Duration::from_secs(5),
                 workers: Arc::new(Mutex::new(HashMap::new())),
+                subscribers: Arc::new(Mutex::new(Vec::new())),
             };
             server.run().await.unwrap();
         });

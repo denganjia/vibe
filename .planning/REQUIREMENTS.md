@@ -43,12 +43,12 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | ORCH-01     | Phase 1 | Done |
-| ORCH-02     | Phase 5 | Pending |
+| ORCH-02     | Phase 5 | Done |
 | INJ-01      | Phase 4 | Done |
 | INJ-02      | Phase 4 | Done |
-| MON-01      | Phase 5 | Pending |
+| MON-01      | Phase 5 | Done |
 | MON-02      | Phase 6 | Pending |
-| MON-03      | Phase 5 | Pending |
+| MON-03      | Phase 5 | Done |
 | STAT-01     | Phase 3 | Done |
 | STAT-02     | Phase 3 | Done |
 | SAFE-01     | Phase 4 | Done |
