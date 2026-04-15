@@ -5,7 +5,8 @@ use futures::{StreamExt, SinkExt};
 use std::time::Duration;
 use tokio::time;
 use crate::error::{Result, VibeError};
-use crate::ipc::protocol::{Message, RegisterInfo, HeartbeatInfo, ExitStatusInfo};
+use crate::ipc::protocol::{Message, RegisterInfo, HeartbeatInfo, ExitStatusInfo, ExecuteIntentInfo};
+use dialoguer::Confirm;
 
 #[derive(Clone)]
 pub struct WorkerClient {
@@ -14,6 +15,7 @@ pub struct WorkerClient {
     physical_id: String,
     terminal_type: String,
     role: Option<String>,
+    trusted: bool,
 }
 
 impl WorkerClient {
@@ -30,10 +32,15 @@ impl WorkerClient {
             physical_id,
             terminal_type,
             role,
+            trusted: false,
         }
     }
 
-    pub async fn run_heartbeat(self) -> Result<()> {
+    pub fn set_trusted(&mut self, trusted: bool) {
+        self.trusted = trusted;
+    }
+
+    pub async fn run_worker(self) -> Result<()> {
         let mut interval = time::interval(Duration::from_secs(5));
         
         loop {
@@ -59,16 +66,12 @@ impl WorkerClient {
                 pid: std::process::id(),
             });
 
-            if let Err(e) = framed.send(serde_json::to_string(&reg).map_err(|e| VibeError::Internal(e.to_string()))?).await {
-                eprintln!("Failed to send registration: {}. Retrying...", e);
-                interval.tick().await;
-                continue;
-            }
+            self.send_msg(&mut framed, &reg).await?;
 
             // Wait for Ack
             match framed.next().await {
                 Some(Ok(line)) => {
-                    let msg = Message::from_str(&line).map_err(|e| VibeError::Internal(e.to_string()))?;
+                    let msg = Message::from_str(&line)?;
                     if msg != Message::Ack {
                         eprintln!("Expected Ack, got {:?}. Retrying...", msg);
                         interval.tick().await;
@@ -82,40 +85,114 @@ impl WorkerClient {
                 }
             }
 
+            println!("Worker {} registered and listening.", self.vibe_id);
+
             loop {
-                interval.tick().await;
-                let hb = Message::Heartbeat(HeartbeatInfo {
-                    vibe_id: self.vibe_id.clone(),
-                    status: "running".to_string(),
-                });
-
-                if let Err(e) = framed.send(serde_json::to_string(&hb).map_err(|e| VibeError::Internal(e.to_string()))?).await {
-                    eprintln!("Failed to send heartbeat: {}. Reconnecting...", e);
-                    break;
-                }
-
-                match framed.next().await {
-                    Some(Ok(line)) => {
-                        let msg = Message::from_str(&line).map_err(|e| VibeError::Internal(e.to_string()))?;
-                        if msg != Message::Ack {
-                            match msg {
-                                Message::ExecuteIntent(_) | Message::GateRequest(_) | Message::GateResponse(_) => {
-                                    // Will be handled in Task 2
-                                }
-                                _ => {
-                                    eprintln!("Warning: Heartbeat Ack mismatch: {:?}", msg);
+                tokio::select! {
+                    _ = interval.tick() => {
+                        let hb = Message::Heartbeat(HeartbeatInfo {
+                            vibe_id: self.vibe_id.clone(),
+                            status: "idle".to_string(), // TODO: Update based on actual state
+                        });
+                        if let Err(e) = self.send_msg(&mut framed, &hb).await {
+                            eprintln!("Failed to send heartbeat: {}. Reconnecting...", e);
+                            break;
+                        }
+                    }
+                    msg_res = framed.next() => {
+                        match msg_res {
+                            Some(Ok(line)) => {
+                                let msg = Message::from_str(&line)?;
+                                match msg {
+                                    Message::ExecuteIntent(intent) => {
+                                        self.handle_intent(&mut framed, intent).await?;
+                                    }
+                                    Message::Ack => {}
+                                    _ => {
+                                        eprintln!("Warning: Unexpected message: {:?}", msg);
+                                    }
                                 }
                             }
+                            Some(Err(e)) => {
+                                eprintln!("Codec error: {}. Reconnecting...", e);
+                                break;
+                            }
+                            None => {
+                                eprintln!("Master disconnected. Reconnecting...");
+                                break;
+                            }
                         }
-                        }
-
-                    _ => {
-                        eprintln!("Master disconnected during heartbeat. Reconnecting...");
-                        break;
                     }
                 }
             }
         }
+    }
+
+    async fn send_msg(&self, framed: &mut Framed<UnixStream, LinesCodec>, msg: &Message) -> Result<()> {
+        let json = serde_json::to_string(msg).map_err(|e| VibeError::Internal(e.to_string()))?;
+        framed.send(json).await.map_err(|e| VibeError::Internal(e.to_string()))
+    }
+
+    async fn handle_intent(&self, framed: &mut Framed<UnixStream, LinesCodec>, intent: ExecuteIntentInfo) -> Result<()> {
+        println!("\n[VIBE] Intent received: {}", intent.cmd);
+        
+        let approved = if self.trusted || intent.trusted {
+            true
+        } else {
+            self.show_gate(&intent.cmd)
+        };
+
+        if approved {
+            println!("[VIBE] Executing command...");
+            // For now, we just spawn it and wait. 
+            // In a real implementation, we'd use the ShellAdapter to build the full command.
+            let mut cmd = std::process::Command::new("sh");
+            #[cfg(windows)]
+            let mut cmd = std::process::Command::new("cmd");
+            
+            #[cfg(not(windows))]
+            cmd.arg("-c").arg(&intent.cmd);
+            #[cfg(windows)]
+            cmd.arg("/c").arg(&intent.cmd);
+
+            if let Some(cwd) = intent.cwd {
+                cmd.current_dir(cwd);
+            }
+
+            // Simple execution for Wave 1
+            match cmd.status() {
+                Ok(status) => {
+                    println!("[VIBE] Command exited with status: {}", status);
+                }
+                Err(e) => {
+                    eprintln!("[VIBE] Failed to execute command: {}", e);
+                }
+            }
+        } else {
+            println!("[VIBE] Command rejected by user.");
+        }
+
+        // Send Ack back to master to signal intent handled
+        self.send_msg(framed, &Message::Ack).await?;
+        Ok(())
+    }
+
+    fn show_gate(&self, cmd: &str) -> bool {
+        println!("\n--------------------------------------------------");
+        println!("  [VIBE GATE] Incoming Command Validation");
+        println!("--------------------------------------------------");
+        println!("  Command: {}", cmd);
+        println!("--------------------------------------------------");
+        
+        Confirm::new()
+            .with_prompt("Do you want to execute this command?")
+            .default(false)
+            .interact()
+            .unwrap_or(false)
+    }
+
+    pub async fn run_heartbeat(self) -> Result<()> {
+        self.run_worker().await
     }
 
     pub async fn send_exit_status(&self, code: i32) -> Result<()> {

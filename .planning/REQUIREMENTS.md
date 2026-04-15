@@ -49,9 +49,10 @@
 | MON-01      | Phase 5 | Pending |
 | MON-02      | Phase 6 | Pending |
 | MON-03      | Phase 5 | Pending |
-| STAT-01     | Phase 3 | Pending |
-| STAT-02     | Phase 3 | Pending |
+| STAT-01     | Phase 3 | Done |
+| STAT-02     | Phase 3 | Done |
 | SAFE-01     | Phase 4 | Pending |
+
 | SAFE-02     | Phase 1 | Done |
 | SKILL-01    | Phase 7 | Pending |
 | SKILL-02    | Phase 7 | Pending |

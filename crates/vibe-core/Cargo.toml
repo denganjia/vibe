@@ -14,6 +14,7 @@ futures = { workspace = true }
 dirs = { workspace = true }
 which = { workspace = true }
 tokio-util = { workspace = true }
+dialoguer = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { workspace = true }

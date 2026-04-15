@@ -9,8 +9,11 @@ use vibe_core::os::spawn_daemon;
 use tokio::sync::mpsc;
 use std::process::Stdio;
 use tokio::process::Command;
-use futures::StreamExt;
-use tokio_util::codec::{FramedRead, LinesCodec};
+use futures::{StreamExt, SinkExt};
+use tokio_util::codec::LinesCodec;
+use vibe_core::ipc::protocol::{Message, ExecuteIntentInfo};
+use std::collections::HashMap;
+use std::time::Duration;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -41,10 +44,31 @@ enum Commands {
         #[arg(short, long)]
         daemon: bool,
     },
-    /// Run a command and track it
+    /// Run a command and track it, or start a worker listener
     Run {
-        #[arg(trailing_var_arg = true, required = true)]
+        /// Trust this worker (skip confirmation gates)
+        #[arg(short, long)]
+        yes: bool,
+
+        /// Command to run. If empty, starts a listener.
+        #[arg(trailing_var_arg = true)]
         command: Vec<String>,
+    },
+    /// Inject a command into a running worker
+    Inject {
+        /// Target vibe ID
+        vibe_id: String,
+        
+        /// Command to execute
+        command: String,
+
+        /// Target working directory
+        #[arg(long)]
+        cwd: Option<String>,
+
+        /// Skip confirmation gate
+        #[arg(short, long)]
+        yes: bool,
     },
 }
 
@@ -53,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     
     match cli.command {
-        Commands::Split { horizontal, vertical } => {
+        Commands::Split { horizontal: _, vertical } => {
             let terminal_type = detect_current_terminal()?;
             let adapter: Box<dyn TerminalAdapter> = match terminal_type {
                 TerminalType::WezTerm => Box::new(WezTermAdapter),
@@ -117,7 +141,7 @@ async fn main() -> anyhow::Result<()> {
             let server = MasterServer::new(socket_path, db_handle);
             server.run().await?;
         }
-        Commands::Run { command } => {
+        Commands::Run { yes, command } => {
             // 1. Ensure master is running
             let socket_path = resolve_socket_path()?;
             if !socket_path.exists() {
@@ -143,7 +167,7 @@ async fn main() -> anyhow::Result<()> {
 
             // 2. Identify current environment
             let terminal_type = detect_current_terminal()?;
-            let (vibe_id, physical_id, term_type_str) = match terminal_type {
+            let (default_vibe_id, physical_id, term_type_str) = match terminal_type {
                 TerminalType::WezTerm => {
                     let meta = WezTermAdapter.get_metadata()?;
                     (meta.pane_id.clone(), meta.pane_id, "wezterm".to_string())
@@ -157,65 +181,76 @@ async fn main() -> anyhow::Result<()> {
             // Lookup vibe_id if possible
             let vibe_id = {
                 let store = StateStore::new()?;
-                store.get_vibe_id_by_physical_id(&physical_id)?.unwrap_or(vibe_id)
+                store.get_vibe_id_by_physical_id(&physical_id)?.unwrap_or(default_vibe_id)
             };
 
             // 3. Setup worker client
-            let worker = WorkerClient::new(
+            let mut worker = WorkerClient::new(
                 socket_path,
                 vibe_id,
                 physical_id,
                 term_type_str,
                 Some("worker".to_string()),
             );
+            worker.set_trusted(yes);
 
-            // 4. Spawn heartbeat task
-            let hb_worker = worker.clone();
-            let hb_handle = tokio::spawn(async move {
-                if let Err(e) = hb_worker.run_heartbeat().await {
-                    eprintln!("Heartbeat error: {}", e);
+            // 4. Run the worker
+            if command.is_empty() {
+                println!("Vibe Worker listening for intents (Ctrl+C to stop).");
+                worker.run_worker().await?;
+            } else {
+                // Spawn worker task in background to handle heartbeats and intents
+                let w_clone = worker.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = w_clone.run_worker().await {
+                        eprintln!("Worker background task error: {}", e);
+                    }
+                });
+
+                // Execute the initial command
+                let mut child = Command::new(&command[0])
+                    .args(&command[1..])
+                    .stdout(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .spawn()?;
+
+                let status = child.wait().await?;
+                let code = status.code().unwrap_or(1);
+
+                if let Err(e) = worker.send_exit_status(code).await {
+                    eprintln!("Failed to send exit status: {}", e);
                 }
-            });
-
-            // 5. Execute the command
-            let mut child = Command::new(&command[0])
-                .args(&command[1..])
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()?;
-
-            let stdout = child.stdout.take().expect("Failed to open stdout");
-            let stderr = child.stderr.take().expect("Failed to open stderr");
-
-            let mut stdout_reader = FramedRead::new(stdout, LinesCodec::new());
-            let mut stderr_reader = FramedRead::new(stderr, LinesCodec::new());
-
-            let stdout_handle = tokio::spawn(async move {
-                while let Some(Ok(line)) = stdout_reader.next().await {
-                    println!("{}", line);
-                }
-            });
-
-            let stderr_handle = tokio::spawn(async move {
-                while let Some(Ok(line)) = stderr_reader.next().await {
-                    eprintln!("{}", line);
-                }
-            });
-
-            let status = child.wait().await?;
-            let code = status.code().unwrap_or(1);
-
-            // Wait for remaining output
-            let _ = stdout_handle.await;
-            let _ = stderr_handle.await;
-
-            // 6. Stop heartbeat and send final status
-            hb_handle.abort();
-            if let Err(e) = worker.send_exit_status(code).await {
-                eprintln!("Failed to send exit status: {}", e);
+                
+                println!("Initial command finished. Worker staying alive for further intents (Ctrl+C to stop).");
+                loop { tokio::time::sleep(Duration::from_secs(3600)).await; }
             }
+        }
+        Commands::Inject { vibe_id, command, cwd, yes } => {
+            let socket_path = resolve_socket_path()?;
+            let stream = tokio::net::UnixStream::connect(&socket_path).await?;
+            let mut framed = tokio_util::codec::Framed::new(stream, LinesCodec::new());
+
+            let intent = Message::ExecuteIntent(ExecuteIntentInfo {
+                target_vibe_id: vibe_id.clone(),
+                cmd: command,
+                cwd,
+                env: HashMap::new(),
+                trusted: yes,
+            });
+
+            framed.send(serde_json::to_string(&intent)?).await?;
             
-            std::process::exit(code);
+            // Wait for Ack
+            if let Some(Ok(line)) = framed.next().await {
+                let msg = Message::from_str(&line)?;
+                if msg == Message::Ack {
+                    println!("Command successfully injected into worker {}.", vibe_id);
+                } else {
+                    anyhow::bail!("Unexpected response from master: {:?}", msg);
+                }
+            } else {
+                anyhow::bail!("Master disconnected unexpectedly.");
+            }
         }
     }
 

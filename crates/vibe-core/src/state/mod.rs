@@ -75,10 +75,10 @@ impl StateStore {
         }
     }
 
-    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String)>> {
-        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type FROM panes")?;
+    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>)>> {
+        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, last_heartbeat_at FROM panes")?;
         let rows = stmt.query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
         })?;
         
         let mut results = Vec::new();

@@ -35,6 +35,7 @@ pub struct ExitStatusInfo {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ExecuteIntentInfo {
+    pub target_vibe_id: String,
     pub cmd: String,
     pub cwd: Option<String>,
     pub env: std::collections::HashMap<String, String>,

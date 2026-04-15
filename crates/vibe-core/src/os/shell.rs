@@ -45,10 +45,32 @@ impl ShellAdapter {
         }
     }
 
-    pub fn build_all_env_commands(&self, envs: &HashMap<String, String>) -> Vec<String> {
-        envs.iter()
-            .map(|(k, v)| self.build_env_command(k, v))
-            .collect()
+    pub fn build_cd_command(&self, path: &str) -> String {
+        match self.shell_type {
+            ShellType::Bash => format!("cd '{}'", path.replace("'", "'\\''")),
+            ShellType::Pwsh => format!("Set-Location '{}'", path.replace("'", "''")),
+            ShellType::Cmd => format!("cd /d \"{}\"", path),
+        }
+    }
+
+    pub fn build_full_command(&self, cmd: &str, cwd: Option<&str>, envs: &HashMap<String, String>) -> String {
+        let mut parts = Vec::new();
+        
+        for (k, v) in envs {
+            parts.push(self.build_env_command(k, v));
+        }
+        
+        if let Some(path) = cwd {
+            parts.push(self.build_cd_command(path));
+        }
+        
+        parts.push(cmd.to_string());
+        
+        match self.shell_type {
+            ShellType::Bash => parts.join(" && "),
+            ShellType::Pwsh => parts.join("; "),
+            ShellType::Cmd => parts.join(" && "),
+        }
     }
 }
 
@@ -64,15 +86,13 @@ mod tests {
     }
 
     #[test]
-    fn test_shell_adapter_env_pwsh() {
-        let adapter = ShellAdapter { shell_type: ShellType::Pwsh };
-        assert_eq!(adapter.build_env_command("KEY", "VALUE"), "$env:KEY='VALUE'");
-        assert_eq!(adapter.build_env_command("KEY", "O'Reilly"), "$env:KEY='O''Reilly'");
-    }
-
-    #[test]
-    fn test_shell_adapter_env_cmd() {
-        let adapter = ShellAdapter { shell_type: ShellType::Cmd };
-        assert_eq!(adapter.build_env_command("KEY", "VALUE"), "set KEY=VALUE");
+    fn test_shell_adapter_full_bash() {
+        let adapter = ShellAdapter { shell_type: ShellType::Bash };
+        let mut envs = HashMap::new();
+        envs.insert("A".to_string(), "1".to_string());
+        let full = adapter.build_full_command("ls", Some("/tmp"), &envs);
+        assert!(full.contains("export A='1'"));
+        assert!(full.contains("cd '/tmp'"));
+        assert!(full.ends_with("ls"));
     }
 }

@@ -20,11 +20,11 @@ pub enum VibeError {
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
+    #[error("Codec error: {0}")]
+    Codec(#[from] tokio_util::codec::LinesCodecError),
+
     #[error("Internal error: {0}")]
     Internal(String),
-
-    #[error("Unexpected error: {0}")]
-    Unexpected(String),
 }
 
 pub type Result<T> = std::result::Result<T, VibeError>;

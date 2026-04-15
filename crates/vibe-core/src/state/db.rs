@@ -7,7 +7,7 @@ use tokio::sync::{mpsc, oneshot};
 pub enum DbRequest {
     RegisterPane(RegisterInfo, oneshot::Sender<Result<()>>),
     UpdateHeartbeat(String, String, oneshot::Sender<Result<()>>), // vibe_id, status
-    GetPanes(oneshot::Sender<Result<Vec<(VibeID, String, String)>>>),
+    GetPanes(oneshot::Sender<Result<Vec<(VibeID, String, String, Option<String>)>>>),
 }
 
 pub struct DbActor {
@@ -59,8 +59,8 @@ impl DbHandle {
         self.sender
             .send(DbRequest::RegisterPane(info, tx))
             .await
-            .map_err(|e| crate::error::VibeError::Unexpected(format!("Failed to send request: {}", e)))?;
-        rx.await.map_err(|e| crate::error::VibeError::Unexpected(format!("Failed to receive response: {}", e)))?
+            .map_err(|e| crate::error::VibeError::Internal(format!("Failed to send request: {}", e)))?;
+        rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
     }
 
     pub async fn update_heartbeat(&self, vibe_id: String, status: String) -> Result<()> {
@@ -68,17 +68,17 @@ impl DbHandle {
         self.sender
             .send(DbRequest::UpdateHeartbeat(vibe_id, status, tx))
             .await
-            .map_err(|e| crate::error::VibeError::Unexpected(format!("Failed to send request: {}", e)))?;
-        rx.await.map_err(|e| crate::error::VibeError::Unexpected(format!("Failed to receive response: {}", e)))?
+            .map_err(|e| crate::error::VibeError::Internal(format!("Failed to send request: {}", e)))?;
+        rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
     }
 
-    pub async fn get_panes(&self) -> Result<Vec<(VibeID, String, String)>> {
+    pub async fn get_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>)>> {
         let (tx, rx) = oneshot::channel();
         self.sender
             .send(DbRequest::GetPanes(tx))
             .await
-            .map_err(|e| crate::error::VibeError::Unexpected(format!("Failed to send request: {}", e)))?;
-        rx.await.map_err(|e| crate::error::VibeError::Unexpected(format!("Failed to receive response: {}", e)))?
+            .map_err(|e| crate::error::VibeError::Internal(format!("Failed to send request: {}", e)))?;
+        rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
     }
 }
 

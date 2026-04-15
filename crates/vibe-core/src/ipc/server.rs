@@ -9,10 +9,17 @@ use crate::ipc::protocol::Message;
 use crate::state::db::DbHandle;
 use tokio::sync::mpsc;
 
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+type WorkerMap = Arc<Mutex<HashMap<String, mpsc::Sender<String>>>>;
+
 pub struct MasterServer {
     socket_path: PathBuf,
     db_handle: DbHandle,
     idle_timeout: Duration,
+    workers: WorkerMap,
 }
 
 impl MasterServer {
@@ -21,6 +28,7 @@ impl MasterServer {
             socket_path,
             db_handle,
             idle_timeout: Duration::from_secs(600), // 10 minutes
+            workers: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -56,9 +64,10 @@ impl MasterServer {
                             let db = self.db_handle.clone();
                             let a_tx = activity_tx.clone();
                             let d_tx = disconnect_tx.clone();
+                            let workers = self.workers.clone();
                             tokio::spawn(async move {
                                 let _ = a_tx.send(()).await;
-                                if let Err(e) = handle_connection(stream, db, a_tx).await {
+                                if let Err(e) = handle_connection(stream, db, a_tx, workers).await {
                                     eprintln!("Connection error: {}", e);
                                 }
                                 let _ = d_tx.send(()).await;
@@ -95,8 +104,9 @@ impl MasterServer {
     }
 }
 
-async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::Sender<()>) -> Result<()> {
+async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::Sender<()>, workers: WorkerMap) -> Result<()> {
     let mut framed = Framed::new(stream, LinesCodec::new());
+    let mut _current_vibe_id: Option<String> = None;
 
     while let Some(result) = framed.next().await {
         let _ = activity_tx.send(()).await;
@@ -105,36 +115,67 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                 let msg = Message::from_str(&line)?;
                 match msg {
                     Message::Register(info) => {
+                        let vibe_id = info.vibe_id.clone();
+                        _current_vibe_id = Some(vibe_id.clone());
                         db.register_pane(info).await?;
+                        
+                        // Setup internal routing
+                        let (tx, mut rx) = mpsc::channel::<String>(10);
+                        {
+                            let mut w = workers.lock().await;
+                            w.insert(vibe_id.clone(), tx);
+                        }
+
+                        // Response Ack
                         let ack = serde_json::to_string(&Message::Ack)?;
-                        framed.send(ack).await
-                            .map_err(|e| VibeError::Internal(e.to_string()))?;
+                        framed.send(ack).await?;
+
+                        // Spawn a task to forward messages from the channel to the socket
+                        tokio::spawn(async move {
+                            while let Some(json) = rx.recv().await {
+                                if let Err(e) = framed.send(json).await {
+                                    eprintln!("Failed to forward message to worker {}: {}", vibe_id, e);
+                                    break;
+                                }
+                                // Wait for Ack from worker after intent
+                                if let Some(Ok(_)) = framed.next().await {
+                                    // Worker acknowledged execution
+                                }
+                            }
+                        });
+                        return Ok(()); // Connection now handled by the forwarding task
                     }
-                    Message::Heartbeat(info) => {
-                        db.update_heartbeat(info.vibe_id, info.status).await?;
+                    Message::ExecuteIntent(intent) => {
+                        let target_id = intent.target_vibe_id.clone();
+                        let w = workers.lock().await;
+                        if let Some(tx) = w.get(&target_id) {
+                            let json = serde_json::to_string(&Message::ExecuteIntent(intent))?;
+                            if let Err(e) = tx.send(json).await {
+                                eprintln!("Failed to queue message for worker {}: {}", target_id, e);
+                                return Err(VibeError::Internal("Worker queue full".to_string()));
+                            }
+                            let ack = serde_json::to_string(&Message::Ack)?;
+                            framed.send(ack).await?;
+                        } else {
+                            return Err(VibeError::Internal(format!("Worker {} not found", target_id)));
+                        }
+                    }
+                    _ => {
                         let ack = serde_json::to_string(&Message::Ack)?;
-                        framed.send(ack).await
-                            .map_err(|e| VibeError::Internal(e.to_string()))?;
-                    }
-                    Message::ExitStatus(info) => {
-                        let status = format!("exited:{}", info.code);
-                        db.update_heartbeat(info.vibe_id, status).await?;
-                        let ack = serde_json::to_string(&Message::Ack)?;
-                        framed.send(ack).await
-                            .map_err(|e| VibeError::Internal(e.to_string()))?;
-                    }
-                    Message::Ack => {}
-                    Message::ExecuteIntent(_) | Message::GateRequest(_) | Message::GateResponse(_) => {
-                        // These messages are typically sent FROM master TO worker, 
-                        // or are handled in a different flow.
+                        framed.send(ack).await?;
                     }
                 }
             }
-            Err(e) => {
-                return Err(VibeError::Internal(format!("Codec error: {}", e)));
-            }
+            Err(e) => return Err(VibeError::from(e)),
         }
     }
+
+    // Cleanup worker mapping on disconnect
+    if let Some(id) = _current_vibe_id {
+        let mut w = workers.lock().await;
+        w.remove(&id);
+    }
+
     Ok(())
 }
 
@@ -166,6 +207,7 @@ mod tests {
             socket_path: socket_path.clone(),
             db_handle,
             idle_timeout: Duration::from_millis(500),
+            workers: Arc::new(Mutex::new(HashMap::new())),
         };
 
         let start = Instant::now();
@@ -196,6 +238,7 @@ mod tests {
                 socket_path: s_path,
                 db_handle: h,
                 idle_timeout: Duration::from_secs(5),
+                workers: Arc::new(Mutex::new(HashMap::new())),
             };
             server.run().await.unwrap();
         });
