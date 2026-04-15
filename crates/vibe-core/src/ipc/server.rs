@@ -124,6 +124,10 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                             .map_err(|e| VibeError::Internal(e.to_string()))?;
                     }
                     Message::Ack => {}
+                    Message::ExecuteIntent(_) | Message::GateRequest(_) | Message::GateResponse(_) => {
+                        // These messages are typically sent FROM master TO worker, 
+                        // or are handled in a different flow.
+                    }
                 }
             }
             Err(e) => {

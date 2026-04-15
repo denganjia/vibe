@@ -7,6 +7,9 @@ pub enum Message {
     Heartbeat(HeartbeatInfo),
     ExitStatus(ExitStatusInfo),
     Ack,
+    ExecuteIntent(ExecuteIntentInfo),
+    GateRequest(GateRequestInfo),
+    GateResponse(GateResponseInfo),
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -28,6 +31,24 @@ pub struct HeartbeatInfo {
 pub struct ExitStatusInfo {
     pub vibe_id: String,
     pub code: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct ExecuteIntentInfo {
+    pub cmd: String,
+    pub cwd: Option<String>,
+    pub env: std::collections::HashMap<String, String>,
+    pub trusted: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct GateRequestInfo {
+    pub cmd: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct GateResponseInfo {
+    pub approved: bool,
 }
 
 impl Message {

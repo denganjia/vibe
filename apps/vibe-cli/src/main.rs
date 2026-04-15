@@ -78,8 +78,9 @@ async fn main() -> anyhow::Result<()> {
                 println!("No active vibe panes.");
             } else {
                 println!("Active Vibe Panes:");
-                for (v_id, p_id, t_type) in panes {
-                    println!("- {}: (Physical ID: {}, Terminal: {})", v_id, p_id, t_type);
+                for (v_id, p_id, t_type, role) in panes {
+                    let role_str = role.map(|r| format!(", Role: {}", r)).unwrap_or_default();
+                    println!("- {}: (Physical ID: {}, Terminal: {}{})", v_id, p_id, t_type, role_str);
                 }
             }
         }
@@ -91,7 +92,7 @@ async fn main() -> anyhow::Result<()> {
             };
             let store = StateStore::new()?;
             let panes = store.list_active_panes()?;
-            for (v_id, _p_id, _t_type) in panes {
+            for (v_id, _p_id, _t_type, _role) in panes {
                 println!("Killing pane: {}", v_id);
                 if let Err(e) = adapter.close(&v_id) {
                     eprintln!("Failed to close pane {}: {}", v_id, e);

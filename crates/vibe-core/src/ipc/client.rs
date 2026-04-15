@@ -34,54 +34,86 @@ impl WorkerClient {
     }
 
     pub async fn run_heartbeat(self) -> Result<()> {
-        let stream = UnixStream::connect(&self.socket_path).await
-            .map_err(|e| VibeError::Internal(format!("Failed to connect to master at {:?}: {}", self.socket_path, e)))?;
-        
-        let mut framed = Framed::new(stream, LinesCodec::new());
-
-        // Register
-        let reg = Message::Register(RegisterInfo {
-            vibe_id: self.vibe_id.clone(),
-            physical_id: self.physical_id.clone(),
-            terminal_type: self.terminal_type.clone(),
-            role: self.role.clone(),
-            pid: std::process::id(),
-        });
-
-        framed.send(serde_json::to_string(&reg).map_err(|e| VibeError::Internal(e.to_string()))?).await
-            .map_err(|e| VibeError::Internal(e.to_string()))?;
-
-        // Wait for Ack
-        if let Some(Ok(line)) = framed.next().await {
-            let msg = Message::from_str(&line).map_err(|e| VibeError::Internal(e.to_string()))?;
-            if msg != Message::Ack {
-                return Err(VibeError::Internal(format!("Expected Ack, got {:?}", msg)));
-            }
-        } else {
-            return Err(VibeError::Internal("Disconnected before Ack".to_string()));
-        }
-
         let mut interval = time::interval(Duration::from_secs(5));
         
         loop {
-            interval.tick().await;
-            let hb = Message::Heartbeat(HeartbeatInfo {
+            let stream_res = UnixStream::connect(&self.socket_path).await;
+            
+            let stream = match stream_res {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to connect to master at {:?}: {}. Retrying in 5s...", self.socket_path, e);
+                    interval.tick().await;
+                    continue;
+                }
+            };
+
+            let mut framed = Framed::new(stream, LinesCodec::new());
+
+            // Register
+            let reg = Message::Register(RegisterInfo {
                 vibe_id: self.vibe_id.clone(),
-                status: "running".to_string(),
+                physical_id: self.physical_id.clone(),
+                terminal_type: self.terminal_type.clone(),
+                role: self.role.clone(),
+                pid: std::process::id(),
             });
 
-            framed.send(serde_json::to_string(&hb).map_err(|e| VibeError::Internal(e.to_string()))?).await
-                .map_err(|e| VibeError::Internal(e.to_string()))?;
+            if let Err(e) = framed.send(serde_json::to_string(&reg).map_err(|e| VibeError::Internal(e.to_string()))?).await {
+                eprintln!("Failed to send registration: {}. Retrying...", e);
+                interval.tick().await;
+                continue;
+            }
 
-            // Optional: wait for Ack for heartbeat? Maybe not needed for high frequency, 
-            // but for reliability let's wait.
-            if let Some(Ok(line)) = framed.next().await {
-                let msg = Message::from_str(&line).map_err(|e| VibeError::Internal(e.to_string()))?;
-                if msg != Message::Ack {
-                    eprintln!("Warning: Heartbeat Ack mismatch: {:?}", msg);
+            // Wait for Ack
+            match framed.next().await {
+                Some(Ok(line)) => {
+                    let msg = Message::from_str(&line).map_err(|e| VibeError::Internal(e.to_string()))?;
+                    if msg != Message::Ack {
+                        eprintln!("Expected Ack, got {:?}. Retrying...", msg);
+                        interval.tick().await;
+                        continue;
+                    }
                 }
-            } else {
-                return Err(VibeError::Internal("Master disconnected".to_string()));
+                _ => {
+                    eprintln!("Disconnected before registration Ack. Retrying...");
+                    interval.tick().await;
+                    continue;
+                }
+            }
+
+            loop {
+                interval.tick().await;
+                let hb = Message::Heartbeat(HeartbeatInfo {
+                    vibe_id: self.vibe_id.clone(),
+                    status: "running".to_string(),
+                });
+
+                if let Err(e) = framed.send(serde_json::to_string(&hb).map_err(|e| VibeError::Internal(e.to_string()))?).await {
+                    eprintln!("Failed to send heartbeat: {}. Reconnecting...", e);
+                    break;
+                }
+
+                match framed.next().await {
+                    Some(Ok(line)) => {
+                        let msg = Message::from_str(&line).map_err(|e| VibeError::Internal(e.to_string()))?;
+                        if msg != Message::Ack {
+                            match msg {
+                                Message::ExecuteIntent(_) | Message::GateRequest(_) | Message::GateResponse(_) => {
+                                    // Will be handled in Task 2
+                                }
+                                _ => {
+                                    eprintln!("Warning: Heartbeat Ack mismatch: {:?}", msg);
+                                }
+                            }
+                        }
+                        }
+
+                    _ => {
+                        eprintln!("Master disconnected during heartbeat. Reconnecting...");
+                        break;
+                    }
+                }
             }
         }
     }

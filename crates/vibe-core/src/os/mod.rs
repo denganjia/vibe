@@ -4,11 +4,15 @@ pub mod windows;
 #[cfg(not(windows))]
 pub mod unix;
 
+pub mod shell;
+
 #[cfg(windows)]
 pub use windows::{assign_to_job, spawn_daemon};
 
 #[cfg(not(windows))]
 pub use unix::spawn_daemon;
+
+pub use shell::ShellAdapter;
 
 #[cfg(not(windows))]
 pub fn assign_to_job(_child_handle: &std::process::Child) -> crate::error::Result<()> {
