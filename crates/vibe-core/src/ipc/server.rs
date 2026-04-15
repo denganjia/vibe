@@ -122,7 +122,7 @@ async fn broadcast_states(db: &DbHandle, subscribers: &SubscriberMap) -> Result<
     }).collect::<Vec<_>>();
 
     let msg = Message::Broadcast { states };
-    let json = serde_json::to_string(&msg).map_err(|e| VibeError::Internal(e.to_string()))? + "\n";
+    let json = serde_json::to_string(&msg).map_err(|e| VibeError::Internal(e.to_string()))?;
 
     let mut subs = subscribers.lock().await;
     let mut to_remove = Vec::new();
@@ -169,20 +169,68 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                         // Trigger broadcast
                         let _ = broadcast_states(&db, &subscribers).await;
 
-                        // Spawn a task to forward messages from the channel to the socket
+                        // Correct Approach: 
+                        // The original design was to let the spawned task OWN the connection.
+                        // Let's stick to that but make the spawned task bidirectional.
+                        
+                        let db_clone = db.clone();
+                        let subscribers_clone = subscribers.clone();
+                        let activity_tx_clone = activity_tx.clone();
+
                         tokio::spawn(async move {
-                            while let Some(json) = rx.recv().await {
-                                if let Err(e) = framed.send(json).await {
-                                    eprintln!("Failed to forward message to worker {}: {}", vibe_id, e);
-                                    break;
+                            loop {
+                                tokio::select! {
+                                    // Handle outgoing intents (Master -> Worker)
+                                    maybe_out = rx.recv() => {
+                                        if let Some(json) = maybe_out {
+                                            if let Err(e) = framed.send(json).await {
+                                                eprintln!("Failed to send intent to worker {}: {}", vibe_id, e);
+                                                break;
+                                            }
+                                        } else {
+                                            break; // rx closed
+                                        }
+                                    }
+                                    // Handle incoming heartbeats/reports (Worker -> Master)
+                                    maybe_in = framed.next() => {
+                                        match maybe_in {
+                                            Some(Ok(line)) => {
+                                                let _ = activity_tx_clone.send(()).await;
+                                                if let Ok(msg) = Message::from_str(&line) {
+                                                    match msg {
+                                                        Message::Heartbeat(h) => {
+                                                            let _ = db_clone.update_heartbeat(h.vibe_id, h.status).await;
+                                                            let _ = broadcast_states(&db_clone, &subscribers_clone).await;
+                                                            let _ = framed.send(serde_json::to_string(&Message::Ack).unwrap()).await;
+                                                        }
+                                                        Message::Report(r) => {
+                                                            let _ = db_clone.update_report(r.vibe_id, r.status, r.summary).await;
+                                                            let _ = broadcast_states(&db_clone, &subscribers_clone).await;
+                                                            let _ = framed.send(serde_json::to_string(&Message::Ack).unwrap()).await;
+                                                        }
+                                                        Message::ExitStatus(e) => {
+                                                            let status = format!("exited:{}", e.code);
+                                                            let _ = db_clone.update_heartbeat(e.vibe_id, status).await;
+                                                            let _ = broadcast_states(&db_clone, &subscribers_clone).await;
+                                                            let _ = framed.send(serde_json::to_string(&Message::Ack).unwrap()).await;
+                                                        }
+                                                        Message::Ack => {
+                                                            // Intent acknowledged by worker
+                                                        }
+                                                        _ => {}
+                                                    }
+                                                }
+                                            }
+                                            _ => break, // Disconnected
+                                        }
+                                    }
                                 }
-                                // Wait for Ack from worker after intent
-                                // For broadcast messages, we might not get an Ack if it's a one-way street,
-                                // but the protocol currently expects Ack for everything except Ack.
-                                // Actually, broadcast doesn't expect Ack.
                             }
+                            // Cleanup
+                            let mut w = workers.lock().await;
+                            w.remove(&vibe_id);
                         });
-                        return Ok(()); // Connection now handled by the forwarding task
+                        return Ok(()); 
                     }
                     Message::Subscribe => {
                         let (tx, mut rx) = mpsc::channel::<String>(100);
@@ -201,6 +249,9 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                                     break;
                                 }
                             }
+                            // Keep the connection open by waiting for the client to close it
+                            // or by reading (and ignoring) incoming messages from the TUI.
+                            while let Some(_) = framed.next().await {}
                         });
                         return Ok(());
                     }

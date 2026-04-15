@@ -168,7 +168,22 @@ async fn main() -> anyhow::Result<()> {
         Commands::Run { yes, command } => {
             // 1. Ensure master is running
             let socket_path = resolve_socket_path()?;
-            if !socket_path.exists() {
+            
+            // Check if master is alive by attempting a connection
+            let is_alive = if socket_path.exists() {
+                match tokio::net::UnixStream::connect(&socket_path).await {
+                    Ok(_) => true,
+                    Err(_) => {
+                        // Stale socket, remove it
+                        let _ = std::fs::remove_file(&socket_path);
+                        false
+                    }
+                }
+            } else {
+                false
+            };
+
+            if !is_alive {
                 let exe = std::env::current_exe()?;
                 std::process::Command::new(exe)
                     .arg("master")

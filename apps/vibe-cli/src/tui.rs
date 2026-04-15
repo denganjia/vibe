@@ -168,6 +168,7 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::R
             maybe_msg = framed.next() => {
                 match maybe_msg {
                     Some(Ok(line)) => {
+                        if line.trim().is_empty() { continue; }
                         let msg = Message::from_str(&line)?;
                         if let Message::Broadcast { states } = msg {
                             app.states = states;
