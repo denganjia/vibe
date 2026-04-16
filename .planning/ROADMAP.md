@@ -8,7 +8,9 @@
 - [x] **Phase 4: Intent Injection & Human-in-the-Loop** - Enable Master to delegate tasks to Workers with safety controls.
 - [x] **Phase 5: Output Monitoring & Lifecycle Safety** - Capture output and ensure robust process cleanup (Windows Job Objects).
 - [x] **Phase 6: Status Dashboard & UX** - Provide visibility into the entire AI team's status via TUI.
-- [/] **Phase 7: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
+- [x] **Phase 7: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
+- [x] **Phase 8: Production Infrastructure & State Evolution** - Implement DB migrations and automated packaging/install scripts.
+- [ ] **Phase 9: Interactive Workflow Orchestration** - Implement "Plan-Review-Execute" flow with human-in-the-loop gates.
 
 ## Phase Details
 
@@ -26,28 +28,26 @@
 
 ### Phase 5: Output Monitoring & Lifecycle Safety
 **Status**: Completed
-- [x] **Phase 7: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
-- [ ] **Phase 8: Production Infrastructure & State Evolution** - Implement DB migrations and automated packaging/install scripts.
-- [ ] **Phase 9: Interactive Workflow Orchestration** - Implement "Plan-Review-Execute" flow with human-in-the-loop gates.
 
-## Phase Details
-...
+### Phase 6: Status Dashboard & UX
+**Status**: Completed
+
 ### Phase 7: AI Skill Integration & Release
 **Status**: Completed
 
 ### Phase 8: Production Infrastructure & State Evolution
-**Goal**: Transition from experimental tool to a stable, distributable product.
-**Depends on**: Phase 7
-**Requirements**: INF-01, OPS-01, OPS-02
-**Success Criteria**:
-  1. Database automatically upgrades when new fields are added (no more manual rm state.db).
-  2. A single script can install vibe across macOS/Linux/Windows.
-  3. Pre-compiled binaries available for major platforms.
+**Status**: Completed
 
 ### Phase 9: Interactive Workflow Orchestration
 **Goal**: Enable complex AI task sequences that require human validation at critical boundaries.
 **Depends on**: Phase 8
 **Requirements**: SCO-01
+**Plans**: 5 plans
+- [ ] 09-01-PLAN.md — Define core IPC protocol and database schema updates for approval tracking.
+- [ ] 09-02-PLAN.md — Implement MCP tools (submit/query) and local Markdown plan storage.
+- [ ] 09-03-PLAN.md — Update TUI dashboard to display "WAITING" for panes pending approval.
+- [ ] 09-04-PLAN.md — Implement human-in-the-loop prompt in the Worker client terminal.
+- [ ] 09-05-PLAN.md — Implement master routing and final end-to-end verification of the workflow.
 **Success Criteria**:
   1. AI can submit a "Plan" via MCP tool.
   2. System blocks execution and notifies human (via TUI/Worker).
@@ -64,6 +64,5 @@
 | 5. Output Monitoring & Lifecycle Safety | 1/1 | Completed | 2026-04-14 |
 | 6. Status Dashboard & UX | 1/1 | Completed | 2026-04-15 |
 | 7. AI Skill Integration & Release | 1/1 | Completed | 2026-04-15 |
-| 8. Production Infrastructure | 0/0 | Not started | - |
-| 9. Workflow Orchestration | 0/0 | Not started | - |
-
+| 8. Production Infrastructure | 1/1 | Completed | 2026-04-15 |
+| 9. Workflow Orchestration | 0/5 | Not started | - |
