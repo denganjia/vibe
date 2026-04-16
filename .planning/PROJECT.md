@@ -12,47 +12,41 @@
 
 ### Validated
 
-<!-- Shipped and confirmed valuable. -->
-
-(None yet — ship to validate)
+- [x] **窗格编排 (Orchestration)**：支持 Wezterm/Tmux 窗格的自动化切分、聚焦与关闭 (Phase 1-2).
+- [x] **意图注入 (Intent Injection)**：Master AI 能向 Worker Agent 注入任务意图 (Phase 4).
+- [x] **状态管理 (State Management)**：通过 Rust 维护 SQLite 状态，实现跨窗格同步 (Phase 3).
+- [x] **实时监控 (Monitoring)**：TUI 仪表盘实时展示 Agent 状态与日志快照 (Phase 6).
+- [x] **AI 原生集成 (MCP)**：提供标准的 MCP Server 接口供 LLM 调用 (Phase 7).
 
 ### Active
 
-<!-- Current scope. Building toward these. -->
-
-- [ ] **窗格编排 (Orchestration)**：支持 Wezterm/Tmux 窗格的自动化切分、聚焦与关闭。
-- [ ] **意图注入 (Intent Injection)**：Master AI (如 Claude) 能通过终端输入向 Worker Agent 注入任务意图。
-- [ ] **进度监控 (Monitoring)**：实时捕获 Worker 窗格的输出，并向 Master AI 回传关键进度。
-- [ ] **状态管理 (State Management)**：通过 Rust 维护 `.vibe/state.db`（或 Unix Socket），实现跨窗格的 AI 角色与任务状态同步。
-- [ ] **自动任务闭环 (Autonomous Loop)**：Worker 完成任务后自动触发 Master 审核，并根据反馈进行修正或清理现场。
+- [ ] **受控编排 (Controlled Workflow)**：实现“计划-确认-执行”的任务节点流，关键节点必须人工二次确认。
+- [ ] **数据库演进 (State Evolution)**：引入自动迁移机制，支持无损更新数据库 Schema。
+- [ ] **工程化分发 (Distribution)**：实现跨平台二进制打包与一键安装脚本。
 
 ### Out of Scope
 
-<!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
-
-- **原生终端 GUI** — 初始版本（MVP）将通过调用 Wezterm/Tmux 的 CLI 工具实现，避免复杂的 GUI 开发。
-- **复杂的多主机调度** — 现阶段专注于本地终端工作空间。
+- **复杂多主机调度** — 现阶段依然专注于本地终端工作空间。
+- **日志深度检索** — TUI 仅保持最近快照显示，不进行全文搜索实现。
 
 ## Context
 
-- **技术环境**：本项目使用 Rust 开发，追求极致的性能与安全性。
-- **目标用户**：习惯于在终端环境（Wezterm/Tmux）中使用 AI 进行重度开发的开发者。
-- **应用场景**：处理复杂的 Electron Monorepo 或涉及多进程协作的现代软件项目。
+- **当前状态**：Wave 1 已完成，系统具备 Master-Worker-TUI 核心架构。
+- **Wave 2 重心**：从“功能可用”向“生产可靠”和“受控编排”演进。
 
 ## Constraints
 
-- **Tech Stack**: Rust — 确保作为系统级工具的稳定性和分发效率。
-- **Dependency**: Wezterm/Tmux CLI — MVP 依赖于终端自带的 CLI 工具（如 `wezterm cli`）。
-- **Environment**: MacOS/Linux — 终端开发者集中的主流操作系统。
+- **Compatibility**: 必须保证在数据库结构变化时，用户的旧数据能自动迁移或平滑处理。
 
 ## Key Decisions
 
-<!-- Decisions that constrain future work. Add throughout project lifecycle. -->
-
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 使用 CLI Wrapper | 快速跑通 MVP，利用 Wezterm/Tmux 现有的成熟功能。 | — Pending |
-| Rust 开发 | 保证调度层的低延迟与高可靠性，适合文件监听与 Socket 通信。 | — Pending |
+| 使用 CLI Wrapper | 快速跑通 MVP，利用 Wezterm/Tmux 现有的成熟功能。 | Validated |
+| MCP 协议 | 标准化 AI 接入层，降低集成本地工具的门槛。 | Validated |
+| 引入 Migration 框架 | 避免 Schema 变更导致的删库操作，提升生产环境稳定性。 | Planned (W2) |
+| GitHub Actions 打包 | 自动化发布流程，提供各平台预编译二进制。 | Planned (W2) |
+
 
 ## Evolution
 

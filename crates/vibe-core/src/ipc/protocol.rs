@@ -101,6 +101,7 @@ mod tests {
             terminal_type: "wezterm".to_string(),
             role: Some("worker".to_string()),
             pid: 1234,
+            cwd: None,
         });
 
         let json = msg.to_ndjson().unwrap();

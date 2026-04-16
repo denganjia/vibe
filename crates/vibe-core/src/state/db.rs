@@ -104,8 +104,6 @@ mod tests {
     #[tokio::test]
     async fn test_actor_concurrency() -> Result<()> {
         let conn = Connection::open_in_memory()?;
-        let schema = include_str!("schema.sql");
-        conn.execute_batch(schema)?;
         let store = StateStore::from_conn(conn);
         
         let (tx, rx) = mpsc::channel(10);
@@ -123,6 +121,7 @@ mod tests {
             terminal_type: "wezterm".to_string(),
             role: Some("worker".to_string()),
             pid: 1234,
+            cwd: None,
         };
         
         handle.register_pane(info).await?;

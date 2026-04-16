@@ -70,7 +70,7 @@ mod tests {
             env::set_var("WEZTERM_PANE", "1");
             env::remove_var("TMUX");
         }
-        assert_eq!(detect_current_terminal().unwrap(), TerminalType::WezTerm);
+        assert_eq!(detect_current_terminal(), Some(TerminalType::WezTerm));
     }
 
     #[test]
@@ -79,7 +79,7 @@ mod tests {
             env::remove_var("WEZTERM_PANE");
             env::set_var("TMUX", "1");
         }
-        assert_eq!(detect_current_terminal().unwrap(), TerminalType::Tmux);
+        assert_eq!(detect_current_terminal(), Some(TerminalType::Tmux));
     }
 
     #[test]
@@ -88,6 +88,6 @@ mod tests {
             env::remove_var("WEZTERM_PANE");
             env::remove_var("TMUX");
         }
-        assert!(detect_current_terminal().is_err());
+        assert!(detect_current_terminal().is_none());
     }
 }

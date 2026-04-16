@@ -322,9 +322,6 @@ mod tests {
         let socket_path = dir.path().join("vibe.sock");
         
         let conn = Connection::open_in_memory().unwrap();
-        // Load schema
-        let schema = include_str!("../state/schema.sql");
-        conn.execute_batch(schema).unwrap();
         let store = StateStore::from_conn(conn);
         let (db_tx, db_rx) = mpsc::channel(10);
         let actor = DbActor::new(db_rx, store);
@@ -385,6 +382,7 @@ mod tests {
             terminal_type: "wezterm".to_string(),
             role: Some("worker".to_string()),
             pid: 1234,
+            cwd: None,
         });
 
         framed.send(serde_json::to_string(&reg).unwrap()).await.unwrap();

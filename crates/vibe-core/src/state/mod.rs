@@ -3,6 +3,7 @@ use crate::env::resolve_state_dir;
 use crate::error::Result;
 use crate::ipc::protocol::RegisterInfo;
 use rusqlite::{params, Connection};
+use rusqlite_migration::{Migrations, M};
 use std::fs;
 
 pub mod db;
@@ -16,16 +17,34 @@ impl StateStore {
         let state_dir = resolve_state_dir()?;
         fs::create_dir_all(&state_dir)?;
         let db_path = state_dir.join("state.db");
-        let conn = Connection::open(db_path)?;
+        let mut conn = Connection::open(db_path)?;
         
-        // Initialize schema
-        let schema = include_str!("schema.sql");
-        conn.execute_batch(schema)?;
+        let migrations = Self::migrations();
+        migrations.to_latest(&mut conn).map_err(|e| crate::error::VibeError::Internal(format!("Migration failed: {}", e)))?;
         
         Ok(Self { conn })
     }
 
-    pub fn from_conn(conn: Connection) -> Self {
+    fn migrations() -> Migrations<'static> {
+        Migrations::new(vec![
+            M::up("CREATE TABLE IF NOT EXISTS panes (
+                vibe_id TEXT PRIMARY KEY,
+                physical_id TEXT NOT NULL,
+                terminal_type TEXT NOT NULL
+            );"),
+            M::up("ALTER TABLE panes ADD COLUMN role TEXT;
+                   ALTER TABLE panes ADD COLUMN status TEXT;
+                   ALTER TABLE panes ADD COLUMN summary TEXT;
+                   ALTER TABLE panes ADD COLUMN pid INTEGER;
+                   ALTER TABLE panes ADD COLUMN last_heartbeat_at DATETIME;
+                   ALTER TABLE panes ADD COLUMN cwd TEXT;
+                   ALTER TABLE panes ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP;"),
+        ])
+    }
+
+    pub fn from_conn(mut conn: Connection) -> Self {
+        let migrations = Self::migrations();
+        let _ = migrations.to_latest(&mut conn);
         Self { conn }
     }
 
@@ -109,13 +128,10 @@ mod tests {
     #[test]
     fn test_database_persistence() -> Result<()> {
         let conn = Connection::open_in_memory()?;
-        let schema = include_str!("schema.sql");
-        conn.execute_batch(schema)?;
-        
-        let store = StateStore { conn };
+        let store = StateStore::from_conn(conn);
         
         let v_id = "vibe-1".to_string();
-        store.save_pane(&v_id, "phys-1", "wezterm")?;
+        store.save_pane(&v_id, "phys-1", "wezterm", None)?;
         
         let phys_id = store.get_pane(&v_id)?;
         assert_eq!(phys_id, Some("phys-1".to_string()));
