@@ -16,6 +16,15 @@ pub enum Message {
         states: Vec<WorkerState>,
     },
     KillRequest(String),
+    ApprovalRequest {
+        vibe_id: String,
+        plan_path: String,
+    },
+    ApprovalResult {
+        vibe_id: String,
+        approved: bool,
+        reason: Option<String>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -27,6 +36,9 @@ pub struct WorkerState {
     pub summary: String,
     pub last_seen: String,
     pub cwd: Option<String>,
+    pub approval_status: String, // "none", "pending", "approved", "rejected"
+    pub plan_path: Option<String>,
+    pub rejection_reason: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -121,5 +133,56 @@ mod tests {
         let json = msg.to_ndjson().unwrap();
         let deserialized = Message::from_str(&json).unwrap();
         assert_eq!(msg, deserialized);
+    }
+
+    #[test]
+    fn test_approval_request_serialization() {
+        let msg = Message::ApprovalRequest {
+            vibe_id: "vibe-1".to_string(),
+            plan_path: "/path/to/plan".to_string(),
+        };
+
+        let json = msg.to_ndjson().unwrap();
+        let deserialized = Message::from_str(&json).unwrap();
+        assert_eq!(msg, deserialized);
+    }
+
+    #[test]
+    fn test_approval_result_serialization() {
+        let msg = Message::ApprovalResult {
+            vibe_id: "vibe-1".to_string(),
+            approved: true,
+            reason: Some("Approved by user".to_string()),
+        };
+
+        let json = msg.to_ndjson().unwrap();
+        let deserialized = Message::from_str(&json).unwrap();
+        assert_eq!(msg, deserialized);
+    }
+
+    #[test]
+    fn test_worker_state_approval_fields() {
+        let state = WorkerState {
+            vibe_id: "vibe-1".to_string(),
+            physical_id: "phys-1".to_string(),
+            role: Some("worker".to_string()),
+            status: "waiting".to_string(),
+            summary: "Awaiting approval".to_string(),
+            last_seen: "2023-10-27T10:00:00Z".to_string(),
+            cwd: None,
+            approval_status: "pending".to_string(),
+            plan_path: Some("/path/to/plan".to_string()),
+            rejection_reason: None,
+        };
+
+        let msg = Message::Broadcast { states: vec![state.clone()] };
+        let json = msg.to_ndjson().unwrap();
+        let deserialized = Message::from_str(&json).unwrap();
+        if let Message::Broadcast { states } = deserialized {
+            assert_eq!(states[0].approval_status, "pending");
+            assert_eq!(states[0].plan_path, Some("/path/to/plan".to_string()));
+        } else {
+            panic!("Wrong message type");
+        }
     }
 }

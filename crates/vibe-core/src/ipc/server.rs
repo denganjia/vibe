@@ -119,6 +119,9 @@ async fn broadcast_states(db: &DbHandle, subscribers: &SubscriberMap) -> Result<
             summary: summary.unwrap_or_default(),
             last_seen: "".to_string(), // TODO: add last_heartbeat_at
             cwd,
+            approval_status: "none".to_string(),
+            plan_path: None,
+            rejection_reason: None,
         }
     }).collect::<Vec<_>>();
 
