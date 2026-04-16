@@ -137,7 +137,7 @@ async fn main() -> anyhow::Result<()> {
             let store = StateStore::new()?;
             let panes = store.list_active_panes()?;
             if json {
-                let json_panes: Vec<_> = panes.into_iter().map(|(v_id, p_id, t_type, role, status, summary, cwd)| {
+                let json_panes: Vec<_> = panes.into_iter().map(|(v_id, p_id, t_type, role, status, summary, cwd, approval_status, plan_path, rejection_reason)| {
                     serde_json::json!({
                         "vibe_id": v_id,
                         "physical_id": p_id,
@@ -145,7 +145,10 @@ async fn main() -> anyhow::Result<()> {
                         "role": role,
                         "status": status,
                         "summary": summary,
-                        "cwd": cwd
+                        "cwd": cwd,
+                        "approval_status": approval_status,
+                        "plan_path": plan_path,
+                        "rejection_reason": rejection_reason
                     })
                 }).collect();
                 println!("{}", serde_json::to_string_pretty(&json_panes)?);
@@ -154,12 +157,21 @@ async fn main() -> anyhow::Result<()> {
                     println!("No active vibe panes.");
                 } else {
                     println!("Active Vibe Panes:");
-                    for (v_id, p_id, t_type, role, status, summary, cwd) in panes {
+                    for (v_id, p_id, t_type, role, status, summary, cwd, approval_status, _plan_path, _rejection_reason) in panes {
                         let role_str = role.map(|r| format!(", Role: {}", r)).unwrap_or_default();
                         let status_str = status.map(|s| format!(", Status: {}", s)).unwrap_or_default();
                         let summary_str = summary.map(|s| format!("\n    Summary: {}", s)).unwrap_or_default();
                         let cwd_str = cwd.map(|c| format!(", CWD: {}", c)).unwrap_or_default();
-                        println!("- {}: (Physical ID: {}, Terminal: {}{}{}{}){}", v_id, p_id, t_type, role_str, status_str, cwd_str, summary_str);
+                        let app_str = if let Some(ref s) = approval_status {
+                            if s != "none" {
+                                format!(", Approval: {}", s)
+                            } else {
+                                "".to_string()
+                            }
+                        } else {
+                            "".to_string()
+                        };
+                        println!("- {}: (Physical ID: {}, Terminal: {}{}{}{}{}){}", v_id, p_id, t_type, role_str, status_str, cwd_str, app_str, summary_str);
                     }
                 }
             }
@@ -209,7 +221,7 @@ async fn main() -> anyhow::Result<()> {
             };
             let store = StateStore::new()?;
             let panes = store.list_active_panes()?;
-            for (v_id, _p_id, _t_type, _role, _status, _summary, _cwd) in panes {
+            for (v_id, _p_id, _t_type, _role, _status, _summary, _cwd, _approval_status, _plan_path, _rejection_reason) in panes {
                 println!("Killing pane: {}", v_id);
                 if let Err(e) = adapter.close(&v_id) {
                     eprintln!("Failed to close pane {}: {}", v_id, e);
