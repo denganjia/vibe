@@ -16,6 +16,7 @@ which = { workspace = true }
 tokio-util = { workspace = true }
 dialoguer = { workspace = true }
 regex = { workspace = true }
+chrono = { workspace = true }
 rusqlite_migration = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]

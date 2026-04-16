@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::io::{self, BufRead, Write};
+use tokio::io::AsyncWriteExt;
 use vibe_core::env::{detect_current_terminal, resolve_socket_path};
+use vibe_core::ipc::protocol::Message;
+use vibe_core::state::plans::save_plan;
 use vibe_core::state::StateStore;
 
 #[derive(Debug, Deserialize)]
@@ -129,6 +132,29 @@ async fn handle_request(req: JsonRpcRequest) -> anyhow::Result<JsonRpcResponse> 
                                 },
                                 "required": ["vibeId", "command"]
                             }
+                        },
+                        {
+                            "name": "vibe_submit_plan",
+                            "description": "Submit a multi-step plan for human approval before execution.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "vibeId": { "type": "string", "description": "The target vibe ID" },
+                                    "plan": { "type": "string", "description": "The plan in Markdown format" }
+                                },
+                                "required": ["vibeId", "plan"]
+                            }
+                        },
+                        {
+                            "name": "vibe_query_approval",
+                            "description": "Query the approval status of a previously submitted plan.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "vibeId": { "type": "string", "description": "The target vibe ID" }
+                                },
+                                "required": ["vibeId"]
+                            }
                         }
                     ]
                 })),
@@ -195,7 +221,7 @@ async fn call_tool(name: &str, params: Value) -> anyhow::Result<Value> {
         "vibe_list" => {
             let store = StateStore::new()?;
             let panes = store.list_active_panes()?;
-            let json_panes: Vec<_> = panes.into_iter().map(|(v_id, p_id, t_type, role, status, summary, cwd)| {
+            let json_panes: Vec<_> = panes.into_iter().map(|(v_id, p_id, t_type, role, status, summary, cwd, approval_status, plan_path, rejection_reason)| {
                 serde_json::json!({
                     "vibe_id": v_id,
                     "physical_id": p_id,
@@ -203,7 +229,10 @@ async fn call_tool(name: &str, params: Value) -> anyhow::Result<Value> {
                     "role": role,
                     "status": status,
                     "summary": summary,
-                    "cwd": cwd
+                    "cwd": cwd,
+                    "approval_status": approval_status,
+                    "plan_path": plan_path,
+                    "rejection_reason": rejection_reason
                 })
             }).collect();
             Ok(serde_json::json!(json_panes))
@@ -281,6 +310,152 @@ async fn call_tool(name: &str, params: Value) -> anyhow::Result<Value> {
                 anyhow::bail!("Injection failed: {}", stderr);
             }
         }
+        "vibe_submit_plan" => {
+            let vibe_id = params.get("vibeId").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Missing vibeId"))?;
+            let plan_text = params.get("plan").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Missing plan"))?;
+            
+            // 1. Save plan to file
+            let path = save_plan(vibe_id, plan_text)?;
+            let path_str = path.to_string_lossy().to_string();
+            
+            // 2. Update DB status
+            let store = StateStore::new()?;
+            store.update_approval_status(vibe_id, "pending_approval", Some(path_str.clone()), None)?;
+            
+            // 3. Notify master via UDS
+            let socket_path = resolve_socket_path()?;
+            if let Ok(mut stream) = tokio::net::UnixStream::connect(&socket_path).await {
+                let msg = Message::ApprovalRequest {
+                    vibe_id: vibe_id.to_string(),
+                    plan_path: path_str.clone(),
+                };
+                let _ = stream.write_all(msg.to_ndjson()?.as_bytes()).await;
+            }
+            
+            Ok(serde_json::json!({
+                "status": "pending",
+                "plan_path": path_str
+            }))
+        }
+        "vibe_query_approval" => {
+            let vibe_id = params.get("vibeId").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Missing vibeId"))?;
+            
+            let store = StateStore::new()?;
+            let panes = store.list_active_panes()?;
+            let pane = panes.into_iter().find(|p| p.0 == vibe_id)
+                .ok_or_else(|| anyhow::anyhow!("Vibe ID not found: {}", vibe_id))?;
+            
+            // index 7 is approval_status, index 9 is rejection_reason
+            let approval_status = &pane.7;
+            let rejection_reason = &pane.9;
+            
+            match approval_status.as_deref() {
+                Some("pending_approval") => Ok(serde_json::json!({ "status": "pending" })),
+                Some("approved") => Ok(serde_json::json!({ "status": "approved" })),
+                Some("rejected") => Ok(serde_json::json!({ 
+                    "status": "rejected", 
+                    "reason": rejection_reason.clone().unwrap_or_else(|| "No reason provided".to_string()) 
+                })),
+                _ => Ok(serde_json::json!({ "status": "none" })),
+            }
+        }
         _ => anyhow::bail!("Tool not found"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use std::env;
+    use vibe_core::state::StateStore;
+
+    #[tokio::test]
+    async fn test_vibe_submit_plan() -> anyhow::Result<()> {
+        let dir = tempdir()?;
+        let old_home = env::var("HOME").ok();
+        let old_xdg = env::var("XDG_DATA_HOME").ok();
+        
+        env::set_var("HOME", dir.path());
+        env::set_var("XDG_DATA_HOME", dir.path().join(".local/share"));
+        
+        // Ensure the directory exists for StateStore
+        std::fs::create_dir_all(dir.path().join(".local/share/vibe"))?;
+
+        let vibe_id = "test-vibe";
+        let plan = "# Test Plan\n1. Do something";
+        
+        // Initialize DB with a pane
+        {
+            let store = StateStore::new()?;
+            store.save_pane(&vibe_id.to_string(), "phys-1", "test", None)?;
+        }
+
+        let params = serde_json::json!({
+            "vibeId": vibe_id,
+            "plan": plan
+        });
+
+        let result = call_tool("vibe_submit_plan", params).await?;
+        
+        assert_eq!(result.get("status").and_then(|v| v.as_str()), Some("pending"));
+        let plan_path = result.get("plan_path").and_then(|v| v.as_str()).unwrap();
+        assert!(std::path::Path::new(plan_path).exists());
+        
+        // Check DB status
+        let store = StateStore::new()?;
+        let panes = store.list_active_panes()?;
+        let pane = panes.iter().find(|p| p.0 == vibe_id).unwrap();
+        assert_eq!(pane.7, Some("pending_approval".to_string()));
+        assert_eq!(pane.8, Some(plan_path.to_string()));
+
+        // Restore env
+        if let Some(h) = old_home { env::set_var("HOME", h); }
+        if let Some(x) = old_xdg { env::set_var("XDG_DATA_HOME", x); }
+        
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_vibe_query_approval() -> anyhow::Result<()> {
+        let dir = tempdir()?;
+        let old_home = env::var("HOME").ok();
+        let old_xdg = env::var("XDG_DATA_HOME").ok();
+        
+        env::set_var("HOME", dir.path());
+        env::set_var("XDG_DATA_HOME", dir.path().join(".local/share"));
+        
+        std::fs::create_dir_all(dir.path().join(".local/share/vibe"))?;
+
+        let vibe_id = "test-vibe-query";
+        
+        {
+            let store = StateStore::new()?;
+            store.save_pane(&vibe_id.to_string(), "phys-1", "test", None)?;
+            store.update_approval_status(vibe_id, "approved", None, None)?;
+        }
+
+        let params = serde_json::json!({
+            "vibeId": vibe_id
+        });
+
+        let result = call_tool("vibe_query_approval", params).await?;
+        assert_eq!(result.get("status").and_then(|v| v.as_str()), Some("approved"));
+
+        // Test rejected
+        {
+            let store = StateStore::new()?;
+            store.update_approval_status(vibe_id, "rejected", None, Some("Too risky".to_string()))?;
+        }
+
+        let result = call_tool("vibe_query_approval", params).await?;
+        assert_eq!(result.get("status").and_then(|v| v.as_str()), Some("rejected"));
+        assert_eq!(result.get("reason").and_then(|v| v.as_str()), Some("Too risky"));
+
+        // Restore env
+        if let Some(h) = old_home { env::set_var("HOME", h); }
+        if let Some(x) = old_xdg { env::set_var("XDG_DATA_HOME", x); }
+        
+        Ok(())
     }
 }
