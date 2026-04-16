@@ -218,6 +218,12 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                                                             let _ = broadcast_states(&db_clone, &subscribers_clone).await;
                                                             let _ = framed.send(serde_json::to_string(&Message::Ack).unwrap()).await;
                                                         }
+                                                        Message::ApprovalResult { vibe_id, approved, reason } => {
+                                                            let status = if approved { "approved" } else { "rejected" };
+                                                            let _ = db_clone.update_approval_status(vibe_id, status, None, reason).await;
+                                                            let _ = broadcast_states(&db_clone, &subscribers_clone).await;
+                                                            let _ = framed.send(serde_json::to_string(&Message::Ack).unwrap()).await;
+                                                        }
                                                         Message::Ack => {
                                                             // Intent acknowledged by worker
                                                         }
@@ -274,6 +280,25 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                         let ack = serde_json::to_string(&Message::Ack)?;
                         framed.send(ack).await?;
                         let _ = broadcast_states(&db, &subscribers).await;
+                    }
+                    Message::ApprovalRequest { vibe_id, plan_path } => {
+                        let target_id = vibe_id.clone();
+                        let w = workers.lock().await;
+                        if let Some(tx) = w.get(&target_id) {
+                            let json = serde_json::to_string(&Message::ApprovalRequest { vibe_id, plan_path })?;
+                            let _ = tx.send(json).await;
+                            let ack = serde_json::to_string(&Message::Ack)?;
+                            framed.send(ack).await?;
+                        } else {
+                            return Err(VibeError::Internal(format!("Worker {} not found for approval request", target_id)));
+                        }
+                    }
+                    Message::ApprovalResult { vibe_id, approved, reason } => {
+                        let status = if approved { "approved" } else { "rejected" };
+                        db.update_approval_status(vibe_id, status, None, reason).await?;
+                        let _ = broadcast_states(&db, &subscribers).await;
+                        let ack = serde_json::to_string(&Message::Ack)?;
+                        framed.send(ack).await?;
                     }
                     Message::ExecuteIntent(intent) => {
                         let target_id = intent.target_vibe_id.clone();

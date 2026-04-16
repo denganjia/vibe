@@ -27,7 +27,7 @@ created: 2026-04-16
 
 ## Sampling Rate
 
-- **After every task commit:** Run `cargo test -p vibe-cli`
+- **After every task commit:** Run `cargo test` for affected crate
 - **After every plan wave:** Run `cargo test --workspace`
 - **Before `/gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 30 seconds
@@ -38,10 +38,16 @@ created: 2026-04-16
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 09-01-01 | 01 | 0 | SCO-01 | — | N/A | unit | `cargo test test_mcp_routes` | ❌ W0 | ⬜ pending |
-| 09-01-02 | 01 | 0 | SCO-01 | — | N/A | unit | `cargo test test_protocol_serialization` | ❌ W0 | ⬜ pending |
-| 09-02-01 | 01 | 1 | SCO-01 | — | N/A | unit | `cargo test test_mcp_submit_plan` | ❌ W0 | ⬜ pending |
-| 09-02-02 | 01 | 1 | SCO-01 | — | N/A | unit | `cargo test test_state_approval_transition` | ❌ W0 | ⬜ pending |
+| 09-01-01 | 01 | 1 | SCO-01 | — | N/A | unit | `cargo test -p vibe-core --lib ipc::protocol::tests` | ✅ | ⬜ pending |
+| 09-01-02 | 01 | 1 | SCO-01 | T-09-01 | N/A | unit | `cargo test -p vibe-core --lib state::tests` | ✅ | ⬜ pending |
+| 09-01-03 | 01 | 1 | SCO-01 | — | N/A | unit | `cargo test -p vibe-core --lib state::db::tests` | ✅ | ⬜ pending |
+| 09-02-01 | 02 | 2 | SCO-01 | — | N/A | integration | `ls ~/.vibe/plans/` | ✅ | ⬜ pending |
+| 09-02-02 | 02 | 2 | SCO-01 | T-09-03 | N/A | unit | `cargo test -p vibe-cli --lib mcp` | ✅ | ⬜ pending |
+| 09-03-01 | 03 | 2 | SCO-01 | — | N/A | check | `cargo check -p vibe-core` | ✅ | ⬜ pending |
+| 09-04-01 | 04 | 2 | SCO-01 | T-09-06 | N/A | check | `cargo check -p vibe-core --lib ipc::client` | ✅ | ⬜ pending |
+| 09-04-02 | 04 | 2 | SCO-01 | — | N/A | unit | `cargo test -p vibe-core --lib ipc::client::tests` | ✅ | ⬜ pending |
+| 09-05-01 | 05 | 3 | SCO-01 | T-09-07 | N/A | check | `cargo check -p vibe-core` | ✅ | ⬜ pending |
+| 09-05-02 | 05 | 3 | SCO-01 | — | N/A | integration | `cargo test -p vibe-cli` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -49,8 +55,7 @@ created: 2026-04-16
 
 ## Wave 0 Requirements
 
-- [ ] `apps/vibe-cli/src/mcp.rs` — tests for the new JSON-RPC routes
-- [ ] `crates/vibe-core/src/ipc/protocol.rs` — serialization tests for new events
+None.
 
 ---
 
