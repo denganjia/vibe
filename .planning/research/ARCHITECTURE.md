@@ -1,98 +1,100 @@
-# Architecture Patterns: vibe-cli
+# ARCHITECTURE
 
-**Domain:** Terminal Orchestration for AI Agents
+**Domain:** Terminal AI Agent Orchestration (vibe-cli)
 **Researched:** 2024-05-24
-**Overall confidence:** HIGH
 
 ## Recommended Architecture
 
-`vibe-cli` adopts a **Master-Worker (Orchestrator-Executor)** pattern, utilizing a decoupled **Adapter-based Orchestration Layer** to support multiple terminal multiplexers (Wezterm/Tmux).
+The new capabilities (Skills Definitions, Multi-model Workflows, Cross-checking) will build on top of the existing Master-Worker-TUI triangular topology and SQLite state management.
 
 ### Component Boundaries
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **CLI Master** | CLI entry point, session management, high-level task splitting. | User, Orchestration Core, State DB, Unix Socket. |
-| **Orchestration Core** | Abstract interface for terminal operations (split, send-text, get-text). | Wezterm/Tmux CLI, CLI Master. |
-| **Worker Runtime** | The agent execution environment running inside a sub-pane. | Master (via Unix Socket), Local Filesystem, LLM APIs. |
-| **State Layer** | Persistent storage of session, pane metadata, and task statuses. | CLI Master, Worker Runtime (indirectly via Master). |
-| **IPC Layer (UDS)** | Real-time message bus for intent injection and progress streaming. | CLI Master (Server), Worker Runtime (Client). |
+| Component | Status | Responsibility | Communicates With |
+|-----------|--------|----------------|-------------------|
+| `SkillsRegistry` | **NEW** | Parses and loads declarative AI skill definitions (e.g., YAML) into executable tool schemas. | `MCP Server`, `Master Server` |
+| `WorkflowEngine` | **NEW** | Executes directed graphs (DAGs) of tasks, handling state transitions, step passing, and dependencies. | `StateStore`, `Master Server` |
+| `MCP Server` | *Modified* | Dynamically exposes tools from `SkillsRegistry` and endpoints to interact with `WorkflowEngine`. | `SkillsRegistry`, `LLM Clients` |
+| `StateStore (SQLite)` | *Modified* | Schema updates to persist workflow definitions, step execution state, and cross-check results. | `WorkflowEngine`, `TUI`, `Master Server` |
+| `TUI Dashboard` | *Modified* | New views to visualize workflow progress (DAG/steps) and cross-check validation statuses. | `Master Server (via UDS)` |
+| `Worker Client` | *Modified* | Executes specific workflow steps; captures output for cross-checking evaluation. | `Master Server (via UDS)` |
 
 ### Data Flow
 
-1.  **Session Initialization**: `vibe init` creates a SQLite database in `.vibe/state.db` and starts a Unix Domain Socket (UDS) server.
-2.  **Worker Spawning**:
-    - Master calls `vibe split --intent "Build Feature X"`.
-    - Orchestration Core translates this to `wezterm cli split-pane` or `tmux split-window`.
-    - The new pane executes `vibe worker --session-id <ID> --parent-pid <PID>`.
-3.  **Registration & Intent**:
-    - The `Worker Runtime` connects to the Master's UDS.
-    - Master sends a JSON payload containing the detailed "Intent" and context.
-4.  **Execution & Monitoring**:
-    - Worker executes the task.
-    - Worker streams logs/progress via UDS (JSON messages).
-    - Master updates `state.db` and optionally reflects status in the main UI.
-5.  **Completion & Cleanup**:
-    - Worker sends a `TASK_COMPLETE` signal.
-    - Master verifies results (manually or via AI).
-    - Master triggers `vibe close-pane` or marks the task as `DONE`.
-
----
+1. **Skill Loading**: On startup, `SkillsRegistry` loads `.yaml` definitions from a standard directory (`~/.local/share/vibe/skills`). `MCP Server` reads this registry to dynamically populate `tools/list`.
+2. **Workflow Initiation**: A user or AI agent submits a workflow definition via a new MCP tool (e.g., `vibe_submit_workflow`). `WorkflowEngine` parses it, persists it in `StateStore`, and queues the first step.
+3. **Execution & State Transitions**:
+   - `Master Server` spawns/injects commands into a `Worker Client` for the current workflow step.
+   - The worker executes the task and streams output.
+   - Upon completion, `Master Server` updates step status in `StateStore` and triggers the `WorkflowEngine` to advance.
+4. **Cross-Checking**:
+   - If the next step is defined as a `check` node, `WorkflowEngine` pauses execution of the main task.
+   - A secondary cross-checking agent (or specific LLM prompt) is invoked, providing the previous step's output as context.
+   - Depending on the boolean result of the check, the `WorkflowEngine` either proceeds to the next step, marks the workflow as failed, or loops back for correction.
 
 ## Patterns to Follow
 
-### Pattern 1: Terminal Adapter (Provider Pattern)
-**What:** Decouple the orchestration logic from specific terminal implementations.
-**When:** To support both Wezterm and Tmux without duplicating business logic.
+### Pattern 1: Dynamic Tool Exposure (Skill Registry)
+**What:** Instead of hardcoding tools in `mcp.rs`, define them declaratively.
+**When:** Adding new domain-specific capabilities without recompiling the CLI.
 **Example:**
 ```rust
-trait TerminalAdapter {
-    fn split_pane(&self, direction: Direction, cmd: &str) -> Result<PaneId>;
-    fn get_text(&self, id: PaneId) -> Result<String>;
-    fn send_keys(&self, id: PaneId, keys: &str) -> Result<()>;
+// vibe-core/src/skills/mod.rs
+pub struct SkillRegistry {
+    skills: HashMap<String, SkillDefinition>,
 }
 
-struct WeztermAdapter;
-impl TerminalAdapter for WeztermAdapter { /* uses `wezterm cli` */ }
+impl SkillRegistry {
+    pub fn load_from_dir(path: &Path) -> Result<Self> { ... }
+    pub fn to_mcp_tools(&self) -> Vec<serde_json::Value> { ... }
+}
 ```
 
-### Pattern 2: State-Driven Orchestration
-**What:** Treat the terminal layout as a projection of the `state.db`.
-**When:** Ensuring that if the CLI process crashes, we can "re-attach" to existing panes.
-**Instead of:** Relying on in-memory process handles that disappear on exit.
+### Pattern 2: State-Machine Driven Workflows
+**What:** Use SQLite to track the state machine of a multi-step workflow.
+**When:** Orchestrating sequences of actions (Plan -> Execute -> Check) that might span multiple panes or models.
+**Example:**
+`WorkflowEngine` polls or receives events from `StateStore`. Steps have states: `Pending`, `Running`, `Checking`, `Completed`, `Failed`.
 
-### Pattern 3: Intent Injection via Environment or Pipe
-**What:** Passing initial context to the worker.
-**When:** Spawning a new worker process.
-**Implementation:** Use environment variables (`VIBE_INTENT`) for small metadata and the UDS for large context or ongoing commands.
-
----
+### Pattern 3: Decoupled Verification (Cross-checking)
+**What:** Treat cross-checking as just another node/step in the workflow, but with routing logic.
+**When:** High-stakes operations where LLM hallucinations could be destructive.
+**Instead of:** Combining execution and verification in a single prompt.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Direct PTY Manipulation
-**What:** Trying to implement a full terminal emulator or low-level PTY driver in Rust.
-**Why bad:** High complexity, fragile across OS versions, reinventing Wezterm/Tmux.
-**Instead:** Use the mature CLI tools provided by the multiplexers (`wezterm cli`, `tmux`).
+### Anti-Pattern 1: Blocking IPC during Workflows
+**What:** Waiting for a multi-step workflow to complete in a single synchronous UDS call.
+**Why bad:** Will block the Master Server, preventing TUI updates and other worker heartbeats.
+**Instead:** Make workflow submission asynchronous. The MCP server immediately returns a `workflow_id`, and the agent can poll status or the TUI can observe it passively.
 
-### Anti-Pattern 2: Polling for Status
-**What:** Master repeatedly calling `get-text` to see if a worker is done.
-**Why bad:** Resource intensive, laggy, hard to distinguish between "working" and "hung".
-**Instead:** Use push-based communication via Unix Sockets.
+### Anti-Pattern 2: In-Memory Workflow State
+**What:** Tracking workflow progress purely in Rust memory.
+**Why bad:** `vibe-cli` is often invoked statelessly or might crash.
+**Instead:** All workflow state transitions MUST be committed to SQLite (`StateStore`) before execution.
 
----
+## Build Order (Integration Strategy)
 
-## Scalability Considerations
+To minimize disruption to existing validated capabilities, build in this order:
 
-| Concern | At 100 users | At 10K users (per machine) | Notes |
-|---------|--------------|--------------|-------------|
-| **DB Performance** | SQLite (Fast) | N/A (Local tool) | SQLite is perfect for local state. |
-| **IPC Overhead** | Negligible | Socket limit issues | Local UDS can handle thousands of concurrent workers. |
-| **Terminal Lag** | None | Resource contention | The bottleneck will be CPU/RAM for the AI agents, not the orchestration layer. |
+1. **Phase 1: Skills Definitions (Foundation)**
+   - Implement `SkillRegistry` and YAML parsing.
+   - Migrate existing hardcoded tools (in `mcp.rs`) to the new registry format.
+   - *Dependency*: None.
+2. **Phase 2: Database Evolution for Workflows**
+   - Implement schema migrations (as planned in Wave 2).
+   - Add tables: `workflows`, `workflow_steps`.
+   - *Dependency*: SQLite State Management.
+3. **Phase 3: Workflow Engine & Cross-checking**
+   - Implement state machine logic for step transitions.
+   - Introduce "Check" nodes that evaluate output.
+   - Add MCP tools to submit and query workflows.
+   - *Dependency*: Phase 2.
+4. **Phase 4: TUI Observability**
+   - Update `Ratatui` interface to display a Workflow tab.
+   - *Dependency*: Phase 3.
 
 ## Sources
 
-- [tmux_interface (Crates.io)](https://crates.io/crates/tmux_interface)
-- [Wezterm CLI Documentation](https://wezfurlong.org/wezterm/cli/index.html)
-- [Master-Worker AI coordination patterns](https://google.com)
-- [Interprocess Communication in Rust (interprocess crate)](https://crates.io/crates/interprocess)
+- `.planning/PROJECT.md` (Validated capabilities: SQLite, Master-Worker, TUI, MCP)
+- `apps/vibe-cli/src/mcp.rs` (Current hardcoded tool implementation)
+- `.planning/codebase/ARCHITECTURE.md` (Current Master-Worker-TUI topology)
