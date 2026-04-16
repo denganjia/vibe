@@ -8,6 +8,7 @@ pub enum DbRequest {
     RegisterPane(RegisterInfo, oneshot::Sender<Result<()>>),
     UpdateHeartbeat(String, String, oneshot::Sender<Result<()>>), // vibe_id, status
     UpdateReport(String, String, String, oneshot::Sender<Result<()>>), // vibe_id, status, summary
+    UpdateApprovalStatus(String, String, Option<String>, Option<String>, oneshot::Sender<Result<()>>), // vibe_id, status, plan_path, reason
     GetPanes(oneshot::Sender<Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>)>>>),
 }
 
@@ -39,6 +40,10 @@ impl DbActor {
             }
             DbRequest::UpdateReport(vibe_id, status, summary, res_tx) => {
                 let res = self.store.update_report(&vibe_id, &status, &summary);
+                let _ = res_tx.send(res);
+            }
+            DbRequest::UpdateApprovalStatus(vibe_id, status, plan_path, reason, res_tx) => {
+                let res = self.store.update_approval_status(&vibe_id, &status, plan_path, reason);
                 let _ = res_tx.send(res);
             }
             DbRequest::GetPanes(res_tx) => {
@@ -81,6 +86,15 @@ impl DbHandle {
         let (tx, rx) = oneshot::channel();
         self.sender
             .send(DbRequest::UpdateReport(vibe_id, status, summary, tx))
+            .await
+            .map_err(|e| crate::error::VibeError::Internal(format!("Failed to send request: {}", e)))?;
+        rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
+    }
+
+    pub async fn update_approval_status(&self, vibe_id: String, status: String, plan_path: Option<String>, reason: Option<String>) -> Result<()> {
+        let (tx, rx) = oneshot::channel();
+        self.sender
+            .send(DbRequest::UpdateApprovalStatus(vibe_id, status, plan_path, reason, tx))
             .await
             .map_err(|e| crate::error::VibeError::Internal(format!("Failed to send request: {}", e)))?;
         rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
@@ -131,6 +145,12 @@ mod tests {
         assert_eq!(panes[0].0, "v1");
         
         handle.update_heartbeat("v1".to_string(), "running".to_string()).await?;
+        
+        handle.update_approval_status("v1".to_string(), "pending".to_string(), Some("/tmp/plan.md".to_string()), None).await?;
+        
+        let panes = handle.get_panes().await?;
+        assert_eq!(panes[0].7, Some("pending".to_string()));
+        assert_eq!(panes[0].8, Some("/tmp/plan.md".to_string()));
         
         Ok(())
     }

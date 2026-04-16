@@ -7,6 +7,7 @@ use rusqlite_migration::{Migrations, M};
 use std::fs;
 
 pub mod db;
+pub mod plans;
 
 pub struct StateStore {
     conn: Connection,
@@ -79,6 +80,14 @@ impl StateStore {
         self.conn.execute(
             "UPDATE panes SET status = ?1, summary = ?2, last_heartbeat_at = CURRENT_TIMESTAMP WHERE vibe_id = ?3",
             params![status, summary, vibe_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_approval_status(&self, vibe_id: &str, status: &str, plan_path: Option<String>, reason: Option<String>) -> Result<()> {
+        self.conn.execute(
+            "UPDATE panes SET approval_status = ?1, plan_path = ?2, rejection_reason = ?3 WHERE vibe_id = ?4",
+            params![status, plan_path, reason, vibe_id],
         )?;
         Ok(())
     }
