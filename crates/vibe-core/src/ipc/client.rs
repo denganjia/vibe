@@ -6,7 +6,7 @@ use std::time::Duration;
 use tokio::time;
 use crate::error::{Result, VibeError};
 use crate::ipc::protocol::{Message, RegisterInfo, HeartbeatInfo, ExitStatusInfo, ExecuteIntentInfo, ReportInfo};
-use dialoguer::Confirm;
+use dialoguer::{Confirm, Select, Input};
 
 #[derive(Clone)]
 pub struct WorkerClient {
@@ -109,6 +109,15 @@ impl WorkerClient {
                                     Message::ExecuteIntent(intent) => {
                                         self.handle_intent(&mut framed, intent).await?;
                                     }
+                                    Message::ApprovalRequest { vibe_id, plan_path } => {
+                                        let (approved, reason) = self.handle_approval_request(&plan_path);
+                                        let result = Message::ApprovalResult {
+                                            vibe_id,
+                                            approved,
+                                            reason,
+                                        };
+                                        self.send_msg(&mut framed, &result).await?;
+                                    }
                                     Message::Ack => {}
                                     _ => {
                                         eprintln!("Warning: Unexpected message: {:?}", msg);
@@ -187,6 +196,35 @@ impl WorkerClient {
             .default(false)
             .interact()
             .unwrap_or(false)
+    }
+
+    fn handle_approval_request(&self, plan_path: &str) -> (bool, Option<String>) {
+        println!("\n--------------------------------------------------");
+        println!("  [VIBE] New plan submitted for review");
+        println!("--------------------------------------------------");
+        println!("  Plan: {}", plan_path);
+        println!("--------------------------------------------------");
+
+        let items = vec!["Approve", "Reject", "Reject with Reason"];
+        let selection = Select::new()
+            .with_prompt("Your decision?")
+            .items(&items)
+            .default(0)
+            .interact()
+            .unwrap_or(1); // Default to Reject on error
+
+        match selection {
+            0 => (true, None),
+            1 => (false, None),
+            2 => {
+                let reason: String = Input::new()
+                    .with_prompt("Reason for rejection")
+                    .interact_text()
+                    .unwrap_or_else(|_| "No reason provided".to_string());
+                (false, Some(reason))
+            }
+            _ => (false, None),
+        }
     }
 
     pub async fn run_heartbeat(self) -> Result<()> {
