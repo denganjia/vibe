@@ -7,8 +7,8 @@
 - [x] **Phase 3: State Persistence & IPC Layer** - Build infrastructure for tracking tasks and cross-pane communication via unified UDS.
 - [x] **Phase 4: Intent Injection & Human-in-the-Loop** - Enable Master to delegate tasks to Workers with safety controls.
 - [x] **Phase 5: Output Monitoring & Lifecycle Safety** - Capture output and ensure robust process cleanup (Windows Job Objects).
-- [ ] **Phase 6: Status Dashboard & UX** - Provide visibility into the entire AI team's status via TUI.
-- [ ] **Phase 7: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
+- [x] **Phase 6: Status Dashboard & UX** - Provide visibility into the entire AI team's status via TUI.
+- [/] **Phase 7: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
 
 ## Phase Details
 
@@ -26,17 +26,10 @@
 
 ### Phase 5: Output Monitoring & Lifecycle Safety
 **Status**: Completed
+- [x] **Phase 7: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
 
-### Phase 6: Status Dashboard & UX
-**Goal**: Users can monitor the high-level health and progress of all concurrent AI tasks.
-**Depends on**: Phase 5
-**Requirements**: MON-02
-**Success Criteria** (what must be TRUE):
-  1. User can run `vibe status` to see a live-updating table of all workers, their current task, and elapsed time.
-  2. The dashboard clearly distinguishes between idling, working, and failed agents.
-**Plans**: TBD
-**UI hint**: yes
-
+## Phase Details
+...
 ### Phase 7: AI Skill Integration & Release
 **Goal**: Make vibe-cli natively discoverable and usable by AI models as a professional toolset.
 **Depends on**: Phase 6
@@ -45,7 +38,7 @@
   1. Deployment of an MCP (Model Context Protocol) server or JSON tool definition for vibe-cli.
   2. Documentation/System prompts provided for Claude/GPT to trigger vibe actions autonomously.
   3. Final binary packaging (v0.1.0) and installation script validation across platforms.
-**Plans**: TBD
+**Status**: Completed
 
 ## Progress Table
 
@@ -56,5 +49,6 @@
 | 3. State Persistence & IPC Layer | 4/4 | Completed | 2026-04-14 |
 | 4. Intent Injection & Human-in-the-Loop | 1/1 | Completed | 2026-04-14 |
 | 5. Output Monitoring & Lifecycle Safety | 1/1 | Completed | 2026-04-14 |
-| 6. Status Dashboard & UX | 0/0 | Not started | - |
-| 7. AI Skill Integration & Release | 0/0 | Not started | - |
+| 6. Status Dashboard & UX | 1/1 | Completed | 2026-04-15 |
+| 7. AI Skill Integration & Release | 1/1 | Completed | 2026-04-15 |
+

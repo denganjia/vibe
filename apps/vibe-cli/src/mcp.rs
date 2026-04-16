@@ -96,6 +96,39 @@ async fn handle_request(req: JsonRpcRequest) -> anyhow::Result<JsonRpcResponse> 
                                 },
                                 "required": ["command"]
                             }
+                        },
+                        {
+                            "name": "vibe_split",
+                            "description": "Split the current pane or create a new one externally if local orchestration is not available.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "vertical": { "type": "boolean", "description": "Split vertically instead of horizontally" }
+                                }
+                            }
+                        },
+                        {
+                            "name": "vibe_focus",
+                            "description": "Switch terminal focus to a specific vibe agent's pane.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "vibeId": { "type": "string", "description": "Target vibe ID" }
+                                },
+                                "required": ["vibeId"]
+                            }
+                        },
+                        {
+                            "name": "vibe_inject",
+                            "description": "Inject a command into a running worker agent.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "vibeId": { "type": "string", "description": "Target vibe ID" },
+                                    "command": { "type": "string", "description": "The command to inject" }
+                                },
+                                "required": ["vibeId", "command"]
+                            }
                         }
                     ]
                 })),
@@ -177,17 +210,14 @@ async fn call_tool(name: &str, params: Value) -> anyhow::Result<Value> {
         }
         "vibe_run" => {
             let command = params.get("command").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Missing command"))?;
-            let role = params.get("role").and_then(|v| v.as_str()).map(|s| s.to_string());
             
-            // We use the current binary to execute run
             let exe = std::env::current_exe()?;
             let mut cmd = std::process::Command::new(exe);
             cmd.arg("run");
-            cmd.arg("--yes"); // Auto-approve in AI context
+            cmd.arg("--yes");
             cmd.arg("--");
             cmd.arg(command);
 
-            // This spawns a new process that will register itself
             let child = cmd.spawn()?;
             
             Ok(serde_json::json!({
@@ -195,6 +225,61 @@ async fn call_tool(name: &str, params: Value) -> anyhow::Result<Value> {
                 "pid": child.id(),
                 "note": "The task has been spawned. Check vibe_list for its registration status."
             }))
+        }
+        "vibe_split" => {
+            let vertical = params.get("vertical").and_then(|v| v.as_bool()).unwrap_or(false);
+            
+            let exe = std::env::current_exe()?;
+            let mut cmd = std::process::Command::new(exe);
+            cmd.arg("split");
+            if vertical {
+                cmd.arg("--vertical");
+            }
+
+            let output = cmd.output()?;
+            let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            
+            if output.status.success() {
+                Ok(serde_json::json!({ "status": "success", "output": stdout }))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                anyhow::bail!("Split failed: {}", stderr);
+            }
+        }
+        "vibe_focus" => {
+            let vibe_id = params.get("vibeId").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Missing vibeId"))?;
+            
+            let exe = std::env::current_exe()?;
+            let mut cmd = std::process::Command::new(exe);
+            cmd.arg("focus");
+            cmd.arg(vibe_id);
+
+            let output = cmd.output()?;
+            if output.status.success() {
+                Ok(serde_json::json!({ "status": "success", "message": format!("Focused on {}", vibe_id) }))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                anyhow::bail!("Focus failed: {}", stderr);
+            }
+        }
+        "vibe_inject" => {
+            let vibe_id = params.get("vibeId").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Missing vibeId"))?;
+            let command = params.get("command").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Missing command"))?;
+            
+            let exe = std::env::current_exe()?;
+            let mut cmd = std::process::Command::new(exe);
+            cmd.arg("inject");
+            cmd.arg(vibe_id);
+            cmd.arg(command);
+            cmd.arg("--yes");
+
+            let output = cmd.output()?;
+            if output.status.success() {
+                Ok(serde_json::json!({ "status": "success", "message": format!("Injected command into {}", vibe_id) }))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                anyhow::bail!("Injection failed: {}", stderr);
+            }
         }
         _ => anyhow::bail!("Tool not found"),
     }
