@@ -8,7 +8,7 @@ pub enum DbRequest {
     RegisterPane(RegisterInfo, oneshot::Sender<Result<()>>),
     UpdateHeartbeat(String, String, oneshot::Sender<Result<()>>), // vibe_id, status
     UpdateReport(String, String, String, oneshot::Sender<Result<()>>), // vibe_id, status, summary
-    GetPanes(oneshot::Sender<Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>)>>>),
+    GetPanes(oneshot::Sender<Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>)>>>),
 }
 
 pub struct DbActor {
@@ -86,7 +86,7 @@ impl DbHandle {
         rx.await.map_err(|e| crate::error::VibeError::Internal(format!("Failed to receive response: {}", e)))?
     }
 
-    pub async fn get_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>)>> {
+    pub async fn get_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>)>> {
         let (tx, rx) = oneshot::channel();
         self.sender
             .send(DbRequest::GetPanes(tx))

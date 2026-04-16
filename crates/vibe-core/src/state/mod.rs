@@ -39,6 +39,9 @@ impl StateStore {
                    ALTER TABLE panes ADD COLUMN last_heartbeat_at DATETIME;
                    ALTER TABLE panes ADD COLUMN cwd TEXT;
                    ALTER TABLE panes ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP;"),
+            M::up("ALTER TABLE panes ADD COLUMN approval_status TEXT DEFAULT 'none';
+                   ALTER TABLE panes ADD COLUMN plan_path TEXT;
+                   ALTER TABLE panes ADD COLUMN rejection_reason TEXT;"),
         ])
     }
 
@@ -102,10 +105,21 @@ impl StateStore {
         }
     }
 
-    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>)>> {
-        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, role, status, summary, cwd FROM panes")?;
+    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>)>> {
+        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, role, status, summary, cwd, approval_status, plan_path, rejection_reason FROM panes")?;
         let rows = stmt.query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?))
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                row.get(5)?,
+                row.get(6)?,
+                row.get(7)?,
+                row.get(8)?,
+                row.get(9)?,
+            ))
         })?;
         
         let mut results = Vec::new();

@@ -110,7 +110,7 @@ impl MasterServer {
 
 async fn broadcast_states(db: &DbHandle, subscribers: &SubscriberMap) -> Result<()> {
     let panes = db.get_panes().await?;
-    let states = panes.into_iter().map(|(id, phys, _term, role, status, summary, cwd)| {
+    let states = panes.into_iter().map(|(id, phys, _term, role, status, summary, cwd, approval_status, plan_path, rejection_reason)| {
         crate::ipc::protocol::WorkerState {
             vibe_id: id,
             physical_id: phys,
@@ -119,9 +119,9 @@ async fn broadcast_states(db: &DbHandle, subscribers: &SubscriberMap) -> Result<
             summary: summary.unwrap_or_default(),
             last_seen: "".to_string(), // TODO: add last_heartbeat_at
             cwd,
-            approval_status: "none".to_string(),
-            plan_path: None,
-            rejection_reason: None,
+            approval_status: approval_status.unwrap_or_else(|| "none".to_string()),
+            plan_path,
+            rejection_reason,
         }
     }).collect::<Vec<_>>();
 
