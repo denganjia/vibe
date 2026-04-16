@@ -47,7 +47,8 @@ struct App {
 
 impl App {
     fn new() -> anyhow::Result<Self> {
-        let terminal_type = detect_current_terminal()?;
+        let terminal_type = detect_current_terminal()
+            .ok_or_else(|| anyhow::anyhow!("No supported terminal detected for TUI"))?;
         let adapter: Box<dyn TerminalAdapter> = match terminal_type {
             TerminalType::WezTerm => Box::new(WezTermAdapter),
             TerminalType::Tmux => Box::new(TmuxAdapter),
@@ -223,7 +224,7 @@ fn ui(f: &mut ratatui::Frame, app: &mut App) {
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED).fg(Color::Yellow);
     let normal_style = Style::default().fg(Color::White);
-    let header_cells = ["ID", "Role", "Status", "Summary"]
+    let header_cells = ["ID", "Role", "Status", "CWD", "Summary"]
         .iter()
         .map(|h| ratatui::widgets::Cell::from(*h).style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)));
     let header = Row::new(header_cells)
@@ -236,16 +237,18 @@ fn ui(f: &mut ratatui::Frame, app: &mut App) {
             ratatui::widgets::Cell::from(item.vibe_id.clone()),
             ratatui::widgets::Cell::from(item.role.clone().unwrap_or_default()),
             ratatui::widgets::Cell::from(item.status.clone()),
+            ratatui::widgets::Cell::from(item.cwd.clone().unwrap_or_default()),
             ratatui::widgets::Cell::from(item.summary.clone()),
         ];
         Row::new(cells).height(1)
     });
 
     let t = Table::new(rows, [
+        Constraint::Percentage(15),
+        Constraint::Percentage(10),
+        Constraint::Percentage(10),
         Constraint::Percentage(20),
-        Constraint::Percentage(15),
-        Constraint::Percentage(15),
-        Constraint::Percentage(50),
+        Constraint::Percentage(45),
     ])
     .header(header)
     .block(Block::default().borders(Borders::ALL).title(" Vibe Agents "))

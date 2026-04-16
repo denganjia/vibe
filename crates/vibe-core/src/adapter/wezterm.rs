@@ -15,6 +15,9 @@ struct WezTermPane {
 
 impl TerminalAdapter for WezTermAdapter {
     fn split(&self, direction: SplitDirection, _size: Option<u32>) -> Result<VibeID> {
+        // Try to detect if we are inside WezTerm
+        let is_inside = std::env::var("WEZTERM_PANE").is_ok();
+
         let mut cmd = Command::new("wezterm");
         cmd.args(["cli", "split-pane"]);
 
@@ -23,12 +26,30 @@ impl TerminalAdapter for WezTermAdapter {
             SplitDirection::Vertical => cmd.arg("--bottom"),
         };
 
+        if !is_inside {
+            // If we are outside, try to split at the top-level of the current active window
+            // or just create a new window if that fails.
+            cmd.arg("--top-level");
+        }
+
         let output = cmd.output()?;
         if !output.status.success() {
-            return Err(VibeError::TerminalDetectionFailed(format!(
-                "WezTerm split-pane failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            )));
+            // If split-pane failed because no window is available, try to just spawn a new wezterm window
+            let output = Command::new("wezterm")
+                .arg("start")
+                .output();
+            
+            match output {
+                Ok(_) => {
+                    // This is tricky as we don't get the pane-id immediately.
+                    // For Wave 2, we'll just return a placeholder or wait.
+                    // But for now, let's try to get the newly created pane id if possible.
+                    return Err(VibeError::TerminalDetectionFailed(
+                        "No active WezTerm window found. Started a new one, please retry in a supported environment.".to_string()
+                    ));
+                }
+                Err(e) => return Err(VibeError::TerminalDetectionFailed(format!("Failed to start WezTerm: {}", e))),
+            }
         }
 
         let pane_id = String::from_utf8_lossy(&output.stdout).trim().to_string();

@@ -1,65 +1,40 @@
-# Codebase Structure
+# STRUCTURE
 
-**Analysis Date:** 2024-03-20
+## File Tree
 
-## Directory Layout
+/Users/anjia/Documents/part-time/vibe-cli/
+├───Cargo.lock
+├───Cargo.toml          # Workspace root, defines shared dependencies
+├───apps/
+│   └───vibe-cli/       # Main user-facing CLI application
+│       ├───Cargo.toml
+│       └───src/
+│           ├───main.rs # CLI command routing (split, run, master, status)
+│           └───tui.rs  # Interactive dashboard (Ratatui implementation)
+├───crates/
+│   └───vibe-core/      # Core logic and shared library
+│       ├───Cargo.toml
+│       ├───src/
+│       │   ├───adapter/ # Terminal drivers (WezTerm, Tmux)
+│       │   ├───env.rs   # OS-specific paths and env detection
+│       │   ├───error.rs # Unified error types (VibeError)
+│       │   ├───ipc/     # Networking (Protocol, Master Server, Worker Client)
+│       │   ├───os/      # Low-level OS helpers (Shell, Windows Job Objects)
+│       │   └───state/   # Persistence (SQLite, DB Actor)
+│       └───tests/      # Integration and concurrency tests
+└───.planning/          # Project roadmaps and codebase documentation
+    ├───STATE.md
+    └───codebase/
+        ├───ARCHITECTURE.md
+        ├───CONCERNS.md
+        └───STRUCTURE.md
 
-```
-vibe-cli/
-├── src/            # Source code
-│   └── main.rs     # CLI Entry point
-├── Cargo.toml      # Build and dependency manifest
-└── .gitignore      # Git ignore patterns
-```
+## Module Dependencies
+1. `apps/vibe-cli` depends on `crates/vibe-core`.
+2. `vibe-core/ipc` depends on `vibe-core/state` (via DB actor).
+3. `vibe-core/adapter` depends on `vibe-core/env`.
 
-## Directory Purposes
-
-**src/:**
-- Purpose: Contains all source code for the project.
-- Contains: Rust files (.rs).
-- Key files: `src/main.rs`.
-
-## Key File Locations
-
-**Entry Points:**
-- `src/main.rs`: Primary entry point for the CLI binary.
-
-**Configuration:**
-- `Cargo.toml`: Package definition and dependencies.
-
-**Core Logic:**
-- `src/main.rs`: Currently contains the entire application logic.
-
-**Testing:**
-- Not implemented yet.
-
-## Naming Conventions
-
-**Files:**
-- Snake case: `main.rs`.
-
-**Directories:**
-- Snake case (expected): `src`.
-
-## Where to Add New Code
-
-**New Feature:**
-- Primary code: `src/` directory. Create new modules as needed.
-- Tests: Either in-file `#[cfg(test)]` modules or `tests/` directory.
-
-**New Component/Module:**
-- Implementation: `src/` directory. Create subdirectories for complex modules.
-
-**Utilities:**
-- Shared helpers: `src/utils.rs` or `src/utils/` (not yet present).
-
-## Special Directories
-
-**.planning/:**
-- Purpose: Documentation for codebase mapping and project planning.
-- Generated: Yes.
-- Committed: Yes.
-
----
-
-*Structure analysis: 2024-03-20*
+## Data Storage
+- **Database**: `~/Library/Application Support/vibe/state.db` (macOS)
+- **Sockets**: `~/Library/Application Support/vibe/vibe.sock`
+- **Logs**: `~/Library/Application Support/vibe/logs/*.log`

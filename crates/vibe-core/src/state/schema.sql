@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS panes (
     summary TEXT,
     pid INTEGER,
     last_heartbeat_at DATETIME,
-    metadata TEXT,
+    cwd TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

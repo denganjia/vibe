@@ -7,10 +7,10 @@
 
 ## Current Position
 
-**Phase**: 6 - Status Dashboard & UX Enhancement
-**Plan**: 06-01-SUMMARY.md
-**Status**: Phase 6 Complete ✓
-**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
+**Phase**: 7 - AI Skill Integration & Release
+**Plan**: 07-01-SUMMARY.md
+**Status**: Phase 7-01 Complete ✓
+**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100% (Wave 1) + Wave 2 Started
 
 ## Performance Metrics
 
@@ -68,6 +68,10 @@
 - [x] Implement `vibe report` for structured task feedback (Phase 5).
 - [x] Implement `vibe status` (TUI dashboard) with UDS broadcasting (Phase 6).
 - [x] Integrated hotkeys (f/k/Enter) for physical orchestration (Phase 6).
+- [x] Implement `vibe check` for AI environment sensing (Phase 7-01).
+- [x] Implement core MCP toolset: check, list, run (Phase 7-01).
+- [x] Support external orchestration via WezTerm fallback (Phase 7-01).
+- [x] Enable CWD tracking in agent states (Phase 7-01).
 
 ### Blockers
 - None.

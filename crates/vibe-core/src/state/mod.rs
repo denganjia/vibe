@@ -29,18 +29,18 @@ impl StateStore {
         Self { conn }
     }
 
-    pub fn save_pane(&self, vibe_id: &VibeID, physical_id: &str, terminal_type: &str) -> Result<()> {
+    pub fn save_pane(&self, vibe_id: &VibeID, physical_id: &str, terminal_type: &str, cwd: Option<String>) -> Result<()> {
         self.conn.execute(
-            "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type) VALUES (?1, ?2, ?3)",
-            params![vibe_id, physical_id, terminal_type],
+            "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type, cwd) VALUES (?1, ?2, ?3, ?4)",
+            params![vibe_id, physical_id, terminal_type, cwd],
         )?;
         Ok(())
     }
 
     pub fn register_pane(&self, info: &RegisterInfo) -> Result<()> {
         self.conn.execute(
-            "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type, role, pid, status) VALUES (?1, ?2, ?3, ?4, ?5, 'registered')",
-            params![info.vibe_id, info.physical_id, info.terminal_type, info.role, info.pid],
+            "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type, role, pid, status, cwd) VALUES (?1, ?2, ?3, ?4, ?5, 'registered', ?6)",
+            params![info.vibe_id, info.physical_id, info.terminal_type, info.role, info.pid, info.cwd],
         )?;
         Ok(())
     }
@@ -83,10 +83,10 @@ impl StateStore {
         }
     }
 
-    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>)>> {
-        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, role, status, summary FROM panes")?;
+    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>)>> {
+        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, role, status, summary, cwd FROM panes")?;
         let rows = stmt.query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?))
         })?;
         
         let mut results = Vec::new();

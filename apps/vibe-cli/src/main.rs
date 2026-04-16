@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 mod tui;
+mod mcp;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -37,9 +38,21 @@ enum Commands {
         vertical: bool,
     },
     /// List active vibe panes
-    List,
+    List {
+        /// Output in JSON format
+        #[arg(short, long)]
+        json: bool,
+    },
     /// Interactive dashboard
     Status,
+    /// Run as an MCP server for AI clients
+    Mcp,
+    /// Check environment compatibility for AI
+    Check {
+        /// Output in JSON format
+        #[arg(short, long, default_value_t = true)]
+        json: bool,
+    },
     /// Kill all active vibe panes
     Kill,
     /// Start the master server
@@ -97,10 +110,14 @@ async fn main() -> anyhow::Result<()> {
     
     match cli.command {
         Commands::Split { horizontal: _, vertical } => {
-            let terminal_type = detect_current_terminal()?;
+            let terminal_type = detect_current_terminal();
             let adapter: Box<dyn TerminalAdapter> = match terminal_type {
-                TerminalType::WezTerm => Box::new(WezTermAdapter),
-                TerminalType::Tmux => Box::new(TmuxAdapter),
+                Some(TerminalType::WezTerm) => Box::new(WezTermAdapter),
+                Some(TerminalType::Tmux) => Box::new(TmuxAdapter),
+                None => {
+                    println!("No supported terminal detected locally. Attempting external orchestration via WezTerm...");
+                    Box::new(WezTermAdapter)
+                }
             };
             let store = StateStore::new()?;
 
@@ -111,36 +128,88 @@ async fn main() -> anyhow::Result<()> {
             };
             
             let vibe_id = adapter.split(split_dir, None)?;
-            store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type))?;
+            // If we are external, vibe_id might be a new pane in a different window
+            let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
+            store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), cwd)?;
             println!("Split new pane: {}", vibe_id);
         }
-        Commands::List => {
+        Commands::List { json } => {
             let store = StateStore::new()?;
             let panes = store.list_active_panes()?;
-            if panes.is_empty() {
-                println!("No active vibe panes.");
+            if json {
+                let json_panes: Vec<_> = panes.into_iter().map(|(v_id, p_id, t_type, role, status, summary, cwd)| {
+                    serde_json::json!({
+                        "vibe_id": v_id,
+                        "physical_id": p_id,
+                        "terminal": t_type,
+                        "role": role,
+                        "status": status,
+                        "summary": summary,
+                        "cwd": cwd
+                    })
+                }).collect();
+                println!("{}", serde_json::to_string_pretty(&json_panes)?);
             } else {
-                println!("Active Vibe Panes:");
-                for (v_id, p_id, t_type, role, status, summary) in panes {
-                    let role_str = role.map(|r| format!(", Role: {}", r)).unwrap_or_default();
-                    let status_str = status.map(|s| format!(", Status: {}", s)).unwrap_or_default();
-                    let summary_str = summary.map(|s| format!("\n    Summary: {}", s)).unwrap_or_default();
-                    println!("- {}: (Physical ID: {}, Terminal: {}{}{}){}", v_id, p_id, t_type, role_str, status_str, summary_str);
+                if panes.is_empty() {
+                    println!("No active vibe panes.");
+                } else {
+                    println!("Active Vibe Panes:");
+                    for (v_id, p_id, t_type, role, status, summary, cwd) in panes {
+                        let role_str = role.map(|r| format!(", Role: {}", r)).unwrap_or_default();
+                        let status_str = status.map(|s| format!(", Status: {}", s)).unwrap_or_default();
+                        let summary_str = summary.map(|s| format!("\n    Summary: {}", s)).unwrap_or_default();
+                        let cwd_str = cwd.map(|c| format!(", CWD: {}", c)).unwrap_or_default();
+                        println!("- {}: (Physical ID: {}, Terminal: {}{}{}{}){}", v_id, p_id, t_type, role_str, status_str, cwd_str, summary_str);
+                    }
                 }
             }
         }
         Commands::Status => {
             tui::run_status_tui().await?;
         }
+        Commands::Mcp => {
+            mcp::run_mcp_server().await?;
+        }
+        Commands::Check { json } => {
+            let term_opt = detect_current_terminal();
+            let term_name = vibe_core::env::get_terminal_name();
+            let socket_path = resolve_socket_path()?;
+            let master_alive = tokio::net::UnixStream::connect(&socket_path).await.is_ok();
+            
+            let store = StateStore::new()?;
+            let active_workers = store.list_active_panes()?.len();
+
+            if json {
+                let res = serde_json::json!({
+                    "supported": term_opt.is_some(),
+                    "terminal": term_name,
+                    "can_orchestrate": term_opt.is_some(),
+                    "master_status": if master_alive { "running" } else { "stopped" },
+                    "active_workers": active_workers,
+                    "recommendation": if term_opt.is_some() {
+                        "Environment supported. You can use split and focus commands."
+                    } else {
+                        "Current terminal does not support local orchestration. Use 'vibe run' to spawn tasks in an external WezTerm window."
+                    }
+                });
+                println!("{}", serde_json::to_string_pretty(&res)?);
+            } else {
+                println!("Terminal: {}", term_name);
+                println!("Supported: {}", if term_opt.is_some() { "Yes" } else { "No" });
+                println!("Master Status: {}", if master_alive { "Running" } else { "Stopped" });
+                println!("Active Workers: {}", active_workers);
+            }
+        }
         Commands::Kill => {
-            let terminal_type = detect_current_terminal()?;
+            let terminal_type = detect_current_terminal()
+                .ok_or_else(|| anyhow::anyhow!("No supported terminal detected"))?;
             let adapter: Box<dyn TerminalAdapter> = match terminal_type {
                 TerminalType::WezTerm => Box::new(WezTermAdapter),
                 TerminalType::Tmux => Box::new(TmuxAdapter),
             };
             let store = StateStore::new()?;
             let panes = store.list_active_panes()?;
-            for (v_id, _p_id, _t_type, _role, _status, _summary) in panes {
+            for (v_id, _p_id, _t_type, _role, _status, _summary, _cwd) in panes {
                 println!("Killing pane: {}", v_id);
                 if let Err(e) = adapter.close(&v_id) {
                     eprintln!("Failed to close pane {}: {}", v_id, e);
@@ -205,15 +274,20 @@ async fn main() -> anyhow::Result<()> {
             }
 
             // 2. Identify current environment
-            let terminal_type = detect_current_terminal()?;
-            let (default_vibe_id, physical_id, term_type_str) = match terminal_type {
-                TerminalType::WezTerm => {
+            let (default_vibe_id, physical_id, term_type_str) = match detect_current_terminal() {
+                Some(TerminalType::WezTerm) => {
                     let meta = WezTermAdapter.get_metadata()?;
                     (meta.pane_id.clone(), meta.pane_id, "wezterm".to_string())
                 }
-                TerminalType::Tmux => {
+                Some(TerminalType::Tmux) => {
                     let meta = TmuxAdapter.get_metadata()?;
                     (meta.pane_id.clone(), meta.pane_id, "tmux".to_string())
+                }
+                None => {
+                    // Fallback for non-supported terminals (like VSCode)
+                    // We generate a synthetic ID and use the PID as physical_id
+                    let pid = std::process::id();
+                    (format!("ext-{}", pid), pid.to_string(), vibe_core::env::get_terminal_name())
                 }
             };
 
@@ -338,7 +412,8 @@ async fn main() -> anyhow::Result<()> {
             let physical_id = store.get_pane(&vibe_id)?
                 .ok_or_else(|| anyhow::anyhow!("Vibe ID {} not found in database", vibe_id))?;
             
-            let terminal_type = detect_current_terminal()?;
+            let terminal_type = detect_current_terminal()
+                .ok_or_else(|| anyhow::anyhow!("No supported terminal detected for focus operation"))?;
             let adapter: Box<dyn TerminalAdapter> = match terminal_type {
                 TerminalType::WezTerm => Box::new(WezTermAdapter),
                 TerminalType::Tmux => Box::new(TmuxAdapter),
@@ -351,10 +426,10 @@ async fn main() -> anyhow::Result<()> {
             let socket_path = resolve_socket_path()?;
             
             // Identify current environment to get our vibe_id
-            let terminal_type = detect_current_terminal()?;
-            let physical_id = match terminal_type {
-                TerminalType::WezTerm => WezTermAdapter.get_metadata()?.pane_id,
-                TerminalType::Tmux => TmuxAdapter.get_metadata()?.pane_id,
+            let (physical_id, term_type_str) = match detect_current_terminal() {
+                Some(TerminalType::WezTerm) => (WezTermAdapter.get_metadata()?.pane_id, "wezterm".to_string()),
+                Some(TerminalType::Tmux) => (TmuxAdapter.get_metadata()?.pane_id, "tmux".to_string()),
+                None => (std::process::id().to_string(), vibe_core::env::get_terminal_name()),
             };
 
             let vibe_id = {
@@ -367,7 +442,7 @@ async fn main() -> anyhow::Result<()> {
                 socket_path,
                 vibe_id.clone(),
                 physical_id,
-                format!("{:?}", terminal_type),
+                term_type_str,
                 None,
             );
 

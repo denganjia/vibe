@@ -5,7 +5,7 @@
 ## Naming Patterns
 
 **Files:**
-- snake_case for all Rust source files.
+- snake_case for all Rust source files (e.g., `error.rs`, `db.rs`).
 
 **Functions:**
 - snake_case for function names (standard Rust).
@@ -15,6 +15,8 @@
 
 **Types:**
 - PascalCase for structs, enums, and traits (standard Rust).
+- `VibeError`: Central error type for the codebase.
+- `Result<T>`: Type alias for `std::result::Result<T, VibeError>`.
 
 ## Code Style
 
@@ -22,14 +24,14 @@
 - `rustfmt` (standard).
 
 **Linting:**
-- `clippy` (recommended standard).
+- `clippy` (standard).
 
 ## Import Organization
 
 **Order:**
-1. Standard library imports.
-2. External dependency imports.
-3. Internal module imports.
+1. Standard library imports (`std::*`).
+2. External dependency imports (e.g., `tokio::*`, `serde::*`).
+3. Internal module imports (`crate::*`).
 
 **Path Aliases:**
 - None detected.
@@ -37,36 +39,52 @@
 ## Error Handling
 
 **Patterns:**
-- Standard Rust Result and Option types.
+- Use `thiserror` for defining custom error types in `crates/vibe-core/src/error.rs`.
+- Propagate errors using the `?` operator.
+- Avoid `unwrap()` and `expect()` in core logic; use `Result` instead.
+
+**Common Errors:**
+- `VibeError::Internal(String)` for unexpected internal failures.
+- `VibeError::Io(std::io::Error)` for file/socket operations.
+- `VibeError::Database(rusqlite::Error)` for persistence issues.
 
 ## Logging
 
-**Framework:** Standard Output
+**Framework:** `println!` and `eprintln!`
 
 **Patterns:**
-- `println!` for CLI output.
+- `println!` for informational output in the CLI.
+- `eprintln!` for error reporting and debugging.
 
-## Comments
+## Concurrency Pattern (Serialized DB Actor)
 
-**When to Comment:**
-- Complexity documentation.
+**Purpose:**
+- To provide thread-safe access to non-thread-safe resources (like SQLite) from multiple async tasks.
 
-**JSDoc/TSDoc:**
-- Rust doc comments (`///` and `//!`) for API documentation.
+**Implementation:**
+- **Request Enum:** Define a `DbRequest` enum in `crates/vibe-core/src/state/db.rs` where each variant includes a `oneshot::Sender<Result<T>>` for the response.
+- **Actor:** A `DbActor` struct that holds the resource and an `mpsc::Receiver<DbRequest>`. It processes requests sequentially in a loop.
+- **Handle:** A `DbHandle` struct that wraps an `mpsc::Sender<DbRequest>`. It is cloneable and provides `async` methods that encapsulate creating a `oneshot` channel and waiting for the response.
 
-## Function Design
-
-**Size:** Concise.
-
-**Parameters:** Prefer passing references.
-
-**Return Values:** Prefer `Result<T, E>` for operations that can fail.
+**Example:**
+```rust
+pub async fn register_pane(&self, info: RegisterInfo) -> Result<()> {
+    let (tx, rx) = oneshot::channel();
+    self.sender.send(DbRequest::RegisterPane(info, tx)).await
+        .map_err(|e| VibeError::Internal(format!("Send error: {}", e)))?;
+    rx.await.map_err(|e| VibeError::Internal(format!("Recv error: {}", e)))?
+}
+```
 
 ## Module Design
 
-**Exports:** `pub` for public interface.
+**Exports:**
+- `pub` for public interface.
+- Use `pub(crate)` for internal library visibility.
 
-**Barrel Files:** `mod.rs` or named modules for organizing exports.
+**Barrel Files:**
+- `mod.rs` for organizing exports within a directory.
+- `lib.rs` for the crate's entry point and public API definition.
 
 ---
 

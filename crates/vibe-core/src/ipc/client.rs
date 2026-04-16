@@ -58,12 +58,14 @@ impl WorkerClient {
             let mut framed = Framed::new(stream, LinesCodec::new());
 
             // Register
+            let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
             let reg = Message::Register(RegisterInfo {
                 vibe_id: self.vibe_id.clone(),
                 physical_id: self.physical_id.clone(),
                 terminal_type: self.terminal_type.clone(),
                 role: self.role.clone(),
                 pid: std::process::id(),
+                cwd,
             });
 
             self.send_msg(&mut framed, &reg).await?;

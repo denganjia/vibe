@@ -8,15 +8,25 @@ pub enum TerminalType {
     Tmux,
 }
 
-pub fn detect_current_terminal() -> Result<TerminalType> {
+pub fn detect_current_terminal() -> Option<TerminalType> {
     if env::var("WEZTERM_PANE").is_ok() {
-        Ok(TerminalType::WezTerm)
+        Some(TerminalType::WezTerm)
     } else if env::var("TMUX").is_ok() {
-        Ok(TerminalType::Tmux)
+        Some(TerminalType::Tmux)
     } else {
-        Err(VibeError::TerminalDetectionFailed(
-            "Neither WezTerm nor Tmux detected. Vibe requires a supported terminal environment.".to_string(),
-        ))
+        None
+    }
+}
+
+pub fn get_terminal_name() -> String {
+    if env::var("TERM_PROGRAM").as_deref() == Ok("vscode") {
+        "vscode".to_string()
+    } else if env::var("WEZTERM_PANE").is_ok() {
+        "wezterm".to_string()
+    } else if env::var("TMUX").is_ok() {
+        "tmux".to_string()
+    } else {
+        env::var("TERM").unwrap_or_else(|_| "unknown".to_string())
     }
 }
 

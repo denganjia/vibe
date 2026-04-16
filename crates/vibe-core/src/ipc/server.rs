@@ -110,7 +110,7 @@ impl MasterServer {
 
 async fn broadcast_states(db: &DbHandle, subscribers: &SubscriberMap) -> Result<()> {
     let panes = db.get_panes().await?;
-    let states = panes.into_iter().map(|(id, phys, _term, role, status, summary)| {
+    let states = panes.into_iter().map(|(id, phys, _term, role, status, summary, cwd)| {
         crate::ipc::protocol::WorkerState {
             vibe_id: id,
             physical_id: phys,
@@ -118,6 +118,7 @@ async fn broadcast_states(db: &DbHandle, subscribers: &SubscriberMap) -> Result<
             status: status.unwrap_or_default(),
             summary: summary.unwrap_or_default(),
             last_seen: "".to_string(), // TODO: add last_heartbeat_at
+            cwd,
         }
     }).collect::<Vec<_>>();
 
@@ -249,9 +250,6 @@ async fn handle_connection(stream: UnixStream, db: DbHandle, activity_tx: mpsc::
                                     break;
                                 }
                             }
-                            // Keep the connection open by waiting for the client to close it
-                            // or by reading (and ignoring) incoming messages from the TUI.
-                            while let Some(_) = framed.next().await {}
                         });
                         return Ok(());
                     }

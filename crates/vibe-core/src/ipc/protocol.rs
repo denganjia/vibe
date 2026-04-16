@@ -26,6 +26,7 @@ pub struct WorkerState {
     pub status: String,
     pub summary: String,
     pub last_seen: String,
+    pub cwd: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -42,6 +43,7 @@ pub struct RegisterInfo {
     pub terminal_type: String,
     pub role: Option<String>,
     pub pid: u32,
+    pub cwd: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]

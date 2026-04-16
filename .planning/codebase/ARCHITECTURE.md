@@ -1,61 +1,42 @@
-# Architecture
+# ARCHITECTURE
 
-**Analysis Date:** 2024-03-20
+## System Overview
+Vibe CLI uses a **Master-Worker-TUI** triangular topology built on Unix Domain Sockets (UDS). It breaks the "dimensional wall" between AI and the local environment by orchestrating physical terminal panes.
 
-## Pattern Overview
+## Core Components
 
-**Overall:** Simple Binary CLI
+### 1. Master Server (`vibe-core/src/ipc/server.rs`)
+The central orchestrator that:
+- Manages a persistent SQLite state store of all active panes.
+- Routes intents (commands) from users or AI to specific Workers.
+- Acts as a **Broadcast Station**, pushing real-time state updates to all subscribed TUIs.
+- Handles bidirectional IPC: listening for Worker heartbeats/reports while simultaneously queueing outgoing intents.
 
-**Key Characteristics:**
-- Single entry point
-- Minimal footprint
-- Standard Rust structure
+### 2. Worker Client (`vibe-core/src/ipc/client.rs`)
+The execution agent residing in each physical pane:
+- Registers with the Master on startup.
+- Maintains a 5s heartbeat loop to signal health and status.
+- Implements a **Confirmation Gate (HITL)** for sensitive commands.
+- Captures and strips ANSI codes from task output before logging to local files.
 
-## Layers
+### 3. TUI Dashboard (`apps/vibe-cli/src/tui.rs`)
+The monitoring center ("Command Tower"):
+- Subscribes to the Master's broadcast stream via UDS.
+- Provides real-time visual feedback of all agent states (Running, Failed, Exited).
+- Implemented using **Ratatui** for a high-performance terminal UI.
+- Enables physical orchestration (focusing/killing panes) via hotkeys.
 
-**Main Application:**
-- Purpose: Entry point for the CLI
-- Location: `src/main.rs`
-- Contains: `main()` function
-- Depends on: Standard Library
-- Used by: User (via CLI)
+## Communication Protocol
+- **Transport**: Unix Domain Sockets (UDS) with `LinesCodec`.
+- **Payload**: NDJSON (Newline Delimited JSON) using the `Message` enum in `vibe-core/src/ipc/protocol.rs`.
+- **Flow**:
+  - `Register`: Worker -> Master (Initial handshake)
+  - `Heartbeat`: Worker -> Master (Periodic health check)
+  - `Subscribe`: TUI -> Master (Subscription for state updates)
+  - `Broadcast`: Master -> TUI (Real-time global state push)
+  - `ExecuteIntent`: Master -> Worker (Command injection)
 
-## Data Flow
-
-**Execution:**
-
-1. OS executes binary
-2. `main()` function in `src/main.rs` is called
-3. Program prints "Hello, world!" and exits
-
-**State Management:**
-- Stateless
-
-## Key Abstractions
-
-**None:**
-- No custom abstractions implemented yet.
-
-## Entry Points
-
-**Binary Entry:**
-- Location: `src/main.rs`
-- Triggers: Execution of the compiled binary
-- Responsibilities: Initialize and run the application logic
-
-## Error Handling
-
-**Strategy:** Default Rust panic/return
-
-**Patterns:**
-- None implemented yet
-
-## Cross-Cutting Concerns
-
-**Logging:** Standard output (`println!`)
-**Validation:** None
-**Authentication:** None
-
----
-
-*Architecture analysis: 2024-03-20*
+## Design Patterns
+- **Serialized Actor**: The database is managed by a `DbActor` that processes requests via an mpsc channel, preventing SQLite concurrency issues.
+- **Hybrid Injection**: Commands are injected via UDS structured messages when possible, with fallback to raw terminal keys if the Worker is unresponsive.
+- **Passive Capture**: ANSI stripping is done at the source (Worker) to ensure logs remain clean and searchable.
