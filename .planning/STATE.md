@@ -2,23 +2,18 @@
 
 ## Project Reference
 
+See: .planning/PROJECT.md (updated 2026-04-16)
+
 **Core Value**: Break the "dimensional wall" between AI and the local dev environment by turning the terminal into a physical orchestration room.
-**Current Focus**: Milestone 2 - Production Infrastructure & Interactive Workflows.
+**Current Focus**: Milestone v3.0 - AI Agent Skills & Workflow Definitions
 
 ## Current Position
 
-**Phase**: 9 - Interactive Workflow Orchestration
-**Plan**: 09-05-SUMMARY.md
-**Status**: Phase 9 Complete ✓
-**Progress**: [▓▓▓▓▓░░░░░░░░░░░░░░░] 50% (Milestone 2 progress)
-
-## Performance Metrics
-
-| Metric | Start | Current | Target |
-|--------|-------|---------|--------|
-| Migration Success Rate | - | 100% | 100% |
-| Release Cycle Time | - | Automated | < 5 mins |
-| Workflow Approval Latency | - | < 1 min | < 1 min |
+**Phase**: Not started (defining requirements)
+**Plan**: —
+**Status**: Defining requirements
+**Last activity**: 2026-04-16 — Milestone v3.0 started
+**Progress**: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -28,11 +23,9 @@
 - **Plan Storage**: Standardized on Markdown files in the vibe data directory (`plans/` subfolder).
 
 ### Todos
-- [x] Implement database migration logic in `vibe-core` (Phase 8).
-- [x] Configure CI/CD for cross-platform binary release (Phase 8).
-- [x] Write universal installation script (Phase 8).
-- [x] Define `vibe flow` protocol and MCP tools (Phase 9).
-- [x] Implement "Waiting for Approval" UI/UX in TUI and Worker (Phase 9).
+- [ ] AI Skills 集成 (Phase 10)
+- [ ] 多模型工作流定义 (Phase 10)
+- [ ] 交叉检查机制 (Phase 10)
 
 ### Blockers
 - None.
@@ -40,8 +33,7 @@
 ## Session Continuity
 
 ### Current Intent
-Phase 9: Interactive Workflow Orchestration completed and verified.
+Defining requirements and roadmap for Milestone v3.0.
 
 ### Next Steps
-1. Transition to the next milestone or refine existing interactive features.
-2. Review multi-agent collaboration patterns using the new approval workflow.
+1. Execute `/gsd-plan-phase 10` after the roadmap is generated.
