@@ -233,10 +233,26 @@ fn ui(f: &mut ratatui::Frame, app: &mut App) {
         .bottom_margin(1);
 
     let rows = app.states.iter().map(|item| {
+        let status_text = if item.approval_status == "pending_approval" {
+            "WAITING".to_string()
+        } else if item.approval_status == "rejected" {
+            "REJECTED".to_string()
+        } else {
+            item.status.clone()
+        };
+
+        let status_style = if item.approval_status == "pending_approval" {
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        } else if item.approval_status == "rejected" {
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+
         let cells = vec![
             ratatui::widgets::Cell::from(item.vibe_id.clone()),
             ratatui::widgets::Cell::from(item.role.clone().unwrap_or_default()),
-            ratatui::widgets::Cell::from(item.status.clone()),
+            ratatui::widgets::Cell::from(status_text).style(status_style),
             ratatui::widgets::Cell::from(item.cwd.clone().unwrap_or_default()),
             ratatui::widgets::Cell::from(item.summary.clone()),
         ];
