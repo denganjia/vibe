@@ -6,21 +6,29 @@ This document defines the collaboration protocols and roles for AI agents using 
 
 ## Role Definitions
 
-### Vibe-Conductor (Master)
-- **Responsibilities**:
-  - Global orchestration and task decomposition.
-  - Initializing the environment (splitting panes, setting up workers).
-  - Submitting high-level plans for human approval.
-  - Monitoring all active "vibe agents" via `vibe_list`.
-  - Managing task handoffs and conflict resolution.
-- **Authority**: High. Can spawn new workers and redirect focus.
+### Vibe-Conductor (指挥官/Master)
+- **职责 (Responsibilities)**:
+  - 全局编排与任务拆解。
+  - 环境初始化（拆分窗格、设置 Worker）。
+  - 基于推理的任务分配：根据任务复杂度和模型能力分配子任务 (基于 D-01)。
+  - 提交高层计划供人工审批。
+  - 通过 `vibe_list` 进行全局状态监控和进度追踪。
+  - 管理任务移交和冲突解决。
+- **权限 (Authority)**: 高。可以创建新 Worker 并重定向关注点。
 
-### Worker (Executor)
-- **Responsibilities**:
-  - Executing specific sub-tasks assigned by the Vibe-Conductor.
-  - Reporting status and blocking issues promptly.
-  - requesting clarification when tasks are ambiguous.
-- **Authority**: Restricted to its assigned context/pane.
+### Worker (执行者/Executor)
+- **职责 (Responsibilities)**:
+  - 执行由 Vibe-Conductor 分配的具体子任务。
+  - **标准化报告**：通过 `vibe report` 及时汇报状态、产出、阻塞项及后续步骤。
+  - 在任务模糊时主动请求澄清。
+- **权限 (Authority)**: 受限于分配的上下文/窗格。
+
+### Evaluator (审计者/评估者)
+- **职责 (Responsibilities)**:
+  - **意图对齐**：验证 Worker 的执行结果是否符合 Conductor 的原始意图。
+  - **逻辑审计**：检查任务分解和执行路径的逻辑严密性 (基于 D-01, D-04)。
+  - **验证**：在任务标记为完成前执行独立验证，确保满足 success_criteria。
+- **权限 (Authority)**: 中等。主要进行只读分析、环境检查和验证反馈。
 
 ---
 
