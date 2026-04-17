@@ -65,7 +65,10 @@
   1. `SKILL.md` contains a comprehensive definition of all core `vibe-cli` commands and parameters.
   2. The skill definition clearly explains pane management workflows (split, focus, close).
   3. The IPC state flow (how to use UDS/SQLite) is described such that a model can successfully read/write state.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 10-01-PLAN.md — Initialize core skill package, metadata, and role protocols.
+- [ ] 10-02-PLAN.md — Define Standard Operating Procedures (SOPs) for orchestration, state, and approvals.
+- [ ] 10-03-PLAN.md — Implement modular SDD/SPEC workflow templates and finalize documentation.
 
 ### Phase 11: Multi-model SOP & Verification
 **Goal**: Define collaboration patterns and cross-checking paths using vibe state.
@@ -100,6 +103,6 @@
 | 7. AI Skill Integration & Release | 1/1 | Completed | 2026-04-15 |
 | 8. Production Infrastructure | 1/1 | Completed | 2026-04-15 |
 | 9. Workflow Orchestration | 5/5 | Completed | 2026-04-15 |
-| 10. Vibe-CLI Core Skill | 0/TBD | Not started | - |
+| 10. Vibe-CLI Core Skill | 0/3 | Not started | - |
 | 11. Multi-model SOP | 0/TBD | Not started | - |
 | 12. Workflow Templates | 0/TBD | Not started | - |
