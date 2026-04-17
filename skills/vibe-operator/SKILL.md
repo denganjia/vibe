@@ -6,21 +6,47 @@ Vibe-Operator is the core skill for AI agents to interact with the local develop
 
 The primary goal of this skill is to break the "dimensional wall" between AI reasoning and local execution, providing a safe and efficient way for AI to perform complex development tasks.
 
-## Core Capabilities
+## Tool Reference
 
-### 1. Environment Detection & Management
-- **vibe_check**: Detects if the current terminal supports advanced features like pane splitting and focusing.
-- **vibe_split**: Dynamically organizes the workspace by creating new terminal panes or external windows.
-- **vibe_focus**: Directs the user's or AI's attention to specific task contexts.
+### 1. Environment & Discovery
+- **vibe_check**
+  - Description: Check if the current terminal environment supports physical orchestration (split/focus).
+  - Parameters: None.
+- **vibe_list**
+  - Description: List all active vibe agents and their current status (role, status, summary, cwd, approval).
+  - Parameters: None.
 
-### 2. Autonomous Execution & Tracking
-- **vibe_run**: Spawns and tracks background tasks as "vibe agents."
-- **vibe_list**: Provides a global view of all active agents, their roles, and current statuses.
-- **vibe_inject**: Allows direct interaction with running agents (e.g., sending input or stopping processes).
+### 2. Orchestration & Control
+- **vibe_split**
+  - Description: Split the current pane or create a new one externally if local orchestration is not available.
+  - Parameters:
+    - `vertical` (boolean, optional): Split vertically instead of horizontally.
+- **vibe_run**
+  - Description: Run a command in a tracked vibe agent. Spawns an external window if current environment is not supported.
+  - Parameters:
+    - `command` (string, required): The command to execute.
+    - `role` (string, optional): Role for the agent (e.g., "worker", "evaluator").
+- **vibe_focus**
+  - Description: Switch terminal focus to a specific vibe agent's pane.
+  - Parameters:
+    - `vibeId` (string, required): Target vibe ID.
+- **vibe_inject**
+  - Description: Inject a command into a running worker agent.
+  - Parameters:
+    - `vibeId` (string, required): Target vibe ID.
+    - `command` (string, required): The command to inject.
 
-### 3. Safety & Human-in-the-Loop
-- **vibe_submit_plan**: Submits complex plans for human review before execution, ensuring alignment and safety.
-- **vibe_query_approval**: Tracks the status of submitted plans (Pending, Approved, or Rejected with reasons).
+### 3. Workflow & Approvals
+- **vibe_submit_plan**
+  - Description: Submit a multi-step plan for human approval before execution. Blocks execution until approved.
+  - Parameters:
+    - `vibeId` (string, required): The target vibe ID.
+    - `plan` (string, required): The plan in Markdown format.
+- **vibe_query_approval**
+  - Description: Query the approval status of a previously submitted plan.
+  - Parameters:
+    - `vibeId` (string, required): The target vibe ID.
+  - Returns: `status` (pending, approved, rejected) and `reason` (if rejected).
 
 ## Operating Protocols
 

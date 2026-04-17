@@ -3,6 +3,25 @@
 ## Purpose
 This SOP defines how AI agents maintain global state awareness and synchronize context across multiple terminal panes/vibe agents.
 
+## Technical Architecture (IPC & State)
+
+`vibe-cli` operates on a distributed physical layer using local persistence and real-time communication:
+
+### 1. Persistent State (SQLite)
+- All agent metadata (vibe_id, role, status, summary, CWD) and workflow plans are stored in a local **SQLite** database.
+- This allows for state recovery after CLI crashes and provides a unified "Source of Truth" for all windows and panes.
+- AI agents interact with this state via `vibe_list`, which queries the database.
+
+### 2. Real-time Communication (UDS)
+- **Unix Domain Sockets (UDS)** are used for high-performance, low-latency IPC between the Master server and Worker clients.
+- When you use `vibe_inject`, the Master sends the command through the socket directly to the target Worker's listener.
+- Approval notifications (`vibe_submit_plan`) also flow through UDS to the Master to trigger UI updates in the TUI dashboard.
+
+### 3. Execution Flow
+1. **Worker** performs action -> Updates **SQLite**.
+2. **Master** polls SQLite or receives **UDS** message.
+3. **TUI** (Ratatui) renders the latest state from **SQLite**.
+
 ## Logical Workflow
 
 ### 1. Global State Awareness
