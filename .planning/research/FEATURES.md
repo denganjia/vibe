@@ -1,31 +1,47 @@
-# Feature Landscape: AI Skills & Multi-model Workflows
+# Feature Landscape (AI Agent Bus)
 
-## Table Stakes (必选功能)
+**Domain:** AI Agent Coordination
+**Researched:** 2024-10-27
+
+## Table Stakes
+
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| 结构化技能定义 | 用户需要标准方式定义 Agent 能力（SKILL.md/YAML）。 | Low | 支持元数据、依赖描述和分步指令。 |
-| 模型路由 (Routing) | 不同任务需要指派最适合的模型（推理 vs 执行）。 | Medium | 允许在技能定义中指定 preferred_model。 |
-| 状态同步 (IPC Sync) | 跨窗格协作时，必须保证上下文（环境变量、临时变量）同步。 | Medium | 复用现有的 SQLite + IPC 机制。 |
+| **vibe spawn** | Ability to launch agents with predefined roles. | Medium | Requires stdin injection and terminal management. |
+| **vibe signal** | Sending status updates/events to the bus. | Low | Simple NDJSON push over UDS. |
+| **vibe wait** | Blocking execution until a signal is received. | Medium | Requires server-side connection parking. |
+| **.vibe roles** | Markdown-based role templates. | Low | File I/O + String templating. |
 
-## Differentiators (差异化竞争力)
+## Differentiators
+
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| 交叉验证流 (Cross-checking) | 显著降低代码生成或系统操作的幻觉率。 | Medium | 实现“执行-检查”闭环。 |
-| 动态 Handoffs | Agent 间可自主移交控制权，实现更复杂的流水线。 | High | 类似于终端中的“接力赛”。 |
-| 受控编排 (Human-in-the-loop) | 在高风险节点（如删除、部署）强制介入。 | Medium | 对应 PROJECT.md 中的 Active 需求。 |
+| **Zero-Friction Inbound** | Injecting role prompts into existing interactive sessions. | High | Hard to do without breaking PTY/TTY. |
+| **Cross-Pane Signaling** | Agent in Pane A triggers reaction in Pane B via bus. | Medium | Core value of the Bus architecture. |
+| **Project-Local Memory** | Automatic sync of `active_context.md` between agents. | Medium | Requires file watching or bus-driven updates. |
 
-## Anti-Features (应避免)
+## Anti-Features
+
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| 全局上下文广播 | 导致 Token 膨胀和模型性能下降。 | 采用按需注入（Selective Context）。 |
-| 硬编码的工作流 | 缺乏灵活性。 | 采用声明式的技能文件驱动。 |
+| **Global Registry** | Avoid central servers or global state. | Use project-local `.vibe` directory. |
+| **Strict Workflow Enforcement** | Avoid locking agents into rigid DAGs. | Use flexible Signal/Wait for loose coupling. |
 
 ## Feature Dependencies
-`Skill Definition` -> `Agent Handoffs` (移交需要标准接口)
-`State Sync` -> `Cross-checking` (校验需要读取前序状态)
 
-### Roadmap Implications
+```
+vibe daemon -> vibe signal/wait
+vibe spawn -> .vibe roles
+```
 
-- **Phase 1: Skills Framework** - 定义 `.vibe/skills/` 规范，实现技能解析与注入。
-- **Phase 2: Multi-model Orchestration** - 增强 Master 节点的调度能力，支持 Handoff 逻辑。
-- **Phase 3: Verification Layer** - 引入交叉检查 Agent 类型，实现 Evaluator 模式。
+## MVP Recommendation
+
+Prioritize:
+1. `vibe signal/wait` (Core communication)
+2. `vibe spawn --role` (Basic agent launching)
+3. `.vibe/roles` (Template management)
+
+## Sources
+
+- Strategic Pivot (Milestone 4.0)
+- AGENT_BUS_IMPLEMENTATION.md

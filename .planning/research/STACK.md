@@ -1,36 +1,38 @@
-# Technology Stack
+# Technology Stack (AI Agent Bus)
 
 **Project:** vibe-cli
-**Researched:** 2024-05-20
+**Researched:** 2024-10-27
 
 ## Recommended Stack
 
-### Core Framework (Skills Definition)
+### Core Communication (The Bus)
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| JSON Schema | 2020-12 | Parameter Validation | Standard, robust, supported by most LLM APIs for structured output. |
-| Model Context Protocol (MCP) | v1.0 | Skill Interface | Industry standard for exposing tools/skills to LLMs. Provides a consistent language-agnostic interface. |
-| Rust Serde/Valico | Latest | Schema Validation | High-performance JSON schema validation in Rust before executing commands. |
+| Rust / Tokio | 1.x | Async Runtime | Industry standard for safe, concurrent, and high-performance system tools. Excellent UDS & Process support. |
+| NDJSON | - | Protocol Format | Human-readable, streamable, and avoids complexity of binary protocols like Protobuf. Consistent with existing `vibe-core`. |
+| Unix Domain Sockets (UDS) | - | IPC Layer | Extremely fast, supports file-permission security, and maps naturally to "Project-Local" bus via path-based socket. |
 
-### Architecture (Workflows)
+### Process Management (The Spawner)
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| Stateful DAG (Custom) | - | Workflow Execution | We already have an SQLite state layer. A custom Directed Acyclic Graph (DAG) executor on top of it fits the `vibe-cli` footprint better than integrating heavy external engines like Temporal or cadence. |
+| tokio::process | - | Child Processes | Async process spawning with piped stdin/stdout handling. |
+| nix / libc | - | TTY / Signal Handling | Low-level terminal control and signal forwarding (Unix-specific). |
 
-### Supporting Libraries
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| async-trait | Latest | Abstracting Worker Roles | To define shared behaviors for different Agent types (e.g., Planner, Executor, Reviewer). |
-| tokio | Latest | Parallel Execution | When orchestrating parallel LLM calls for multi-model cross-checking. |
+### Persistence (The Brain)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Markdown / TOML | - | Context Storage | Human & AI readable. Git-friendly for versioning `.vibe` directory context. |
 
 ## Alternatives Considered
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| Workflow Engine | Custom DAG (SQLite) | Temporal/Cadence | Overkill for a local CLI tool. Adds external dependencies (server setup). |
-| Skill Definition | JSON Schema/MCP | Python classes/AutoGen | `vibe-cli` is Rust-based. Wrapping Python agent frameworks would complicate the deployment and architecture significantly. |
+| IPC Protocol | NDJSON | gRPC / MCP | Too heavy for simple CLI-to-CLI signaling. Requires complex code generation and runtime overhead. |
+| Database | .vibe (Files) | SQLite | Pivoed in 4.0 to prioritize git-friendliness and simplicity over structured relational data. |
+| IPC Layer | UDS | TCP (Localhost) | TCP has higher overhead and is harder to secure (port collision/scanning). UDS is file-based and faster. |
 
 ## Sources
 
-- MCP Specification (Anthropic)
-- LangChain / LangGraph standard tooling (DAGs and Stateful Graphs)
+- [Tokio: Async I/O for Rust](https://tokio.rs/)
+- [NDJSON Specification](http://ndjson.org/)
+- Strategic Pivot (Milestone 4.0)

@@ -1,124 +1,88 @@
-# Project Research Summary
-
-**Project:** vibe-cli
-**Domain:** Terminal AI Agent Orchestration
-**Researched:** 2024-05-24
-**Confidence:** HIGH
+# AI Agent Bus Implementation Research Summary
 
 ## Executive Summary
 
-vibe-cli 是一个基于终端的 AI Agent 编排工具，采用 Master-Worker-TUI 架构。本次研究重点在于引入声明式 AI 技能（Skills）、多模型工作流（Multi-model Workflows）以及 AI 交叉检查（Cross-checking）机制。此类系统的核心在于如何标准化 Agent 的能力边界，并确保在复杂的终端环境下执行的安全性与可靠性。
+`vibe-cli` 的 “AI 代理总线 (AI Agent Bus)” 旨在构建一个轻量级、去中心化的协调层，用于支持多代理协作流程。该方案摒弃了复杂的中心化编排器，转而采用 **轻量级守护进程 (Daemon)** + **项目本地上下文 (.vibe)** 的模式。核心技术栈基于 Rust/Tokio，利用 Unix Domain Sockets (UDS) 实现高性能的跨进程通信。
 
-推荐的研究方案是采用 **Model Context Protocol (MCP)** 和 **JSON Schema** 作为技能定义的标准，利用现有的 **SQLite** 状态层构建轻量级的 **有向无环图 (DAG) 工作流引擎**。为了降低幻觉率，必须在架构设计上隔离 Agent 上下文，并在交叉检查阶段强制使用不同型号的模型（异构模型校验），以避免“同质化错误放大”。
+核心实现策略包括：
+1.  **Signal/Wait 机制**: 通过 UDS 连接挂起模拟异步信号，解决代理间的同步问题。
+2.  **角色注入 (Role Injection)**: 利用 Stdin 管道在代理启动时注入 Persona 提示词，实现角色的快速切换与定制。
+3.  **本地大脑 (.vibe)**: 将角色定义、配置和临时状态持久化在项目目录下，确保 AI 代理具备“自我管理”意识且易于团队共享。
 
-关键风险包括多 Agent 协作中的上下文污染、同质化模型的盲目互信以及声明式技能在动态终端环境下的不可控执行。我们将通过严格的 JSON Schema 校验、HITL（人工介入）审批节点以及确定性的 dry-run 机制来规避这些风险。
+主要风险点在于 UDS 路径长度限制（108 字节）以及交互式程序（如 SSH/Vim）在 Stdin 重定向时的 TTY 冲突。
+
+---
 
 ## Key Findings
 
-### Recommended Stack
+### From STACK.md (技术栈)
+*   **核心通信**: Rust + Tokio (异步运行时) + NDJSON (流式协议) + UDS (进程间通信)。
+*   **进程管理**: `tokio::process` 用于异步子进程启动与管道处理。
+*   **持久化**: Markdown/TOML。优先考虑易读性和 Git 友好性，替代重量级的数据库。
 
-研究推荐在现有 Rust 架构基础上，引入标准化的协议和轻量级执行引擎，以保持 CLI 的简洁与高效。
+### From FEATURES.md (功能图景)
+*   **核心功能**: `vibe spawn` (角色启动), `vibe signal` (信号发送), `vibe wait` (阻塞等待), `.vibe/roles` (模板管理)。
+*   **差异化优势**: 跨窗口/面板信号同步、项目本地上下文共享。
+*   **原则**: 避免全局注册中心，坚持项目本地化 (Project-Local)。
 
-**Core technologies:**
-- **Model Context Protocol (MCP) v1.0**: 技能接口 — 作为 LLM 与工具交互的标准，确保技能定义的通用性。
-- **JSON Schema (2020-12)**: 参数校验 — 提供强类型的输入验证，降低 LLM 调用参数错误的概率。
-- **Custom DAG Engine (SQLite-backed)**: 工作流执行 — 基于现有 SQLite 存储实现状态机，避免引入 Temporal 等重型中间件。
-- **Rust Serde/Valico**: 高性能校验 — 在指令执行前进行严苛的模式验证。
+### From ARCHITECTURE.md (架构模式)
+*   **去中心化总线**: 守护进程仅负责消息转发和信号挂起，不维护复杂的任务状态机。
+*   **Stdin "预热" 模式**: 在子进程启动后立即通过 Stdin 写入角色定义，随后接管终端 IO。
+*   **路径哈希化**: 为避免 UDS 路径限制，将 Socket 存放在 `/tmp` 并基于项目路径哈希命名。
 
-### Expected Features
+### From PITFALLS.md (潜在坑点)
+*   **路径溢出**: UDS 路径在 Unix 系统下有 108 字符硬限制。
+*   **僵尸等待者**: 客户端崩溃可能导致服务端资源泄漏，需实现心跳检查和强制超时。
+*   **TTY 丢失**: 重定向 Stdin 会破坏某些交互式工具的 TTY 特性，建议在高级阶段使用终端适配器（WezTerm/Tmux CLI）。
 
-**Must have (table stakes):**
-- **结构化技能定义** — 使用 YAML/JSON Schema 定义 Agent 能力，支持元数据与依赖描述。
-- **状态同步 (IPC Sync)** — 跨窗格、跨 Worker 的环境变量与上下文同步。
-- **受控编排 (Human-in-the-loop)** — 在高风险操作（如文件删除、部署）前强制人工确认。
-
-**Should have (competitive):**
-- **交叉验证流 (Cross-checking)** — 实现“执行-检查”闭环，显著降低幻觉导致的误操作。
-- **模型路由 (Routing)** — 根据任务复杂度自动分配推理模型或执行模型。
-
-**Defer (v2+):**
-- **动态 Handoffs** — Agent 间完全自主的控制权移交，初期建议采用半自动编排。
-
-### Architecture Approach
-
-新架构将基于现有的三角形拓扑进行扩展，引入 `SkillsRegistry` 解析器和 `WorkflowEngine` 状态机。
-
-**Major components:**
-1. **SkillsRegistry**: 负责从本地目录加载 YAML 定义，并动态暴露给 MCP Server。
-2. **WorkflowEngine**: 驱动 DAG 任务流，管理 Pending 到 Completed 的状态迁移。
-3. **StateStore (SQLite)**: 持久化工作流定义与执行记录，确保 CLI 重启后的状态恢复。
-
-### Critical Pitfalls
-
-1. **共享内存污染** — 避免所有 Agent 共享同一个巨量上下文。应采用 Manager-Worker 模式，仅传递经过解析的结构化数据。
-2. **同质化交叉检查** — 避免用同族模型校验自己。必须强制异构模型（如 Claude 校验 GPT）结合确定性逻辑（如 Exit Code）。
-3. **黑盒盲目执行** — 严禁 Agent 直接执行高危操作。必须实现 Plan-Confirm-Execute 流程，并在 TUI 中可视化执行计划。
+---
 
 ## Implications for Roadmap
 
-基于研究结果，建议按以下阶段组织开发：
+### Suggested Phase Structure
 
-### Phase 1: Skills Framework (Foundation)
-**Rationale:** 技能定义是所有后续自动化流程的基础。
-**Delivers:** 声明式技能加载机制、YAML 解析器、动态 MCP Tool 暴露。
-**Addresses:** 结构化技能定义。
-**Avoids:** 技能描述模糊导致的“幻觉调用”。
+1.  **Phase 1: 核心总线与信号机制 (Foundation)**
+    *   **Rationale**: 建立通信基础，信号同步是所有协作的前提。
+    *   **Deliverables**: `vibe daemon`, `vibe signal`, `vibe wait`。
+    *   **Pitfalls**: 需立即解决 UDS 路径限制和连接清理逻辑。
 
-### Phase 2: Workflow Engine & State Persistence
-**Rationale:** 需要在 SQLite 中建立任务追踪模型，才能支持多步协作。
-**Delivers:** SQLite Schema 升级、轻量级 DAG 执行逻辑、任务状态追踪。
-**Uses:** Custom DAG Engine (SQLite-backed).
-**Implements:** WorkflowEngine.
+2.  **Phase 2: 代理启动与角色注入 (Spawning)**
+    *   **Rationale**: 实现代理的生命周期管理。
+    *   **Deliverables**: `vibe spawn --role`, `.vibe/roles/` 支持。
+    *   **Pitfalls**: 处理 Stdin 写入的竞态条件。
 
-### Phase 3: Multi-model Orchestration & Verification
-**Rationale:** 在有了执行引擎后，引入交叉检查节点以确保安全。
-**Delivers:** 异构模型路由逻辑、Cross-checking 校验节点、HITL 确认机制。
-**Avoids:** 同质化交叉检查、共享内存污染。
+3.  **Phase 3: 上下文与持久化 (Memory)**
+    *   **Rationale**: 提供跨代理的“记忆”。
+    *   **Deliverables**: `active_context.md` 自动同步。
 
-### Phase 4: TUI Observability & Advanced Routing
-**Rationale:** 增强用户感知，让工作流进度可视化。
-**Delivers:** TUI 工作流仪表盘、执行计划预览视图、动态模型选择。
-
-### Phase Ordering Rationale
-
-- **先定义，后执行**：先完成 Skills 定义标准，确保所有工具都有强类型约束。
-- **状态先行**：在实现复杂逻辑前，先在 SQLite 层夯实状态持久化能力，避免内存状态丢失。
-- **安全后置但核心**：将交叉检查放在工作流引擎之后，是因为校验本身就是一个特定的工作流节点。
+4.  **Phase 4: 终端适配与 PTY 优化 (Advanced)**
+    *   **Rationale**: 解决交互式代理的体验问题。
+    *   **Deliverables**: WezTerm/Tmux 专用 `send-text` 适配。
 
 ### Research Flags
+*   **需深入调研**: Phase 4 的 PTY 无损注入方案（可能需要调研 `nix` 库的 PTY 处理）。
+*   **标准模式**: Phase 1 & 2 均有成熟的 Rust/Tokio 模式可循，可快速推进。
 
-Phases likely needing deeper research during planning:
-- **Phase 3:** 涉及多模型 API 的并发调用与异常处理，需研究最优的提示词隔离策略。
-
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** JSON Schema 与 YAML 解析在 Rust 生态中有成熟方案。
-- **Phase 2:** 简单的状态机迁移属于标准工程实践。
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | MCP 与 JSON Schema 是行业标准，Rust 生态支持完善。 |
-| Features | HIGH | 紧贴 `vibe-cli` 的本地开发场景，需求明确。 |
-| Architecture | HIGH | 基于现有 Master-Worker 架构平滑演进。 |
-| Pitfalls | MEDIUM | 跨 Agent 通信的复杂性仍有挑战，需在开发中动态调整。 |
+| **Stack** | HIGH | 基于 Rust 工业级实践，方案稳健。 |
+| **Features** | HIGH | 需求明确，MVP 范围可控。 |
+| **Architecture** | HIGH | 去中心化模式符合 vibe-cli 轻量化原则。 |
+| **Pitfalls** | MEDIUM | TTY 冲突是通用技术难题，需要特定终端适配。 |
 
-**Overall confidence:** HIGH
-
-### Gaps to Address
-
-- **异构模型成本估算**: 多模型校验会增加 Token 开销，需在规划中加入成本/性能平衡策略。
-- **并发冲突处理**: 多个 Worker 同时修改同一文件时的锁定机制需在 Phase 2 详细设计。
-
-## Sources
-
-### Primary (HIGH confidence)
-- **MCP Specification (Anthropic)** — 技能定义与工具调用标准。
-- **SQLite Workflow Patterns** — 借鉴了轻量级任务队列的实现。
-
-### Secondary (MEDIUM confidence)
-- **Google DeepMind/Galileo.ai** — 多 Agent 协作中的幻觉与错误放大研究。
+**Gaps to Address:**
+*   Windows 环境下的命名管道 (Named Pipes) 适配尚未详细调研。
+*   多用户环境下 `/tmp` 路径下的 Socket 安全权限隔离需在实施中明确。
 
 ---
-*Research completed: 2024-05-24*
-*Ready for roadmap: yes*
+
+## Sources
+*   .planning/research/AGENT_BUS_IMPLEMENTATION.md
+*   .planning/research/STACK.md
+*   .planning/research/FEATURES.md
+*   .planning/research/ARCHITECTURE.md
+*   .planning/research/PITFALLS.md
