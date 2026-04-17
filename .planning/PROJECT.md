@@ -17,35 +17,39 @@
 - [x] **状态管理 (State Management)**：通过 Rust 维护 SQLite 状态，实现跨窗格同步 (Phase 3).
 - [x] **实时监控 (Monitoring)**：TUI 仪表盘实时展示 Agent 状态与日志快照 (Phase 6).
 - [x] **AI 原生集成 (MCP)**：提供标准的 MCP Server 接口供 LLM 调用 (Phase 7).
+- [x] **数据库演进 (State Evolution)**：引入自动迁移机制，支持无损更新数据库 Schema (Phase 8).
+- [x] **工程化分发 (Distribution)**：实现跨平台二进制打包与一键安装脚本 (Phase 8).
+- [x] **受控编排 (Controlled Workflow)**：实现“计划-确认-执行”的任务节点流，关键节点必须人工二次确认 (Phase 9).
 
 ### Active
 
-- [ ] **受控编排 (Controlled Workflow)**：实现“计划-确认-执行”的任务节点流，关键节点必须人工二次确认。
-- [ ] **数据库演进 (State Evolution)**：引入自动迁移机制，支持无损更新数据库 Schema。
-- [ ] **工程化分发 (Distribution)**：实现跨平台二进制打包与一键安装脚本。
+- [ ] **Vibe-CLI Skill 定义**：编写 AI 可读的技能定义 (SKILL.md)，标准化多模型协作流程。
 
 ### Out of Scope
 
 - **复杂多主机调度** — 现阶段依然专注于本地终端工作空间。
 - **日志深度检索** — TUI 仅保持最近快照显示，不进行全文搜索实现。
+- **通用技能框架** — v3.0 专注于 vibe-cli 自身技能定义，而非让用户定义新技能的通用引擎。
 
 ## Context
 
-- **当前状态**：Wave 1 已完成，系统具备 Master-Worker-TUI 核心架构。
-- **Wave 2 重心**：从“功能可用”向“生产可靠”和“受控编排”演进。
+- **当前状态**：Wave 1 & Wave 2 核心功能已完成。
+- **Wave 3 重心**：实现 AI 的“高阶协作能力”，通过定义结构化 Skill 让模型理解如何高效调度 vibe-cli。
 
 ## Constraints
 
 - **Compatibility**: 必须保证在数据库结构变化时，用户的旧数据能自动迁移或平滑处理。
+- **AI Consumability**: 技能定义必须对 LLM 极其友好，降低指令解析的幻觉率。
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | 使用 CLI Wrapper | 快速跑通 MVP，利用 Wezterm/Tmux 现有的成熟功能。 | Validated |
-| MCP 协议 | 标准化 AI 接入层，降低集成本地工具的门槛。 | Validated |
-| 引入 Migration 框架 | 避免 Schema 变更导致的删库操作，提升生产环境稳定性。 | Planned (W2) |
-| GitHub Actions 打包 | 自动化发布流程，提供各平台预编译二进制。 | Planned (W2) |
+| MCP 协议 | 标准化 AI 接入层，降低集成本地工具门槛。 | Validated |
+| 引入 Migration 框架 | 避免 Schema 变更导致的删库操作，提升生产环境稳定性。 | Validated |
+| GitHub Actions 打包 | 自动化发布流程，提供各平台预编译二进制。 | Validated |
+| 聚焦 Skill 定义 | 从“通用引擎”转向“核心能力定义”，以更轻量的方式实现 AI 高阶协作。 | Planned (W3) |
 
 
 ## Evolution
@@ -66,16 +70,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after starting Milestone v3.0*
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd-complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
-
----
-*Last updated: 2026-04-14 after Initial Questioning*
+*Last updated: 2026-04-16 after starting Milestone v3.0 (Pivot)*

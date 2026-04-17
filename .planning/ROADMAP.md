@@ -11,6 +11,9 @@
 - [x] **Phase 7: AI Skill Integration & Release** - Expose vibe-cli capabilities as actionable AI tools and prepare for distribution.
 - [x] **Phase 8: Production Infrastructure & State Evolution** - Implement DB migrations and automated packaging/install scripts.
 - [x] **Phase 9: Interactive Workflow Orchestration** - Implement "Plan-Review-Execute" flow with human-in-the-loop gates.
+- [ ] **Phase 10: Vibe-CLI Core Skill Definition** - Create the foundational skill definition (SKILL.md) for AI agents to understand vibe-cli.
+- [ ] **Phase 11: Multi-model SOP & Verification** - Define collaboration patterns (SOP) and cross-checking paths using vibe state.
+- [ ] **Phase 12: Workflow Templates & Optimization** - Provide ready-to-use workflow templates and optimize skill for model reliability.
 
 ## Phase Details
 
@@ -54,6 +57,36 @@
   2. System blocks execution and notifies human (via TUI/Worker).
   3. Human approval triggers the next phase of the task.
 
+### Phase 10: Vibe-CLI Core Skill Definition
+**Goal**: Create the foundational skill definition for AI agents to understand vibe-cli.
+**Depends on**: Phase 9
+**Requirements**: SKL-01
+**Success Criteria** (what must be TRUE):
+  1. `SKILL.md` contains a comprehensive definition of all core `vibe-cli` commands and parameters.
+  2. The skill definition clearly explains pane management workflows (split, focus, close).
+  3. The IPC state flow (how to use UDS/SQLite) is described such that a model can successfully read/write state.
+**Plans**: TBD
+
+### Phase 11: Multi-model SOP & Verification
+**Goal**: Define collaboration patterns and cross-checking paths using vibe state.
+**Depends on**: Phase 10
+**Requirements**: SKL-02, SKL-03
+**Success Criteria** (what must be TRUE):
+  1. Standard Operating Procedures (SOP) for Master/Worker/Evaluator patterns are clearly defined within the skill.
+  2. A concrete verification path using `vibe-cli` status for cross-checking is established.
+  3. The skill includes guidance for models on how to utilize `vibe` state to resolve conflicts or verify execution success.
+**Plans**: TBD
+
+### Phase 12: Workflow Templates & Optimization
+**Goal**: Provide ready-to-use workflow templates and optimize skill for model reliability.
+**Depends on**: Phase 11
+**Requirements**: SKL-04, SKL-05
+**Success Criteria** (what must be TRUE):
+  1. The skill provides tested templates for common scenarios like code refactoring and automated testing.
+  2. In testing, AI models generate valid `vibe-cli` instructions that comply with defined specifications 95%+ of the time.
+  3. The skill definition is optimized for token efficiency without sacrificing clarity or command reliability.
+**Plans**: TBD
+
 ## Progress Table
 
 | Phase | Plans Complete | Status | Completed |
@@ -67,3 +100,6 @@
 | 7. AI Skill Integration & Release | 1/1 | Completed | 2026-04-15 |
 | 8. Production Infrastructure | 1/1 | Completed | 2026-04-15 |
 | 9. Workflow Orchestration | 5/5 | Completed | 2026-04-15 |
+| 10. Vibe-CLI Core Skill | 0/TBD | Not started | - |
+| 11. Multi-model SOP | 0/TBD | Not started | - |
+| 12. Workflow Templates | 0/TBD | Not started | - |
