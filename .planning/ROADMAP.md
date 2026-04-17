@@ -78,7 +78,10 @@
   1. Standard Operating Procedures (SOP) for Master/Worker/Evaluator patterns are clearly defined within the skill.
   2. A concrete verification path using `vibe-cli` status for cross-checking is established.
   3. The skill includes guidance for models on how to utilize `vibe` state to resolve conflicts or verify execution success.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 11-01-PLAN.md — Update core role definitions and create the Collaboration SOP.
+- [ ] 11-02-PLAN.md — Define the verification and recovery protocols (audit, deadlock recovery).
+- [ ] 11-03-PLAN.md — Integrate SOPs into SKILL.md and verify collaboration logic via dry-run.
 
 ### Phase 12: Workflow Templates & Optimization
 **Goal**: Provide ready-to-use workflow templates and optimize skill for model reliability.
@@ -104,5 +107,5 @@
 | 8. Production Infrastructure | 1/1 | Completed | 2026-04-15 |
 | 9. Workflow Orchestration | 5/5 | Completed | 2026-04-15 |
 | 10. Vibe-CLI Core Skill | 0/3 | Not started | - |
-| 11. Multi-model SOP | 0/TBD | Not started | - |
+| 11. Multi-model SOP | 0/3 | Not started | - |
 | 12. Workflow Templates | 0/TBD | Not started | - |
