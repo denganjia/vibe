@@ -52,9 +52,13 @@ The primary goal of this skill is to break the "dimensional wall" between AI rea
 
 Before using this skill, agents must align with the user on environment preferences and safety levels.
 
-- **Roles**: Agents operate within defined roles (e.g., Vibe-Conductor for orchestration, Worker for execution). See [role.md](./role.md).
-- **SOPs**: Standard Operating Procedures for common tasks. See [sops/](./sops/).
-- **Templates**: Structured workflow templates for various development modes (e.g., SDD). See [templates/](./templates/).
+- **Roles (角色定义)**: 代理在定义明确的角色内运行（如指挥官 Vibe-Conductor、执行者 Worker、审计者 Evaluator）。详见 [role.md](./role.md)。
+- **SOPs (标准作业程序)**:
+  - [协作 SOP (Collaboration SOP)](./sops/collaboration.md): 定义多模型间的任务分配、标准化报告 (vibe report) 和上下文传递策略。
+  - [验证 SOP (Verification SOP)](./sops/verification.md): 定义任务后的逻辑审计流程、意图对齐检查表及死锁检测规则 (M=3)。
+  - [恢复 SOP (Recovery SOP)](./sops/recovery.md): 定义通过 `vibe_inject` 进行精准干预的故障恢复序列及升级协议。
+  - 其他基础 SOP（审批、编排、状态管理）详见 [sops/](./sops/) 目录。
+- **Templates (工作流模板)**: 针对不同开发模式（如 SDD）的结构化工作流模板。详见 [templates/](./templates/)。
 
 ## Metadata
 
