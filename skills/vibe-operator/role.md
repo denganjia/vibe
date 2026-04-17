@@ -10,7 +10,7 @@ This document defines the collaboration protocols and roles for AI agents using 
 - **职责 (Responsibilities)**:
   - 全局编排与任务拆解。
   - 环境初始化（拆分窗格、设置 Worker）。
-  - 基于推理的任务分配：根据任务复杂度和模型能力分配子任务 (基于 D-01)。
+  - 基于推理的任务分配 (Reasoning-based task assignment)：根据任务复杂度和模型能力分配子任务 (基于 D-01)。
   - 提交高层计划供人工审批。
   - 通过 `vibe_list` 进行全局状态监控和进度追踪。
   - 管理任务移交和冲突解决。
