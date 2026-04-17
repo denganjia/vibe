@@ -91,7 +91,10 @@
   1. The skill provides tested templates for common scenarios like code refactoring and automated testing.
   2. In testing, AI models generate valid `vibe-cli` instructions that comply with defined specifications 95%+ of the time.
   3. The skill definition is optimized for token efficiency without sacrificing clarity or command reliability.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 12-01-PLAN.md — Implement specialized refactoring templates and update skill routing configuration.
+- [ ] 12-02-PLAN.md — Optimize skill definition for token efficiency and document the dynamic variable injection protocol.
+- [ ] 12-03-PLAN.md — Establish reliability benchmarks and verification standards for the Vibe-Operator skill.
 
 ## Progress Table
 
@@ -108,4 +111,4 @@
 | 9. Workflow Orchestration | 5/5 | Completed | 2026-04-15 |
 | 10. Vibe-CLI Core Skill | 0/3 | Not started | - |
 | 11. Multi-model SOP | 0/3 | Not started | - |
-| 12. Workflow Templates | 0/TBD | Not started | - |
+| 12. Workflow Templates | 0/3 | Not started | - |
