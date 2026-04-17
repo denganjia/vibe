@@ -19,16 +19,19 @@
 **Requirements**: BUS-01, BUS-02, BUS-03
 **Success Criteria**:
 1. `mcp.rs` 被移除，二进制文件体积缩小。
-2. IPC 协议中不再包含命令拦截和 approval 字段。
-3. `vibe-core` 状态管理被极简化。
+2. IPC 协议中不再包含命令拦截 and approval 字段。
+3. `vibe-core` 状态管理被极简化.
 
 ### Phase 14: 信号总线实现 (Bus Core)
 **Goal**: 实现代理间的通信基础设施。
 **Requirements**: BUS-04, BUS-05, BUS-06
+**Plans:** 2 plans
+- [ ] 14-01-PLAN.md — 协议与服务端核心逻辑实现
+- [ ] 14-02-PLAN.md — 客户端 helper 与 CLI 命令实现
 **Success Criteria**:
 1. 子 Agent 运行 `vibe signal` 成功发送消息。
 2. 主 Agent 运行 `vibe wait` 能正确阻塞并接收信号。
-3. 消息路由在跨窗格环境下稳定。
+3. 消息路由在跨窗格环境下稳定 (基于项目 Hash 的 UDS 路径)。
 
 ### Phase 15: 自治代理启动器 (Autonomous Spawner)
 **Goal**: 提供一键启动并指派角色的能力。
@@ -55,6 +58,6 @@
 | 11. Multi-model SOP | 3/3 | Completed | 2026-04-17 |
 | 12. Workflow Templates | 3/3 | Completed | 2026-04-17 |
 | 13. Cleanup | 0/TBD | Not started | - |
-| 14. Signal Bus | 0/TBD | Not started | - |
+| 14. Signal Bus | 0/2 | Planning | - |
 | 15. Spawner | 0/TBD | Not started | - |
 | 16. E2E Integration | 0/TBD | Not started | - |
