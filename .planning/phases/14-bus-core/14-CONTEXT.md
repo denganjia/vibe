@@ -1,31 +1,25 @@
-# Phase 14: Signal Bus Implementation (Bus Core)
+# Phase 14: Signal Bus Implementation (Stateless Edition)
 
 ## Objective
-Implement `vibe signal` and `vibe wait` asynchronous communication mechanism to allow sub-agents and master agents to coordinate autonomously via signals.
+Implement `vibe signal` and `vibe wait` based on the Injected Conversation model, removing dependency on a persistent background daemon.
 
 ## Requirements
-- **BUS-04**: Implement `vibe signal <MSG>`. Notify all subscribers/waiters.
-- **BUS-05**: Implement `vibe wait [SIGNAL]`. Block until signal arrives.
-- **BUS-06**: Isolated routing via UDS path based on project hash (`/tmp/vibe-<hash>.sock`).
+- **BUS-04**: Implement `vibe signal <NAME> [PAYLOAD]`. Notify target via text injection.
+- **BUS-05**: Implement `vibe wait <NAME>`. Block until signal marker arrives on stdin.
+- **BUS-06**: Concurrent safe `panes.json` management via file locking.
 
 ## Key Decisions
-- **Signal Bus State**: `MasterServer` will maintain a `waiters` map (`Arc<Mutex<HashMap<String, Vec<mpsc::Sender<serde_json::Value>>>>>`) to track clients waiting for specific signals.
-- **Message Flow**:
-    1. Client A sends `Wait { signal_name, timeout_ms }`.
-    2. Server registers Client A's connection as a waiter for `signal_name`.
-    3. Client B sends `Signal { name, payload }`.
-    4. Server finds all waiters for `name`, sends `SignalFired { name, payload }` to them, and removes them from the map.
-- **UDS Path**: Use `/tmp/vibe-<hash>.sock` to avoid UDS path length limits and provide project isolation.
+- **No Master Daemon**: Communication via terminal text injection instead of UDS. (D-01)
+- **ID Inheritance**: `VIBE_MASTER_ID` injected into children during `spawn/split`. (D-02)
+- **Signal Marker**: Format `\n[vibe-signal:<NAME>] <JSON_PAYLOAD>\n`. (D-04)
+- **Wait Mechanism**: `vibe wait` scans stdin, matching markers and parsing JSON. (D-05, D-06)
+- **State Store**: `panes.json` uses `fd-lock` for cross-process concurrency safety. (D-08)
 
 ## Technical Details
-- **Hashing**: Use a stable hash of the absolute path to the `.vibe` directory.
-- **Protocol**: 
-    - `Message::Signal(SignalInfo)`
-    - `Message::Wait(WaitInfo)`
-    - `Message::SignalFired(SignalInfo)` (New)
-- **CLI**: Add `signal` and `wait` subcommands to `vibe-cli`.
+- **Terminal Adapters**: Use `send-text` (WezTerm) or `send-keys` (Tmux) for injection.
+- **StateStore**: Ensure `save()` and `load()` are wrapped in file locks.
+- **Cleanup**: Remove `server.rs`, `client.rs`, and unused IPC protocols.
 
 ## Traceability
-- BUS-04 -> Plan 01, Plan 02
-- BUS-05 -> Plan 01, Plan 02
-- BUS-06 -> Plan 01
+- D-01, D-02, D-08 -> Plan 01
+- D-03, D-04, D-05, D-06, D-07, D-09 -> Plan 02

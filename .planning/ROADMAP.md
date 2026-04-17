@@ -23,15 +23,16 @@
 3. `vibe-core` 状态管理被极简化.
 
 ### Phase 14: 信号总线实现 (Bus Core)
-**Goal**: 实现代理间的通信基础设施。
+**Goal**: 实现基于终端注入的无状态信号总线。
 **Requirements**: BUS-04, BUS-05, BUS-06
 **Plans:** 2 plans
-- [ ] 14-01-PLAN.md — 协议与服务端核心逻辑实现
-- [ ] 14-02-PLAN.md — 客户端 helper 与 CLI 命令实现
+- [ ] 14-01-PLAN.md — 清理 UDS 架构并强化 StateStore
+- [ ] 14-02-PLAN.md — 实现 `vibe signal` 与 `vibe wait` 命令
 **Success Criteria**:
-1. 子 Agent 运行 `vibe signal` 成功发送消息。
-2. 主 Agent 运行 `vibe wait` 能正确阻塞并接收信号。
-3. 消息路由在跨窗格环境下稳定 (基于项目 Hash 的 UDS 路径)。
+1. 彻底移除 UDS Master 守护进程。
+2. `vibe wait` 能通过 stdin 捕获注入的信号。
+3. `vibe signal` 能通过终端适配器向目标注入信号。
+4. `panes.json` 在并发访问下保持安全。
 
 ### Phase 15: 自治代理启动器 (Autonomous Spawner)
 **Goal**: 提供一键启动并指派角色的能力。
