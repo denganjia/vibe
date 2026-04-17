@@ -7,3 +7,4 @@ routing:
   default_mode: sdd
   patterns:
     - { pattern: "sdd", template: "templates/sdd/" }
+    - { pattern: "refactoring", template: "templates/refactoring/" }
