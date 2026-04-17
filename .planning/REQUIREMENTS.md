@@ -1,27 +1,30 @@
-# Requirements: vibe-cli (Milestone 4.0)
+# Requirements: vibe-cli (Milestone 4.0 - AI Agent Bus)
 
 **Defined:** 2026-04-17
 **Core Value:** Strategic Pivot to "Agent Collaboration Bus" - High autonomy, local context (.vibe), and simple signaling.
 
 ## v1 Requirements (Milestone 4.0: AI Agent Bus)
 
-### Architecture Cleanup (Cleanup)
-- [ ] **BUS-01**: 移除现有的 MCP 服务代码 (`mcp.rs`) 及相关依赖。
-- [ ] **BUS-02**: 移除沉重的 SQLite 强一致性业务逻辑，转为极简的状态追踪。
-- [ ] **BUS-03**: 简化 IPC 协议，移除命令拦截与人工审批字段。
+### 1. 架构净化 (Architecture Cleanup)
+- [ ] **BUS-01**: 移除现有的 MCP 代码 (`mcp.rs`) 与复杂的人工审批逻辑。
+- [ ] **BUS-02**: 移除沉重的 SQLite 强业务逻辑，仅保留内存中的轻量级 Session 表。
+- [ ] **BUS-03**: 简化 IPC 协议，支持 `Signal` 和 `Wait` (基于连接挂起模式) 消息类型。
 
-### 信号总线 (Messaging Bus)
-- [ ] **BUS-04**: 实现 `vibe signal <MESSAGE>`。允许子窗格向总线发送异步信号。
-- [ ] **BUS-05**: 实现 `vibe wait [SIGNAL_TYPE]`。主会话进入阻塞监听，直至收到目标信号。
-- [ ] **BUS-06**: 建立基于 UDS 的极简消息路由机制，支持跨窗格寻址。
+### 2. 信号总线 (The Bus)
+- [ ] **BUS-04**: 实现 `vibe signal <MSG>`。通过总线通知所有关注该消息的订阅者。
+- [ ] **BUS-05**: 实现 `vibe wait [SIGNAL]`。进入阻塞状态，监听 UDS 消息直至信号到达。
+- [ ] **BUS-06**: 实现多项目隔离的消息路由，基于项目哈希生成的 UDS 路径 (`/tmp/vibe-<hash>.sock`)。
 
-### 自治编排 (Autonomous Spawner)
-- [ ] **BUS-07**: 实现 `vibe spawn --role <ROLE>`。自动 split 窗格并启动预定义的 AI CLI 会话。
-- [ ] **BUS-08**: 角色 Prompt 注入。从 `.vibe/roles/` 读取配置并通过管道注入新启动的进程。
+### 3. 自治代理启动 (Autonomous Spawner)
+- [ ] **BUS-07**: 实现 `vibe spawn --role <ROLE>`。
+    - 自动通过终端适配器 (Wezterm/Tmux) 拆分窗格。
+    - 读取 `.vibe/roles/<ROLE>.md` 作为 Persona。
+- [ ] **BUS-08**: 角色注入协议。在子进程启动时通过 `stdin` 管道注入 Persona 提示词。
+- [ ] **BUS-09**: 实现交互交接。注入完成后，自动将主 `stdin` 桥接到子进程。
 
-### 项目本地上下文 (Local Context)
-- [ ] **BUS-09**: 建立 `.vibe/` 目录规范。包含 `roles/`, `state/`, `config.yaml`。
-- [ ] **BUS-10**: 任务追踪自治。主 Agent 负责维护 `.vibe/project.md` 进度，而非由 CLI 强制同步。
+### 4. 项目本地上下文 (Local Context)
+- [ ] **BUS-10**: 建立 `.vibe/` 规范目录结构。
+- [ ] **BUS-11**: 实现跨 Agent 上下文共享。子 Agent 任务完成后自动更新 `.vibe/state/`。
 
 ## Traceability
 
@@ -36,12 +39,14 @@
 | BUS-07 | Phase 15 | Pending |
 | BUS-08 | Phase 15 | Pending |
 | BUS-09 | Phase 15 | Pending |
-| BUS-10 | Phase 16 | Pending |
+| BUS-10 | Phase 15 | Pending |
+| BUS-11 | Phase 16 | Pending |
 
 **Coverage:**
-- Milestone 4.0 requirements: 10 total
-- Mapped to phases: 10
+- Milestone 4.0 requirements: 11 total
+- Mapped to phases: 11
 - Unmapped: 0 ✓
 
 ---
-*Last updated: 2026-04-17 after Strategic Pivot*
+*Requirements defined: 2026-04-17*
+*Last updated: 2026-04-17 after Implementation Research*
