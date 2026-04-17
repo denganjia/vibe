@@ -59,19 +59,22 @@
 
 ### Phase 10: Vibe-CLI Core Skill Definition
 **Goal**: Create the foundational skill definition for AI agents to understand vibe-cli.
+**Status**: Completed
 **Depends on**: Phase 9
 **Requirements**: SKL-01
 **Success Criteria** (what must be TRUE):
   1. `SKILL.md` contains a comprehensive definition of all core `vibe-cli` commands and parameters.
   2. The skill definition clearly explains pane management workflows (split, focus, close).
   3. The IPC state flow (how to use UDS/SQLite) is described such that a model can successfully read/write state.
-**Plans**: 3 plans
-- [ ] 10-01-PLAN.md — Initialize core skill package, metadata, and role protocols.
-- [ ] 10-02-PLAN.md — Define Standard Operating Procedures (SOPs) for orchestration, state, and approvals.
-- [ ] 10-03-PLAN.md — Implement modular SDD/SPEC workflow templates and finalize documentation.
+**Plans**: 4 plans
+- [x] 10-01-PLAN.md — Initialize core skill package, metadata, and role protocols.
+- [x] 10-02-PLAN.md — Define Standard Operating Procedures (SOPs) for orchestration, state, and approvals.
+- [x] 10-03-PLAN.md — Implement modular SDD/SPEC workflow templates and finalize documentation.
+- [x] 10-04-PLAN.md — Fix verification gaps (parameters and IPC details).
 
 ### Phase 11: Multi-model SOP & Verification
 **Goal**: Define collaboration patterns and cross-checking paths using vibe state.
+**Status**: Completed
 **Depends on**: Phase 10
 **Requirements**: SKL-02, SKL-03
 **Success Criteria** (what must be TRUE):
@@ -79,9 +82,9 @@
   2. A concrete verification path using `vibe-cli` status for cross-checking is established.
   3. The skill includes guidance for models on how to utilize `vibe` state to resolve conflicts or verify execution success.
 **Plans**: 3 plans
-- [ ] 11-01-PLAN.md — Update core role definitions and create the Collaboration SOP.
-- [ ] 11-02-PLAN.md — Define the verification and recovery protocols (audit, deadlock recovery).
-- [ ] 11-03-PLAN.md — Integrate SOPs into SKILL.md and verify collaboration logic via dry-run.
+- [x] 11-01-PLAN.md — Update core role definitions and create the Collaboration SOP.
+- [x] 11-02-PLAN.md — Define the verification and recovery protocols (audit, deadlock recovery).
+- [x] 11-03-PLAN.md — Integrate SOPs into SKILL.md and verify collaboration logic via dry-run.
 
 ### Phase 12: Workflow Templates & Optimization
 **Goal**: Provide ready-to-use workflow templates and optimize skill for model reliability.

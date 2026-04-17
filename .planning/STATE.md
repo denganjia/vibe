@@ -5,33 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core Value**: Break the "dimensional wall" between AI and the local dev environment by turning the terminal into a physical orchestration room.
-**Current Focus**: Milestone v3.0 - Vibe-CLI Skill Definition (AI-consumable)
+**Current Focus**: Milestone v3.0 - AI Agent Skills & Workflow Definitions (Completed)
 
 ## Current Position
 
-**Phase**: Phase 12: Workflow Templates & Optimization
-**Plan**: 12-03-PLAN.md
-**Status**: Phase 12 Complete
-**Last activity**: 2026-04-16 — Phase 12 completed (Templates, Optimization, Benchmarks)
-**Progress**: [████████████████████] 100%
+**Phase**: Phase 12 Completed
+**Plan**: All Phase 10-12 plans executed and verified.
+**Status**: Milestone v3.0 Completed
+**Last activity**: 2026-04-17 — Phase 12 verified, Milestone finalized.
+**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100% (Milestone v3.0)
 
 ## Accumulated Context
 
-### Decisions (W2)
-- **Refactoring Workflow**: Adopted 4-stage Analyze-Implement-Test-Review flow for refactoring.
-- **Dynamic Variable Injection**: Used $[VARIABLE] syntax for dynamic template injection.
-- **Token Optimization**: Compressed tool references in SKILL.md to single-line format.
-- **DB Migration**: Integrated `rusqlite_migration`. Current version: M3 (added approval fields).
-- **Packaging**: Standardized on `.tar.gz` (Unix) and `.zip` (Windows) via GitHub Actions.
-- **Plan Storage**: Standardized on Markdown files in the vibe data directory (`plans/` subfolder).
-- **Skill Pivot**: Milestone v3.0 focus shifted from a "general skills framework" to "defining the vibe-cli skill itself" for better AI orchestration.
+### Decisions (W3)
+- **Vibe-Operator Skill**: Established a structured AI skill package with $[VARIABLE] injection support.
+- **Hierarchical Control**: Conductor (Master) -> Worker (Executor) -> Evaluator (Auditor) roles defined.
+- **Verification SOP**: Logic audit focusing on intent alignment and M=3 deadlock detection.
+- **Surgical Inject**: Recovery protocol using `vibe_inject` for non-destructive intervention.
 
 ### Todos
-- [ ] SKL-01: 编写 vibe-cli 核心技能定义 (SKILL.md) (Phase 10)
-- [ ] SKL-02: 在技能中定义多模型协作模式 SOP (Phase 11)
-- [ ] SKL-03: 定义交叉检查 (Cross-checking) 实现路径 (Phase 11)
-- [x] SKL-04: 提供不同场景下的 Workflow 模版 (Phase 12)
-- [x] SKL-05: 验证并优化 Skill 定义 (Phase 12)
+- [ ] Transition to Milestone v4.0 (General Framework & Automation).
 
 ### Blockers
 - None.
@@ -39,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Session Continuity
 
 ### Current Intent
-Completed Phase 12 (Workflow Templates & Optimization).
+Finalizing Milestone v3.0.
 
 ### Next Steps
-1. Proceed to next phase (likely Phase 13 or similar if planned).
+1. The user can choose to start a new milestone (e.g., v4.0 for broader automation/DAG workflows).
