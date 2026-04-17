@@ -2,29 +2,31 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-16)
+See: .planning/PROJECT.md (updated 2026-04-17)
 
-**Core Value**: Break the "dimensional wall" between AI and the local dev environment by turning the terminal into a physical orchestration room.
-**Current Focus**: Milestone v3.0 - AI Agent Skills & Workflow Definitions (Completed)
+**Core Value**: Strategic Pivot to "Agent Collaboration Bus" - High autonomy, local context (.vibe), and simple signaling.
+**Current Focus**: Milestone 4.0 - AI Agent Bus
 
 ## Current Position
 
-**Phase**: Phase 12 Completed
-**Plan**: All Phase 10-12 plans executed and verified.
-**Status**: Milestone v3.0 Completed
-**Last activity**: 2026-04-17 — Phase 12 verified, Milestone finalized.
-**Progress**: [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100% (Milestone v3.0)
+**Phase**: Not started (defining requirements)
+**Plan**: —
+**Status**: Strategic pivot & code cleanup
+**Last activity**: 2026-04-17 — Milestone 4.0 started, Strategic Pivot defined.
+**Progress**: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
-### Decisions (W3)
-- **Vibe-Operator Skill**: Established a structured AI skill package with $[VARIABLE] injection support.
-- **Hierarchical Control**: Conductor (Master) -> Worker (Executor) -> Evaluator (Auditor) roles defined.
-- **Verification SOP**: Logic audit focusing on intent alignment and M=3 deadlock detection.
-- **Surgical Inject**: Recovery protocol using `vibe_inject` for non-destructive intervention.
+### Decisions (W4)
+- **Pivot 4.0**: Moving from command-level interception to task-level autonomous signaling.
+- **Removed**: MCP Server logic and high-friction approval gates.
+- **Context**: Project-local `.vibe/` directory will handle persistence.
 
 ### Todos
-- [ ] Transition to Milestone v4.0 (General Framework & Automation).
+- [ ] Phase 13: Architecture Cleanup (Removal of MCP/DB)
+- [ ] Phase 14: Signal Bus implementation
+- [ ] Phase 15: Autonomous Spawner
+- [ ] Phase 16: E2E Integration
 
 ### Blockers
 - None.
@@ -32,7 +34,8 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Session Continuity
 
 ### Current Intent
-Finalizing Milestone v3.0.
+Defining requirements and roadmap for Milestone 4.0.
 
 ### Next Steps
-1. The user can choose to start a new milestone (e.g., v4.0 for broader automation/DAG workflows).
+1. Update REQUIREMENTS.md and ROADMAP.md.
+2. Begin Phase 13 execution.

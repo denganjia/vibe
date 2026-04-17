@@ -1,51 +1,47 @@
-# Requirements: vibe-cli
+# Requirements: vibe-cli (Milestone 4.0)
 
-**Defined:** 2026-04-16
-**Core Value:** Break the "dimensional wall" between AI and the local dev environment by turning the terminal into a physical orchestration room.
+**Defined:** 2026-04-17
+**Core Value:** Strategic Pivot to "Agent Collaboration Bus" - High autonomy, local context (.vibe), and simple signaling.
 
-## v1 Requirements (Milestone v3.0: Vibe-CLI Skill Definition)
+## v1 Requirements (Milestone 4.0: AI Agent Bus)
 
-The focus of this milestone is creating the "vibe-cli skill" (AI-consumable definition) so that AI models understand how to use vibe-cli and coordinate multi-model workflows. It is NOT a general framework for users to define new skills.
+### Architecture Cleanup (Cleanup)
+- [ ] **BUS-01**: 移除现有的 MCP 服务代码 (`mcp.rs`) 及相关依赖。
+- [ ] **BUS-02**: 移除沉重的 SQLite 强一致性业务逻辑，转为极简的状态追踪。
+- [ ] **BUS-03**: 简化 IPC 协议，移除命令拦截与人工审批字段。
 
-- [x] **SKL-01**: 编写 vibe-cli 核心技能定义 (SKILL.md)，涵盖命令集、窗格管理与 IPC 状态流。
-- [x] **SKL-02**: 在技能中定义多模型协作模式 (如 Master/Worker/Evaluator) 的标准操作规程 (SOP)。
-- [x] **SKL-03**: 定义交叉检查 (Cross-checking) 的具体实现路径（如何利用 vibe 状态进行校验）。
-- [x] **SKL-04**: 提供不同场景下的 Workflow 模版（如代码重构流、自动化测试流）。
-- [x] **SKL-05**: 验证并优化 Skill 定义，确保模型生成的指令符合 vibe-cli 规范。
+### 信号总线 (Messaging Bus)
+- [ ] **BUS-04**: 实现 `vibe signal <MESSAGE>`。允许子窗格向总线发送异步信号。
+- [ ] **BUS-05**: 实现 `vibe wait [SIGNAL_TYPE]`。主会话进入阻塞监听，直至收到目标信号。
+- [ ] **BUS-06**: 建立基于 UDS 的极简消息路由机制，支持跨窗格寻址。
 
-## Deferred to v4.0+ (General Framework)
+### 自治编排 (Autonomous Spawner)
+- [ ] **BUS-07**: 实现 `vibe spawn --role <ROLE>`。自动 split 窗格并启动预定义的 AI CLI 会话。
+- [ ] **BUS-08**: 角色 Prompt 注入。从 `.vibe/roles/` 读取配置并通过管道注入新启动的进程。
 
-These requirements were originally planned for v3.0 but have been deferred to focus on the core vibe-cli skill definition.
-
-- **WFK-01**: 实现基于 SQLite 的多步任务状态持久化。
-- **WFK-02**: 支持任务节点流 (DAG) 定义与执行。
-- **WFK-03**: 实现任务失败重试机制。
-- **WFK-04**: 支持任务状态断点续传（恢复执行）。
-- **MOD-01**: 实现基于任务类型的不同模型路由 (Routing)。
-- **MOD-02**: 实现 Evaluator-Optimizer 交叉检查机制。
-- **MOD-03**: 支持 Agent 间的动态 Handoffs（控制权移交）。
-- **MOD-04**: 实现异构模型结果自动对比分析。
-- **SAF-01**: 在高风险节点（如系统修改）强制人工二次确认。
-- **SAF-02**: 提供执行计划的详细预览 UI。
-- **SAF-03**: 实现技能执行的 Dry-run 模式。
-- **SAF-04**: 实现任务失败后的自动回滚策略（尽可能）。
+### 项目本地上下文 (Local Context)
+- [ ] **BUS-09**: 建立 `.vibe/` 目录规范。包含 `roles/`, `state/`, `config.yaml`。
+- [ ] **BUS-10**: 任务追踪自治。主 Agent 负责维护 `.vibe/project.md` 进度，而非由 CLI 强制同步。
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SKL-01 | Phase 10 | Pending |
-| SKL-02 | Phase 11 | Pending |
-| SKL-03 | Phase 11 | Pending |
-| SKL-04 | Phase 12 | Complete |
-| SKL-05 | Phase 12 | Complete |
+| BUS-01 | Phase 13 | Pending |
+| BUS-02 | Phase 13 | Pending |
+| BUS-03 | Phase 13 | Pending |
+| BUS-04 | Phase 14 | Pending |
+| BUS-05 | Phase 14 | Pending |
+| BUS-06 | Phase 14 | Pending |
+| BUS-07 | Phase 15 | Pending |
+| BUS-08 | Phase 15 | Pending |
+| BUS-09 | Phase 15 | Pending |
+| BUS-10 | Phase 16 | Pending |
 
 **Coverage:**
-- v1 requirements: 5 total
-- Mapped to phases: 5
+- Milestone 4.0 requirements: 10 total
+- Mapped to phases: 10
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after Milestone v3.0 Scope Pivot*
-t*
+*Last updated: 2026-04-17 after Strategic Pivot*
