@@ -1,0 +1,9 @@
+name: vibe-operator
+version: 0.1.0
+description: Core skill for multi-agent orchestration and development using Vibe-CLI.
+dependencies:
+  - mcp:vibe-cli
+routing:
+  default_mode: sdd
+  patterns:
+    - { pattern: "sdd", template: "templates/sdd/" }
