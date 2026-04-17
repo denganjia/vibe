@@ -1,10 +1,8 @@
-use vibe_core::ipc::protocol::{Message, WorkerState};
-use vibe_core::env::{resolve_socket_path, detect_current_terminal, TerminalType};
+use vibe_core::ipc::protocol::WorkerState;
+use vibe_core::env::{detect_current_terminal, TerminalType};
 use vibe_core::adapter::{TerminalAdapter, WezTermAdapter, TmuxAdapter};
 use vibe_core::state::StateStore;
-use tokio::net::UnixStream;
-use tokio_util::codec::{Framed, LinesCodec};
-use futures::{StreamExt, SinkExt};
+use futures::StreamExt;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
@@ -107,16 +105,10 @@ impl App {
         Ok(())
     }
 
-    fn kill_selected(&self, _framed: &mut Framed<UnixStream, LinesCodec>) -> anyhow::Result<()> {
+    fn kill_selected(&self) -> anyhow::Result<()> {
         if let Some(ref id) = self.selected_id {
-            // We can send KillRequest to master, or just close it here.
-            // Let's send KillRequest to Master to let it handle it gracefully if possible.
-            // But Master currently doesn't have adapter.
-            // So we'll just close it here and Master will detect disconnect.
             if let Some(state) = self.states.iter().find(|s| s.vibe_id == *id) {
-                self.adapter.close(&state.vibe_id)?;
-                // Remove from DB via vibe-core? Master does this on disconnect usually.
-                // But we can also remove it here to be faster.
+                let _ = self.adapter.close(&state.vibe_id);
                 let store = StateStore::new()?;
                 store.remove_pane(&state.vibe_id)?;
             }
@@ -126,18 +118,27 @@ impl App {
 }
 
 async fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::Result<()> {
-    let socket_path = resolve_socket_path()?;
-    let stream = UnixStream::connect(&socket_path).await?;
-    let mut framed = Framed::new(stream, LinesCodec::new());
-
-    // Subscribe
-    let sub = Message::Subscribe;
-    framed.send(serde_json::to_string(&sub)?).await?;
-
     let mut app = App::new()?;
     let mut reader = event::EventStream::new();
+    let store = StateStore::new()?;
 
     loop {
+        // Poll state from local store
+        app.states = store.list_active_panes()?;
+        // Keep selection if possible
+        if let Some(ref id) = app.selected_id {
+            if let Some(i) = app.states.iter().position(|s| s.vibe_id == *id) {
+                app.table_state.select(Some(i));
+            } else {
+                app.table_state.select(None);
+                app.selected_id = None;
+            }
+        }
+        if app.table_state.selected().is_none() && !app.states.is_empty() {
+            app.table_state.select(Some(0));
+            app.update_selected_id();
+        }
+
         terminal.draw(|f| ui(f, &mut app))?;
 
         tokio::select! {
@@ -153,7 +154,7 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::R
                                     app.focus_selected()?;
                                 }
                                 KeyCode::Char('x') | KeyCode::Char('K') => {
-                                    app.kill_selected(&mut framed)?;
+                                    app.kill_selected()?;
                                 }
                                 KeyCode::Enter => {
                                     app.focus_selected()?;
@@ -166,32 +167,7 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::R
                     _ => {}
                 }
             }
-            maybe_msg = framed.next() => {
-                match maybe_msg {
-                    Some(Ok(line)) => {
-                        if line.trim().is_empty() { continue; }
-                        let msg = Message::from_str(&line)?;
-                        if let Message::Broadcast { states } = msg {
-                            app.states = states;
-                            // Keep selection if possible
-                            if let Some(ref id) = app.selected_id {
-                                if let Some(i) = app.states.iter().position(|s| s.vibe_id == *id) {
-                                    app.table_state.select(Some(i));
-                                } else {
-                                    app.table_state.select(None);
-                                    app.selected_id = None;
-                                }
-                            }
-                            if app.table_state.selected().is_none() && !app.states.is_empty() {
-                                app.table_state.select(Some(0));
-                                app.update_selected_id();
-                            }
-                        }
-                    }
-                    _ => break,
-                }
-            }
-            _ = tokio::time::sleep(Duration::from_millis(100)) => {
+            _ = tokio::time::sleep(Duration::from_millis(250)) => {
                 // Background refresh for logs
                 if let Some(ref id) = app.selected_id {
                     let logs_dir = vibe_core::env::resolve_logs_dir()?;
@@ -212,8 +188,6 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::R
             }
         }
     }
-
-    Ok(())
 }
 
 fn ui(f: &mut ratatui::Frame, app: &mut App) {
@@ -233,21 +207,8 @@ fn ui(f: &mut ratatui::Frame, app: &mut App) {
         .bottom_margin(1);
 
     let rows = app.states.iter().map(|item| {
-        let status_text = if item.approval_status == "pending_approval" {
-            "WAITING".to_string()
-        } else if item.approval_status == "rejected" {
-            "REJECTED".to_string()
-        } else {
-            item.status.clone()
-        };
-
-        let status_style = if item.approval_status == "pending_approval" {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
-        } else if item.approval_status == "rejected" {
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
-        } else {
-            Style::default()
-        };
+        let status_text = item.status.clone();
+        let status_style = Style::default();
 
         let cells = vec![
             ratatui::widgets::Cell::from(item.vibe_id.clone()),

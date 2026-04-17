@@ -14,9 +14,6 @@ pub enum VibeError {
     #[error("State directory resolution failed")]
     StateDirResolutionFailed,
 
-    #[error("Database error: {0}")]
-    Database(#[from] rusqlite::Error),
-
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 

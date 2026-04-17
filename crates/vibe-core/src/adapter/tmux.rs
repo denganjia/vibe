@@ -5,7 +5,7 @@ use std::process::Command;
 pub struct TmuxAdapter;
 
 impl TerminalAdapter for TmuxAdapter {
-    fn split(&self, direction: SplitDirection, _size: Option<u32>) -> Result<VibeID> {
+    fn split(&self, direction: SplitDirection, _size: Option<u32>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
         let mut cmd = Command::new("tmux");
         cmd.args(["split-window", "-P", "-F", "#{pane_id}"]);
 
@@ -13,6 +13,10 @@ impl TerminalAdapter for TmuxAdapter {
             SplitDirection::Horizontal => cmd.arg("-h"),
             SplitDirection::Vertical => cmd.arg("-v"),
         };
+
+        for (k, v) in env_vars {
+            cmd.arg("-e").arg(format!("{}={}", k, v));
+        }
 
         let output = cmd.output()?;
         if !output.status.success() {
@@ -36,6 +40,21 @@ impl TerminalAdapter for TmuxAdapter {
         if !output.status.success() {
             return Err(VibeError::TerminalDetectionFailed(format!(
                 "Tmux send-keys failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+
+        Ok(())
+    }
+
+    fn inject_text(&self, target_id: &VibeID, text: &str) -> Result<()> {
+        let output = Command::new("tmux")
+            .args(["send-keys", "-t", target_id, "-l", text])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(VibeError::TerminalDetectionFailed(format!(
+                "Tmux send-keys (literal) failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
         }

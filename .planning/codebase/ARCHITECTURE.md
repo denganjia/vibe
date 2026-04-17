@@ -1,42 +1,96 @@
-# ARCHITECTURE
+# Architecture
 
-## System Overview
-Vibe CLI uses a **Master-Worker-TUI** triangular topology built on Unix Domain Sockets (UDS). It breaks the "dimensional wall" between AI and the local environment by orchestrating physical terminal panes.
+**Analysis Date:** 2025-03-04
 
-## Core Components
+## Pattern Overview
 
-### 1. Master Server (`vibe-core/src/ipc/server.rs`)
-The central orchestrator that:
-- Manages a persistent SQLite state store of all active panes.
-- Routes intents (commands) from users or AI to specific Workers.
-- Acts as a **Broadcast Station**, pushing real-time state updates to all subscribed TUIs.
-- Handles bidirectional IPC: listening for Worker heartbeats/reports while simultaneously queueing outgoing intents.
+**Overall:** Centralized Agent Bus with JSON State Persistence.
 
-### 2. Worker Client (`vibe-core/src/ipc/client.rs`)
-The execution agent residing in each physical pane:
-- Registers with the Master on startup.
-- Maintains a 5s heartbeat loop to signal health and status.
-- Implements a **Confirmation Gate (HITL)** for sensitive commands.
-- Captures and strips ANSI codes from task output before logging to local files.
+**Key Characteristics:**
+- **Master/Worker Topology:** A central master process (`vibe master`) coordinates multiple worker processes running in terminal panes.
+- **Decoupled Communication:** Agents communicate via an NDJSON-based IPC bus rather than direct process calls.
+- **Stateless CLI:** The CLI interacts with either the `StateStore` (for queries) or the `MasterServer` (for actions), keeping the CLI logic focused on UI/UX.
 
-### 3. TUI Dashboard (`apps/vibe-cli/src/tui.rs`)
-The monitoring center ("Command Tower"):
-- Subscribes to the Master's broadcast stream via UDS.
-- Provides real-time visual feedback of all agent states (Running, Failed, Exited).
-- Implemented using **Ratatui** for a high-performance terminal UI.
-- Enables physical orchestration (focusing/killing panes) via hotkeys.
+## Layers
 
-## Communication Protocol
-- **Transport**: Unix Domain Sockets (UDS) with `LinesCodec`.
-- **Payload**: NDJSON (Newline Delimited JSON) using the `Message` enum in `vibe-core/src/ipc/protocol.rs`.
-- **Flow**:
-  - `Register`: Worker -> Master (Initial handshake)
-  - `Heartbeat`: Worker -> Master (Periodic health check)
-  - `Subscribe`: TUI -> Master (Subscription for state updates)
-  - `Broadcast`: Master -> TUI (Real-time global state push)
-  - `ExecuteIntent`: Master -> Worker (Command injection)
+**IPC Layer (AI Agent Bus):**
+- Purpose: Provides the communication backbone for the entire system.
+- Location: `crates/vibe-core/src/ipc/`
+- Contains: `protocol.rs` (Message types), `server.rs` (Master), `client.rs` (Worker).
+- Depends on: `tokio`, `serde_json`, `tokio-util` (codec).
+- Used by: `vibe-cli` (Master/Run/Inject/Report commands).
 
-## Design Patterns
-- **Serialized Actor**: The database is managed by a `DbActor` that processes requests via an mpsc channel, preventing SQLite concurrency issues.
-- **Hybrid Injection**: Commands are injected via UDS structured messages when possible, with fallback to raw terminal keys if the Worker is unresponsive.
-- **Passive Capture**: ANSI stripping is done at the source (Worker) to ensure logs remain clean and searchable.
+**State Layer:**
+- Purpose: Persists pane and agent state to disk.
+- Location: `crates/vibe-core/src/state/`
+- Contains: `StateStore` (JSON-based persistence).
+- Depends on: `serde`, `serde_json`, `std::fs`.
+- Used by: `MasterServer` for tracking workers, CLI for listing and status.
+
+**Adapter Layer:**
+- Purpose: Abstracts terminal multiplexer commands (WezTerm, Tmux).
+- Location: `crates/vibe-core/src/adapter/`
+- Contains: `wezterm.rs`, `tmux.rs`.
+- Depends on: CLI tools of respective multiplexers.
+- Used by: CLI for splitting, focusing, and metadata retrieval.
+
+## Data Flow
+
+**Worker Registration:**
+1. `vibe run` starts a `WorkerClient`.
+2. Client connects to `MasterServer` socket (resolved via `crates/vibe-core/src/env.rs`).
+3. Client sends `Register` message with `vibe_id`, `pid`, and metadata.
+4. `MasterServer` updates `StateStore` and broadcasts new state to all `Subscribers`.
+
+**Command Injection (Intent):**
+1. `vibe inject <vibe_id> <cmd>` sends `ExecuteIntent` to `MasterServer`.
+2. `MasterServer` lookups the connection for `<vibe_id>`.
+3. `MasterServer` forwards the intent to the corresponding `WorkerClient`.
+4. `WorkerClient` executes the command and sends `Ack` or `Report` back.
+
+**State Management:**
+- **In-Memory:** `MasterServer` maintains an `Arc<Mutex<HashMap>>` of active worker connections and their states.
+- **Persistence:** `StateStore` writes state to `panes.json` on every change using atomic write-and-rename.
+- **Actors:** The previous Actor pattern for DB/State has been **removed** in favor of direct shared-state management within the async Master server for simplicity and performance.
+
+## Key Abstractions
+
+**`Message` (IPC Protocol):**
+- Purpose: Uniform message format for all agent communications.
+- Examples: `crates/vibe-core/src/ipc/protocol.rs`
+- Pattern: Enums with `#[serde(tag = "type")]` for NDJSON serialization.
+
+**`TerminalAdapter`:**
+- Purpose: Common interface for terminal operations.
+- Examples: `crates/vibe-core/src/adapter/mod.rs`
+- Pattern: Trait-based abstraction.
+
+## Entry Points
+
+**CLI Main:**
+- Location: `apps/vibe-cli/src/main.rs`
+- Triggers: User commands via `clap`.
+- Responsibilities: Command parsing, orchestration, starting master/workers.
+
+**Master Server Loop:**
+- Location: `crates/vibe-core/src/ipc/server.rs`
+- Triggers: `vibe master` or automatic spawn by `vibe run`.
+- Responsibilities: Connection management, message routing, state persistence.
+
+## Error Handling
+
+**Strategy:** Centralized `VibeError` enum in `vibe-core`.
+
+**Patterns:**
+- `Result<T, VibeError>` used throughout core.
+- `anyhow::Result` used in CLI for convenient top-level error reporting.
+
+## Cross-Cutting Concerns
+
+**Logging:** Output is directed to `.vibe/logs/<vibe_id>.log` for worker tasks.
+**Validation:** CLI arguments validated by `clap`; IPC messages validated by `serde`.
+**Authentication:** Relies on OS-level permissions for Unix Domain Sockets/Named Pipes.
+
+---
+
+*Architecture analysis: 2025-03-04*

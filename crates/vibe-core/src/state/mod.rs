@@ -1,172 +1,229 @@
 use crate::adapter::VibeID;
-use crate::env::resolve_state_dir;
+use crate::env::{resolve_state_dir, resolve_project_vibe_dir};
 use crate::error::Result;
-use crate::ipc::protocol::RegisterInfo;
-use rusqlite::{params, Connection};
-use rusqlite_migration::{Migrations, M};
+use crate::ipc::protocol::{RegisterInfo, WorkerState};
+use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use serde::{Serialize, Deserialize};
 
-pub mod db;
-pub mod plans;
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PaneRecord {
+    pub vibe_id: VibeID,
+    pub physical_id: String,
+    pub terminal_type: String,
+    pub role: Option<String>,
+    pub status: Option<String>,
+    pub summary: Option<String>,
+    pub pid: Option<u32>,
+    pub cwd: Option<String>,
+    pub last_heartbeat_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
 
 pub struct StateStore {
-    conn: Connection,
+    state_file: PathBuf,
+    panes: Arc<Mutex<HashMap<VibeID, PaneRecord>>>,
+}
+
+struct LockGuard {
+    path: PathBuf,
+}
+
+impl Drop for LockGuard {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.path);
+    }
 }
 
 impl StateStore {
     pub fn new() -> Result<Self> {
         let state_dir = resolve_state_dir()?;
-        fs::create_dir_all(&state_dir)?;
-        let db_path = state_dir.join("state.db");
-        let mut conn = Connection::open(db_path)?;
+        if !state_dir.exists() {
+            fs::create_dir_all(&state_dir)?;
+        }
+        let state_file = state_dir.join("panes.json");
         
-        let migrations = Self::migrations();
-        migrations.to_latest(&mut conn).map_err(|e| crate::error::VibeError::Internal(format!("Migration failed: {}", e)))?;
-        
-        Ok(Self { conn })
+        Ok(Self {
+            state_file,
+            panes: Arc::new(Mutex::new(HashMap::new())),
+        })
     }
 
-    fn migrations() -> Migrations<'static> {
-        Migrations::new(vec![
-            M::up("CREATE TABLE IF NOT EXISTS panes (
-                vibe_id TEXT PRIMARY KEY,
-                physical_id TEXT NOT NULL,
-                terminal_type TEXT NOT NULL
-            );"),
-            M::up("ALTER TABLE panes ADD COLUMN role TEXT;
-                   ALTER TABLE panes ADD COLUMN status TEXT;
-                   ALTER TABLE panes ADD COLUMN summary TEXT;
-                   ALTER TABLE panes ADD COLUMN pid INTEGER;
-                   ALTER TABLE panes ADD COLUMN last_heartbeat_at DATETIME;
-                   ALTER TABLE panes ADD COLUMN cwd TEXT;
-                   ALTER TABLE panes ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP;"),
-            M::up("ALTER TABLE panes ADD COLUMN approval_status TEXT DEFAULT 'none';
-                   ALTER TABLE panes ADD COLUMN plan_path TEXT;
-                   ALTER TABLE panes ADD COLUMN rejection_reason TEXT;"),
-        ])
+    fn load(&self) -> Result<()> {
+        if self.state_file.exists() {
+            let content = fs::read_to_string(&self.state_file)?;
+            let mut panes = self.panes.lock().unwrap();
+            *panes = serde_json::from_str(&content).unwrap_or_default();
+        }
+        Ok(())
     }
 
-    pub fn from_conn(mut conn: Connection) -> Self {
-        let migrations = Self::migrations();
-        let _ = migrations.to_latest(&mut conn);
-        Self { conn }
+    fn save(&self) -> Result<()> {
+        let panes = self.panes.lock().unwrap();
+        let content = serde_json::to_string_pretty(&*panes)?;
+        
+        // Atomic write
+        let tmp_file = self.state_file.with_extension("tmp");
+        fs::write(&tmp_file, content)?;
+        fs::rename(tmp_file, &self.state_file)?;
+        
+        Ok(())
+    }
+
+    fn acquire_lock(&self) -> Result<LockGuard> {
+        let lock_file = self.state_file.with_extension("lock");
+        let start = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(5);
+
+        while start.elapsed() < timeout {
+            match fs::OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(&lock_file) {
+                Ok(_) => return Ok(LockGuard { path: lock_file }),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                }
+                Err(e) => return Err(e.into()),
+            }
+        }
+        Err(crate::error::VibeError::Internal("Timeout acquiring state lock".into()))
+    }
+
+    pub fn get_master_pane(&self) -> Result<Option<String>> {
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let panes = self.panes.lock().unwrap();
+        let mut all: Vec<_> = panes.values().collect();
+        all.sort_by_key(|r| r.created_at);
+        Ok(all.first().map(|r| r.physical_id.clone()))
     }
 
     pub fn save_pane(&self, vibe_id: &VibeID, physical_id: &str, terminal_type: &str, cwd: Option<String>) -> Result<()> {
-        self.conn.execute(
-            "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type, cwd) VALUES (?1, ?2, ?3, ?4)",
-            params![vibe_id, physical_id, terminal_type, cwd],
-        )?;
-        Ok(())
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let mut panes = self.panes.lock().unwrap();
+        let record = PaneRecord {
+            vibe_id: vibe_id.clone(),
+            physical_id: physical_id.to_string(),
+            terminal_type: terminal_type.to_string(),
+            role: None,
+            status: Some("spawned".to_string()),
+            summary: None,
+            pid: None,
+            cwd,
+            last_heartbeat_at: Some(chrono::Utc::now()),
+            created_at: chrono::Utc::now(),
+        };
+        panes.insert(vibe_id.clone(), record);
+        drop(panes);
+        self.save()
     }
 
-    pub fn register_pane(&self, info: &RegisterInfo) -> Result<()> {
-        self.conn.execute(
-            "INSERT OR REPLACE INTO panes (vibe_id, physical_id, terminal_type, role, pid, status, cwd) VALUES (?1, ?2, ?3, ?4, ?5, 'registered', ?6)",
-            params![info.vibe_id, info.physical_id, info.terminal_type, info.role, info.pid, info.cwd],
-        )?;
-        Ok(())
+    pub fn register_pane(&self, info: RegisterInfo) -> Result<()> {
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let mut panes = self.panes.lock().unwrap();
+        let record = PaneRecord {
+            vibe_id: info.vibe_id.clone(),
+            physical_id: info.physical_id,
+            terminal_type: info.terminal_type,
+            role: info.role,
+            status: Some("registered".to_string()),
+            summary: None,
+            pid: Some(info.pid),
+            cwd: info.cwd,
+            last_heartbeat_at: Some(chrono::Utc::now()),
+            created_at: chrono::Utc::now(),
+        };
+        panes.insert(info.vibe_id, record);
+        drop(panes);
+        self.save()
     }
 
-    pub fn update_heartbeat(&self, vibe_id: &str, status: &str) -> Result<()> {
-        self.conn.execute(
-            "UPDATE panes SET status = ?1, last_heartbeat_at = CURRENT_TIMESTAMP WHERE vibe_id = ?2",
-            params![status, vibe_id],
-        )?;
-        Ok(())
+    pub fn update_heartbeat(&self, vibe_id: String, status: String) -> Result<()> {
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let mut panes = self.panes.lock().unwrap();
+        if let Some(record) = panes.get_mut(&vibe_id) {
+            record.status = Some(status);
+            record.last_heartbeat_at = Some(chrono::Utc::now());
+        }
+        drop(panes);
+        self.save()
     }
 
-    pub fn update_report(&self, vibe_id: &str, status: &str, summary: &str) -> Result<()> {
-        self.conn.execute(
-            "UPDATE panes SET status = ?1, summary = ?2, last_heartbeat_at = CURRENT_TIMESTAMP WHERE vibe_id = ?3",
-            params![status, summary, vibe_id],
-        )?;
-        Ok(())
-    }
-
-    pub fn update_approval_status(&self, vibe_id: &str, status: &str, plan_path: Option<String>, reason: Option<String>) -> Result<()> {
-        self.conn.execute(
-            "UPDATE panes SET approval_status = ?1, plan_path = ?2, rejection_reason = ?3 WHERE vibe_id = ?4",
-            params![status, plan_path, reason, vibe_id],
-        )?;
-        Ok(())
+    pub fn update_report(&self, vibe_id: String, status: String, summary: String) -> Result<()> {
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let mut panes = self.panes.lock().unwrap();
+        if let Some(record) = panes.get_mut(&vibe_id) {
+            record.status = Some(status);
+            record.summary = Some(summary);
+            record.last_heartbeat_at = Some(chrono::Utc::now());
+        }
+        drop(panes);
+        self.save()
     }
 
     pub fn get_pane(&self, vibe_id: &VibeID) -> Result<Option<String>> {
-        let mut stmt = self.conn.prepare("SELECT physical_id FROM panes WHERE vibe_id = ?1")?;
-        let mut rows = stmt.query(params![vibe_id])?;
-        
-        if let Some(row) = rows.next()? {
-            Ok(Some(row.get(0)?))
-        } else {
-            Ok(None)
-        }
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let panes = self.panes.lock().unwrap();
+        Ok(panes.get(vibe_id).map(|r| r.physical_id.clone()))
     }
 
     pub fn get_vibe_id_by_physical_id(&self, physical_id: &str) -> Result<Option<VibeID>> {
-        let mut stmt = self.conn.prepare("SELECT vibe_id FROM panes WHERE physical_id = ?1")?;
-        let mut rows = stmt.query(params![physical_id])?;
-        
-        if let Some(row) = rows.next()? {
-            Ok(Some(row.get(0)?))
-        } else {
-            Ok(None)
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let panes = self.panes.lock().unwrap();
+        for record in panes.values() {
+            if record.physical_id == physical_id {
+                return Ok(Some(record.vibe_id.clone()));
+            }
         }
+        Ok(None)
     }
 
-    pub fn list_active_panes(&self) -> Result<Vec<(VibeID, String, String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>)>> {
-        let mut stmt = self.conn.prepare("SELECT vibe_id, physical_id, terminal_type, role, status, summary, cwd, approval_status, plan_path, rejection_reason FROM panes")?;
-        let rows = stmt.query_map([], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-                row.get(5)?,
-                row.get(6)?,
-                row.get(7)?,
-                row.get(8)?,
-                row.get(9)?,
-            ))
-        })?;
-        
+    pub fn list_active_panes(&self) -> Result<Vec<WorkerState>> {
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let panes = self.panes.lock().unwrap();
         let mut results = Vec::new();
-        for row in rows {
-            results.push(row?);
+        
+        for record in panes.values() {
+            results.push(WorkerState {
+                vibe_id: record.vibe_id.clone(),
+                physical_id: record.physical_id.clone(),
+                role: record.role.clone(),
+                status: record.status.clone().unwrap_or_default(),
+                summary: record.summary.clone().unwrap_or_default(),
+                last_seen: record.last_heartbeat_at.map(|t| t.to_rfc3339()).unwrap_or_default(),
+                cwd: record.cwd.clone(),
+            });
         }
         Ok(results)
     }
 
     pub fn remove_pane(&self, vibe_id: &VibeID) -> Result<()> {
-        self.conn.execute("DELETE FROM panes WHERE vibe_id = ?1", params![vibe_id])?;
-        Ok(())
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let mut panes = self.panes.lock().unwrap();
+        panes.remove(vibe_id);
+        drop(panes);
+        self.save()
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_database_persistence() -> Result<()> {
-        let conn = Connection::open_in_memory()?;
-        let store = StateStore::from_conn(conn);
-        
-        let v_id = "vibe-1".to_string();
-        store.save_pane(&v_id, "phys-1", "wezterm", None)?;
-        
-        let phys_id = store.get_pane(&v_id)?;
-        assert_eq!(phys_id, Some("phys-1".to_string()));
-        
-        let active = store.list_active_panes()?;
-        assert_eq!(active.len(), 1);
-        assert_eq!(active[0].0, v_id);
-        
-        store.remove_pane(&v_id)?;
-        let phys_id_after = store.get_pane(&v_id)?;
-        assert_eq!(phys_id_after, None);
-        
-        Ok(())
+pub fn ensure_project_vibe() -> Result<PathBuf> {
+    let vibe_dir = resolve_project_vibe_dir()?;
+    if !vibe_dir.exists() {
+        fs::create_dir_all(&vibe_dir)?;
+        fs::create_dir_all(vibe_dir.join("roles"))?;
+        fs::create_dir_all(vibe_dir.join("state"))?;
+        println!("Initialized .vibe directory in {:?}", vibe_dir);
     }
+    Ok(vibe_dir)
 }

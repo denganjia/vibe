@@ -1,14 +1,14 @@
 # Testing Patterns
 
-**Analysis Date:** 2024-03-20
+**Analysis Date:** 2024-04-18
 
 ## Test Framework
 
 **Runner:**
-- Built-in `cargo test`
+- Built-in `cargo test`.
 
 **Assertion Library:**
-- Rust Standard Library (`assert!`, `assert_eq!`)
+- Rust Standard Library (`assert!`, `assert_eq!`).
 
 **Run Commands:**
 ```bash
@@ -19,93 +19,83 @@ cargo test -- --nocapture # See stdout during testing
 ## Test File Organization
 
 **Location:**
-- **Unit Tests:** In-file `mod tests` for logic close to implementation (e.g., `crates/vibe-core/src/ipc/server.rs`).
-- **Integration Tests:** `crates/vibe-core/tests/` directory for cross-module or complex scenario testing.
+- **Unit & Component Tests:** In-file `mod tests` for logic close to implementation.
+- **Example:** `crates/vibe-core/src/ipc/server.rs` contains tests for the Master server and its protocol interaction.
 
 **Naming:**
-- Unit tests: `mod tests`
-- Integration tests: descriptive filename in `tests/` (e.g., `concurrency_test.rs`).
+- Standard Rust `mod tests` pattern with `#[cfg(test)]`.
 
 ## Test Structure
 
 **Async Testing:**
-- Use `#[tokio::test]` for tests involving async code, IPC, or actors.
-- Return `anyhow::Result<()>` or `crate::error::Result<()>` to use `?` in tests.
+- Use `#[tokio::test]` for tests involving IPC, async I/O, or timers.
+- Return `crate::error::Result<()>` to allow use of `?` operator.
 
-**Example (Integration Test):**
+**IPC Integration Pattern:**
 ```rust
 #[tokio::test]
-async fn test_scenario() -> anyhow::Result<()> {
-    // Setup
-    let dir = tempdir()?;
-    let socket = dir.path().join("vibe.sock");
+async fn test_master_interaction() -> Result<()> {
+    let dir = tempdir().unwrap();
+    let socket_path = dir.path().join("vibe.sock");
+    let store = Arc::new(StateStore::new().unwrap());
 
-    // Execution
-    let handle = tokio::spawn(async move { ... });
+    // Spawn server in background task
+    let s_path = socket_path.clone();
+    let store_clone = store.clone();
+    tokio::spawn(async move {
+        let server = MasterServer { ... };
+        server.run().await.unwrap();
+    });
 
-    // Assertion
-    assert!(condition);
-    
-    Ok(())
+    // Wait for server to bind
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    // Connect and interact via UnixStream
+    let stream = UnixStream::connect(&socket_path).await.unwrap();
+    // ... assertions ...
 }
 ```
 
 ## Mocking
 
-**Framework:** None (prefer in-memory or temporary real resources).
+**Framework:** None (prefer temporary real resources).
 
 **Patterns:**
-- **In-memory SQLite:** Use `Connection::open_in_memory()` for database testing.
-- **Temporary Directories:** Use `tempfile::tempdir()` for filesystem and Unix domain socket testing.
+- **Temporary Directories:** Use `tempfile::tempdir()` for filesystem (state files) and Unix domain socket testing.
+- **In-memory State:** While `StateStore` persists to disk, tests usually use a temporary directory to ensure isolation.
 
 ## Fixtures and Factories
 
 **Test Data:**
-- Manual instantiation of protocol structs (e.g., `RegisterInfo`).
+- Manual instantiation of protocol structs (e.g., `RegisterInfo`, `Message`).
+- JSON strings for testing serialization/deserialization.
 
-**Location:**
-- Within test modules or integration test files.
+## Coverage
 
-## Concurrency Testing
-
-**Multi-worker Simulation:**
-- Spawn multiple `tokio` tasks to simulate concurrent workers (`WorkerClient`).
-- Use `tokio::time::sleep` to allow for registration and heartbeat cycles.
-- Verify state by querying the `DbHandle`.
-
-**Master Recovery (Restart):**
-- Spawn the `MasterServer` as a task.
-- Use `AbortHandle` or `abort()` to simulate a crash/restart.
-- Re-spawn the server and verify that clients reconnect and state is preserved/recovered.
-
-## Idle Timeout Testing
-
-**Pattern:**
-- Initialize the server with a short `idle_timeout` (e.g., 500ms).
-- Start the server and `await` its `run()` method directly (not in a spawned task).
-- Measure the elapsed time and verify it is greater than or equal to the timeout.
-- Verify that cleanup (like socket file removal) occurs after the timeout.
-
-**Example:**
-```rust
-let start = Instant::now();
-server.run().await?;
-assert!(start.elapsed() >= Duration::from_millis(500));
-```
+**Requirements:** None enforced.
 
 ## Test Types
 
 **Unit Tests:**
-- Test individual functions or small components (e.g., `VibeID` generation).
+- Test individual functions or small components (e.g., ANSI stripping in `crates/vibe-core/src/os/shell.rs`).
 
-**Integration Tests:**
-- `crates/vibe-core/tests/concurrency_test.rs`: Tests IPC server-client communication, multi-worker registration, and master server restart scenarios.
-- `crates/vibe-core/src/ipc/server.rs` (internal tests): Tests master handshake, message handling, and idle timeout.
+**Integration Tests (In-file):**
+- Located in `crates/vibe-core/src/ipc/server.rs` and `crates/vibe-core/src/ipc/client.rs`.
+- Test the full handshake and message exchange between Master and Worker.
+- Test server lifecycle including idle timeout and socket cleanup.
+
+**State Persistence Tests:**
+- Verify that `StateStore` correctly writes and reads JSON files.
+- Verify atomic write behavior (checking for `.tmp` files during/after failure if possible).
+
+## Common Patterns
+
+**Async Testing:**
+- Always use `tokio::time::sleep` sparingly; prefer waiting for specific state changes if possible.
 
 **Error Testing:**
-- Verify error propagation through `Result` return values.
-- Check specific error variants when necessary.
+- Verify that incorrect messages or connection failures result in expected `VibeError` variants.
 
 ---
 
-*Testing analysis: 2024-03-20*
+*Testing analysis: 2024-04-18*

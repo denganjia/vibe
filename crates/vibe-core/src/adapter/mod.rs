@@ -24,10 +24,13 @@ pub use tmux::TmuxAdapter;
 
 pub trait TerminalAdapter: Send + Sync {
     /// Split the current pane into a new one.
-    fn split(&self, direction: SplitDirection, size: Option<u32>) -> Result<VibeID>;
+    fn split(&self, direction: SplitDirection, size: Option<u32>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID>;
 
-    /// Send keys to the specified pane.
+    /// Send keys to the specified pane (simulates typing and hits Enter).
     fn send_keys(&self, target_id: &VibeID, keys: &str) -> Result<()>;
+
+    /// Inject raw text to the specified pane without automatically hitting Enter.
+    fn inject_text(&self, target_id: &VibeID, text: &str) -> Result<()>;
 
     /// Close the specified pane.
     fn close(&self, target_id: &VibeID) -> Result<()>;
