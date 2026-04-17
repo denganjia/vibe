@@ -1,65 +1,36 @@
 # Vibe-Operator Skill
 
 ## Overview
+Vibe-Operator is the core skill for AI agents to interact with the local development environment using Vibe-CLI. It enables multi-agent orchestration by turning the terminal into a physical orchestration room.
 
-Vibe-Operator is the core skill for AI agents to interact with the local development environment using Vibe-CLI. It enables multi-agent orchestration by turning the terminal into a physical orchestration room, allowing AI to manage panes, execute commands autonomously, and collaborate through structured protocols.
+## Quick Start
+- **INIT**: `vibe_check` -> `vibe_split` -> `vibe_run worker`
+- **PLAN**: `vibe_submit_plan` -> `vibe_query_approval`
+- **EXEC**: `vibe_inject [ID] "[CMD]"`
+- **SYNC**: `vibe_list` -> `vibe_focus [ID]`
 
-The primary goal of this skill is to break the "dimensional wall" between AI reasoning and local execution, providing a safe and efficient way for AI to perform complex development tasks.
-
-## Tool Reference
-
-### 1. Environment & Discovery
-- **vibe_check**
-  - Description: Check if the current terminal environment supports physical orchestration (split/focus).
-  - Parameters: None.
-- **vibe_list**
-  - Description: List all active vibe agents and their current status (role, status, summary, cwd, approval).
-  - Parameters: None.
-
-### 2. Orchestration & Control
-- **vibe_split**
-  - Description: Split the current pane or create a new one externally if local orchestration is not available.
-  - Parameters:
-    - `vertical` (boolean, optional): Split vertically instead of horizontally.
-- **vibe_run**
-  - Description: Run a command in a tracked vibe agent. Spawns an external window if current environment is not supported.
-  - Parameters:
-    - `command` (string, required): The command to execute.
-    - `role` (string, optional): Role for the agent (e.g., "worker", "evaluator").
-- **vibe_focus**
-  - Description: Switch terminal focus to a specific vibe agent's pane.
-  - Parameters:
-    - `vibeId` (string, required): Target vibe ID.
-- **vibe_inject**
-  - Description: Inject a command into a running worker agent.
-  - Parameters:
-    - `vibeId` (string, required): Target vibe ID.
-    - `command` (string, required): The command to inject.
-
-### 3. Workflow & Approvals
-- **vibe_submit_plan**
-  - Description: Submit a multi-step plan for human approval before execution. Blocks execution until approved.
-  - Parameters:
-    - `vibeId` (string, required): The target vibe ID.
-    - `plan` (string, required): The plan in Markdown format.
-- **vibe_query_approval**
-  - Description: Query the approval status of a previously submitted plan.
-  - Parameters:
-    - `vibeId` (string, required): The target vibe ID.
-  - Returns: `status` (pending, approved, rejected) and `reason` (if rejected).
+## Tool Reference (Compact)
+- `vibe_check`: Verify terminal orchestration support.
+- `vibe_list`: List all active vibe agents, roles, and status.
+- `vibe_split [vertical:bool]`: Split current pane or create new one.
+- `vibe_run [command, role]`: Execute command in a new worker agent.
+- `vibe_focus [vibeId]`: Switch terminal focus to a specific agent.
+- `vibe_inject [vibeId, command]`: Inject command into a running agent.
+- `vibe_submit_plan [vibeId, plan]`: Submit MD plan for human approval (blocks).
+- `vibe_query_approval [vibeId]`: Query plan status (pending, approved, rejected).
 
 ## Operating Protocols
-
-Before using this skill, agents must align with the user on environment preferences and safety levels.
-
-- **Roles (角色定义)**: 代理在定义明确的角色内运行（如指挥官 Vibe-Conductor、执行者 Worker、审计者 Evaluator）。详见 [role.md](./role.md)。
-- **SOPs (标准作业程序)**:
-  - [协作 SOP (Collaboration SOP)](./sops/collaboration.md): 定义多模型间的任务分配、标准化报告 (vibe report) 和上下文传递策略。
-  - [验证 SOP (Verification SOP)](./sops/verification.md): 定义任务后的逻辑审计流程、意图对齐检查表及死锁检测规则 (M=3)。
-  - [恢复 SOP (Recovery SOP)](./sops/recovery.md): 定义通过 `vibe_inject` 进行精准干预的故障恢复序列及升级协议。
-  - 其他基础 SOP（审批、编排、状态管理）详见 [sops/](./sops/) 目录。
-- **Templates (工作流模板)**: 针对不同开发模式（如 SDD）的结构化工作流模板。详见 [templates/](./templates/)。
+- **Prompt Variable Injection**:
+  - Syntax: `$[VARIABLE_NAME]`
+  - Protocol: AI must semantically resolve and inject values from history/docs into templates.
+  - Fallback: Ask user if a variable (e.g., `$[REFACTOR_TARGET]`) cannot be resolved.
+- **Roles**: Agents run within defined roles (e.g., Worker, Evaluator). See [role.md](./role.md).
+- **SOPs**:
+  - [协作 SOP](./sops/collaboration.md): Task assignment & reporting.
+  - [验证 SOP](./sops/verification.md): Logic audit & dead-lock detection.
+  - [恢复 SOP](./sops/recovery.md): Precision intervention via `vibe_inject`.
+  - See [sops/](./sops/) for approval, orchestration, and state management.
+- **Templates**: Structured workflows for SDD or Refactoring. See [templates/](./templates/).
 
 ## Metadata
-
-See [SKILL.yaml](./SKILL.yaml) for versioning, dependencies, and routing configurations.
+See [SKILL.yaml](./SKILL.yaml) for versioning and routing.
