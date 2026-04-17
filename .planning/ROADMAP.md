@@ -13,7 +13,7 @@
 - [x] **Phase 9: Interactive Workflow Orchestration** - Implement "Plan-Review-Execute" flow with human-in-the-loop gates.
 - [ ] **Phase 10: Vibe-CLI Core Skill Definition** - Create the foundational skill definition (SKILL.md) for AI agents to understand vibe-cli.
 - [ ] **Phase 11: Multi-model SOP & Verification** - Define collaboration patterns (SOP) and cross-checking paths using vibe state.
-- [ ] **Phase 12: Workflow Templates & Optimization** - Provide ready-to-use workflow templates and optimize skill for model reliability.
+- [x] **Phase 12: Workflow Templates & Optimization** - Provide ready-to-use workflow templates and optimize skill for model reliability. (completed 2026-04-17)
 
 ## Phase Details
 
@@ -92,9 +92,9 @@
   2. In testing, AI models generate valid `vibe-cli` instructions that comply with defined specifications 95%+ of the time.
   3. The skill definition is optimized for token efficiency without sacrificing clarity or command reliability.
 **Plans**: 3 plans
-- [ ] 12-01-PLAN.md — Implement specialized refactoring templates and update skill routing configuration.
-- [ ] 12-02-PLAN.md — Optimize skill definition for token efficiency and document the dynamic variable injection protocol.
-- [ ] 12-03-PLAN.md — Establish reliability benchmarks and verification standards for the Vibe-Operator skill.
+- [x] 12-01-PLAN.md — Implement specialized refactoring templates and update skill routing configuration.
+- [x] 12-02-PLAN.md — Optimize skill definition for token efficiency and document the dynamic variable injection protocol.
+- [x] 12-03-PLAN.md — Establish reliability benchmarks and verification standards for the Vibe-Operator skill.
 
 ## Progress Table
 
@@ -111,4 +111,4 @@
 | 9. Workflow Orchestration | 5/5 | Completed | 2026-04-15 |
 | 10. Vibe-CLI Core Skill | 0/3 | Not started | - |
 | 11. Multi-model SOP | 0/3 | Not started | - |
-| 12. Workflow Templates | 0/3 | Not started | - |
+| 12. Workflow Templates | 3/3 | Complete   | 2026-04-17 |

@@ -10,8 +10,8 @@ The focus of this milestone is creating the "vibe-cli skill" (AI-consumable defi
 - [ ] **SKL-01**: 编写 vibe-cli 核心技能定义 (SKILL.md)，涵盖命令集、窗格管理与 IPC 状态流。
 - [ ] **SKL-02**: 在技能中定义多模型协作模式 (如 Master/Worker/Evaluator) 的标准操作规程 (SOP)。
 - [ ] **SKL-03**: 定义交叉检查 (Cross-checking) 的具体实现路径（如何利用 vibe 状态进行校验）。
-- [ ] **SKL-04**: 提供不同场景下的 Workflow 模版（如代码重构流、自动化测试流）。
-- [ ] **SKL-05**: 验证并优化 Skill 定义，确保模型生成的指令符合 vibe-cli 规范。
+- [x] **SKL-04**: 提供不同场景下的 Workflow 模版（如代码重构流、自动化测试流）。
+- [x] **SKL-05**: 验证并优化 Skill 定义，确保模型生成的指令符合 vibe-cli 规范。
 
 ## Deferred to v4.0+ (General Framework)
 
@@ -37,8 +37,8 @@ These requirements were originally planned for v3.0 but have been deferred to fo
 | SKL-01 | Phase 10 | Pending |
 | SKL-02 | Phase 11 | Pending |
 | SKL-03 | Phase 11 | Pending |
-| SKL-04 | Phase 12 | Pending |
-| SKL-05 | Phase 12 | Pending |
+| SKL-04 | Phase 12 | Complete |
+| SKL-05 | Phase 12 | Complete |
 
 **Coverage:**
 - v1 requirements: 5 total

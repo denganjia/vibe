@@ -9,15 +9,18 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 
 ## Current Position
 
-**Phase**: Phase 10: Vibe-CLI Core Skill Definition
-**Plan**: —
-**Status**: Initializing Milestone v3.0 (Scope Pivot)
-**Last activity**: 2026-04-16 — Milestone v3.0 roadmap revised for skill definition focus
-**Progress**: [░░░░░░░░░░░░░░░░░░░░] 0%
+**Phase**: Phase 12: Workflow Templates & Optimization
+**Plan**: 12-03-PLAN.md
+**Status**: Phase 12 Complete
+**Last activity**: 2026-04-16 — Phase 12 completed (Templates, Optimization, Benchmarks)
+**Progress**: [████████████████████] 100%
 
 ## Accumulated Context
 
 ### Decisions (W2)
+- **Refactoring Workflow**: Adopted 4-stage Analyze-Implement-Test-Review flow for refactoring.
+- **Dynamic Variable Injection**: Used $[VARIABLE] syntax for dynamic template injection.
+- **Token Optimization**: Compressed tool references in SKILL.md to single-line format.
 - **DB Migration**: Integrated `rusqlite_migration`. Current version: M3 (added approval fields).
 - **Packaging**: Standardized on `.tar.gz` (Unix) and `.zip` (Windows) via GitHub Actions.
 - **Plan Storage**: Standardized on Markdown files in the vibe data directory (`plans/` subfolder).
@@ -27,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 - [ ] SKL-01: 编写 vibe-cli 核心技能定义 (SKILL.md) (Phase 10)
 - [ ] SKL-02: 在技能中定义多模型协作模式 SOP (Phase 11)
 - [ ] SKL-03: 定义交叉检查 (Cross-checking) 实现路径 (Phase 11)
-- [ ] SKL-04: 提供不同场景下的 Workflow 模版 (Phase 12)
-- [ ] SKL-05: 验证并优化 Skill 定义 (Phase 12)
+- [x] SKL-04: 提供不同场景下的 Workflow 模版 (Phase 12)
+- [x] SKL-05: 验证并优化 Skill 定义 (Phase 12)
 
 ### Blockers
 - None.
@@ -36,7 +39,7 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Session Continuity
 
 ### Current Intent
-Defining requirements and roadmap for Milestone v3.0 (Pivot).
+Completed Phase 12 (Workflow Templates & Optimization).
 
 ### Next Steps
-1. Execute `/gsd-plan-phase 10` to begin defining the core skill.
+1. Proceed to next phase (likely Phase 13 or similar if planned).
