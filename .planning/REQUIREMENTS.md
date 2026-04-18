@@ -16,14 +16,14 @@
 - [ ] **BUS-06**: 实现多项目隔离的消息路由，基于项目哈希生成的 UDS 路径 (`/tmp/vibe-<hash>.sock`)。
 
 ### 3. 自治代理启动 (Autonomous Spawner)
-- [ ] **BUS-07**: 实现 `vibe spawn --role <ROLE>`。
+- [x] **BUS-07**: 实现 `vibe spawn --role <ROLE>`。
     - 自动通过终端适配器 (Wezterm/Tmux) 拆分窗格。
     - 读取 `.vibe/roles/<ROLE>.md` 作为 Persona。
 - [ ] **BUS-08**: 角色注入协议。在子进程启动时通过 `stdin` 管道注入 Persona 提示词。
 - [ ] **BUS-09**: 实现交互交接。注入完成后，自动将主 `stdin` 桥接到子进程。
 
 ### 4. 项目本地上下文 (Local Context)
-- [ ] **BUS-10**: 建立 `.vibe/` 规范目录结构。
+- [x] **BUS-10**: 建立 `.vibe/` 规范目录结构。
 - [ ] **BUS-11**: 实现跨 Agent 上下文共享。子 Agent 任务完成后自动更新 `.vibe/state/`。
 
 ## Traceability
@@ -36,10 +36,10 @@
 | BUS-04 | Phase 14 | Pending |
 | BUS-05 | Phase 14 | Pending |
 | BUS-06 | Phase 14 | Pending |
-| BUS-07 | Phase 15 | Pending |
+| BUS-07 | Phase 15 | Complete |
 | BUS-08 | Phase 15 | Pending |
 | BUS-09 | Phase 15 | Pending |
-| BUS-10 | Phase 15 | Pending |
+| BUS-10 | Phase 15 | Complete |
 | BUS-11 | Phase 16 | Pending |
 
 **Coverage:**

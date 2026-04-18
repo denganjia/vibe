@@ -37,8 +37,8 @@
 ### Phase 15: 自治代理启动器 (Autonomous Spawner)
 **Goal**: 提供一键启动并指派角色的能力。
 **Requirements**: BUS-07, BUS-08, BUS-09, BUS-10
-**Plans:** 2 plans
-- [ ] 15-01-PLAN.md — 角色模板与项目配置管理系统
+**Plans:** 1/2 plans executed
+- [x] 15-01-PLAN.md — 角色模板与项目配置管理系统
 - [ ] 15-02-PLAN.md — 实现 `vibe spawn` 命令与增强的终端适配器
 **Success Criteria**:
 1. `vibe spawn --role Scanner` 自动开窗。
@@ -63,5 +63,5 @@
 | 12. Workflow Templates | 3/3 | Completed | 2026-04-17 |
 | 13. Cleanup | 1/1 | Completed | 2026-04-17 |
 | 14. Signal Bus | 2/2 | Completed | 2026-04-17 |
-| 15. Spawner | 0/2 | Not started | - |
+| 15. Spawner | 1/2 | In Progress|  |
 | 16. E2E Integration | 0/TBD | Not started | - |
