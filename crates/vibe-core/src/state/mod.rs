@@ -217,13 +217,139 @@ impl StateStore {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProjectConfig {
+    pub agent_command: String,
+}
+
+impl Default for ProjectConfig {
+    fn default() -> Self {
+        Self {
+            agent_command: "a-agent".to_string(),
+        }
+    }
+}
+
+pub struct ConfigManager {
+    config_file: PathBuf,
+}
+
+impl ConfigManager {
+    pub fn new() -> Result<Self> {
+        let vibe_dir = resolve_project_vibe_dir()?;
+        Ok(Self {
+            config_file: vibe_dir.join("config.json"),
+        })
+    }
+
+    pub fn load(&self) -> Result<ProjectConfig> {
+        if self.config_file.exists() {
+            let content = fs::read_to_string(&self.config_file)?;
+            Ok(serde_json::from_str(&content)?)
+        } else {
+            Ok(ProjectConfig::default())
+        }
+    }
+
+    pub fn save(&self, config: &ProjectConfig) -> Result<()> {
+        let content = serde_json::to_string_pretty(config)?;
+        fs::write(&self.config_file, content)?;
+        Ok(())
+    }
+}
+
+pub struct RoleManager {
+    roles_dir: PathBuf,
+}
+
+impl RoleManager {
+    pub fn new() -> Result<Self> {
+        let vibe_dir = resolve_project_vibe_dir()?;
+        Ok(Self {
+            roles_dir: vibe_dir.join("roles"),
+        })
+    }
+
+    pub fn get_persona(&self, role_name: &str) -> Result<String> {
+        let role_file = self.roles_dir.join(format!("{}.md", role_name));
+        if role_file.exists() {
+            Ok(fs::read_to_string(role_file)?)
+        } else {
+            Err(crate::error::VibeError::Internal(format!("Role template not found: {}", role_name)))
+        }
+    }
+}
+
 pub fn ensure_project_vibe() -> Result<PathBuf> {
     let vibe_dir = resolve_project_vibe_dir()?;
     if !vibe_dir.exists() {
         fs::create_dir_all(&vibe_dir)?;
-        fs::create_dir_all(vibe_dir.join("roles"))?;
-        fs::create_dir_all(vibe_dir.join("state"))?;
         println!("Initialized .vibe directory in {:?}", vibe_dir);
     }
+
+    let roles_dir = vibe_dir.join("roles");
+    if !roles_dir.exists() {
+        fs::create_dir_all(&roles_dir)?;
+    }
+
+    // Initialize default roles if empty
+    if let Ok(entries) = fs::read_dir(&roles_dir) {
+        if entries.count() == 0 {
+            let default_roles = [
+                ("Conductor", "# Conductor\nYou are the project orchestrator. You are responsible for planning tasks, managing the workflow, and ensuring that all agents are working towards the common goal."),
+                ("Worker", "# Worker\nYou are a task executor. You are responsible for completing specific technical tasks as assigned by the Conductor."),
+                ("Evaluator", "# Evaluator\nYou are a quality assurance agent. You are responsible for reviewing code, testing functionality, and providing feedback to ensure high quality output."),
+            ];
+            for (name, content) in default_roles {
+                fs::write(roles_dir.join(format!("{}.md", name)), content)?;
+            }
+        }
+    }
+
+    let state_dir = vibe_dir.join("state");
+    if !state_dir.exists() {
+        fs::create_dir_all(&state_dir)?;
+    }
+
+    let config_file = vibe_dir.join("config.json");
+    if !config_file.exists() {
+        let config = ProjectConfig::default();
+        let content = serde_json::to_string_pretty(&config)?;
+        fs::write(config_file, content)?;
+    }
+
     Ok(vibe_dir)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use std::env;
+
+    #[test]
+    fn test_vibe_initialization() -> Result<()> {
+        let original_dir = env::current_dir()?;
+        let dir = tempdir()?;
+        env::set_current_dir(dir.path())?;
+        
+        let vibe_dir = ensure_project_vibe()?;
+        assert!(vibe_dir.exists());
+        assert!(vibe_dir.join("roles").exists());
+        assert!(vibe_dir.join("roles/Conductor.md").exists());
+        assert!(vibe_dir.join("roles/Worker.md").exists());
+        assert!(vibe_dir.join("roles/Evaluator.md").exists());
+        assert!(vibe_dir.join("config.json").exists());
+        
+        let config_manager = ConfigManager::new()?;
+        let config = config_manager.load()?;
+        assert_eq!(config.agent_command, "a-agent");
+        
+        let role_manager = RoleManager::new()?;
+        let persona = role_manager.get_persona("Conductor")?;
+        assert!(persona.contains("Conductor"));
+        
+        env::set_current_dir(original_dir)?;
+        Ok(())
+    }
 }
