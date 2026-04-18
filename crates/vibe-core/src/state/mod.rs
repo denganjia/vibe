@@ -101,7 +101,7 @@ impl StateStore {
         Ok(all.first().map(|r| r.physical_id.clone()))
     }
 
-    pub fn save_pane(&self, vibe_id: &VibeID, physical_id: &str, terminal_type: &str, cwd: Option<String>) -> Result<()> {
+    pub fn save_pane(&self, vibe_id: &VibeID, physical_id: &str, terminal_type: &str, role: Option<String>, cwd: Option<String>) -> Result<()> {
         let _lock = self.acquire_lock()?;
         self.load()?;
         let mut panes = self.panes.lock().unwrap();
@@ -109,7 +109,7 @@ impl StateStore {
             vibe_id: vibe_id.clone(),
             physical_id: physical_id.to_string(),
             terminal_type: terminal_type.to_string(),
-            role: None,
+            role,
             status: Some("spawned".to_string()),
             summary: None,
             pid: None,
