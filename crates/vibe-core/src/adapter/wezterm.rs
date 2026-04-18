@@ -31,15 +31,13 @@ impl TerminalAdapter for WezTermAdapter {
         }
 
         // Add env vars if any
-        for (k, v) in env_vars {
-            // WezTerm CLI doesn't directly support --env for split-pane.
-            // But we can wrap the shell command if needed.
-            // For now, we'll try to set them via the process environment, 
-            // though that might not propagate to the new pane's shell unless we wrap it.
-            // BETTER: Use 'wezterm cli spawn' with --env if we want a new window/tab,
-            // but for split-pane we might need to inject them into the child shell.
-            // For simplicity and to satisfy the requirement, we will try to pass them
-            // though it's terminal dependent.
+        if !env_vars.is_empty() {
+            cmd.arg("--");
+            cmd.arg("env");
+            for (k, v) in env_vars {
+                cmd.arg(format!("{}={}", k, v));
+            }
+            cmd.arg("bash");
         }
 
         let output = cmd.output()?;
