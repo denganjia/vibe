@@ -9,7 +9,7 @@
 - [x] **Phase 10-12: Vibe-Operator Skills** - 已定义的 AI 操作规程与模板。
 - [x] **Phase 13: 架构清理与瘦身 (Cleanup)** - 移除 MCP、审批拦截和沉重的 DB 逻辑。
 - [x] **Phase 14: 信号总线实现 (Bus Core)** - 实现 `vibe signal` 与 `vibe wait` 异步通信机制。
-- [ ] **Phase 15: 自治代理启动器 (Autonomous Spawner)** - 实现 `vibe spawn` 及从 `.vibe/roles/` 注入角色。
+- [x] **Phase 15: 自治代理启动器 (Autonomous Spawner)** - 实现 `vibe spawn` 及从 `.vibe/roles/` 注入角色。 (completed 2026-04-18)
 - [ ] **Phase 16: 全流程集成测试 (E2E Integration)** - 验证多代理自治闭环流。
 
 ## Phase Details
@@ -37,9 +37,9 @@
 ### Phase 15: 自治代理启动器 (Autonomous Spawner)
 **Goal**: 提供一键启动并指派角色的能力。
 **Requirements**: BUS-07, BUS-08, BUS-09, BUS-10
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 - [x] 15-01-PLAN.md — 角色模板与项目配置管理系统
-- [ ] 15-02-PLAN.md — 实现 `vibe spawn` 命令与增强的终端适配器
+- [x] 15-02-PLAN.md — 实现 `vibe spawn` 命令与增强的终端适配器
 **Success Criteria**:
 1. `vibe spawn --role Scanner` 自动开窗。
 2. 子窗格中自动启动 AI CLI 并注入 `.vibe/roles/Scanner.md`。
@@ -63,5 +63,5 @@
 | 12. Workflow Templates | 3/3 | Completed | 2026-04-17 |
 | 13. Cleanup | 1/1 | Completed | 2026-04-17 |
 | 14. Signal Bus | 2/2 | Completed | 2026-04-17 |
-| 15. Spawner | 1/2 | In Progress|  |
+| 15. Spawner | 2/2 | Complete   | 2026-04-18 |
 | 16. E2E Integration | 0/TBD | Not started | - |
