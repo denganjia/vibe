@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use vibe_core::adapter::{SplitDirection, TerminalAdapter, WezTermAdapter, TmuxAdapter};
+use vibe_core::adapter::{SplitDirection, WindowTarget, TerminalAdapter, WezTermAdapter, TmuxAdapter};
 use vibe_core::env::{detect_current_terminal, TerminalType};
 use vibe_core::state::{StateStore, ensure_project_vibe};
 use tokio::process::Command;
@@ -80,7 +80,7 @@ enum Commands {
         /// Target vibe ID
         vibe_id: String,
     },
-    /// Spawn a new agent role in a new pane
+    /// Spawn a new agent role in a new tab or pane
     Spawn {
         /// Role name (e.g., Worker, Conductor)
         role: String,
@@ -88,6 +88,10 @@ enum Commands {
         /// Override agent command
         #[arg(long)]
         cmd: Option<String>,
+
+        /// Spawn in a new pane instead of a new tab
+        #[arg(long)]
+        pane: bool,
     },
     /// Report task summary back to master
     Report {
@@ -134,12 +138,12 @@ async fn main() -> anyhow::Result<()> {
             let mut env_vars = std::collections::HashMap::new();
             env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
             
-            let vibe_id = adapter.split(split_dir, None, env_vars)?;
+            let vibe_id = adapter.spawn(WindowTarget::Pane(split_dir), None, env_vars)?;
             let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
             store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), None, cwd)?;
             println!("Split new pane: {}", vibe_id);
         }
-        Commands::Spawn { role, cmd } => {
+        Commands::Spawn { role, cmd, pane } => {
             ensure_project_vibe()?;
             let terminal_type = detect_current_terminal();
             let adapter: Box<dyn TerminalAdapter> = match terminal_type {
@@ -167,29 +171,32 @@ async fn main() -> anyhow::Result<()> {
                 None => "0".to_string(),
             };
             
-            // 4. Split and inject
+            // 4. Spawn and inject
             let mut env_vars = std::collections::HashMap::new();
             env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
             
-            let vibe_id = adapter.split(SplitDirection::Horizontal, None, env_vars)?;
+            let target = if pane {
+                WindowTarget::Pane(SplitDirection::Horizontal)
+            } else {
+                WindowTarget::Tab
+            };
 
-            // Give the new pane a moment to initialize its TTY
+            let vibe_id = adapter.spawn(target, Some(&agent_command), env_vars)?;
+
+            // Give the new context a moment to initialize its TTY and start the agent
             std::thread::sleep(std::time::Duration::from_secs(2));
 
-            // Inject persona
-
+            // Inject persona directly into the agent
             adapter.inject_text(&vibe_id, &persona)?;
             adapter.inject_text(&vibe_id, "\n\n")?;
-            
-            // Start agent command
-            adapter.send_keys(&vibe_id, &agent_command)?;
             
             // 5. Register in state
             let store = StateStore::new()?;
             let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
             store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.clone()), cwd)?;
             
-            println!("Spawned {} in pane: {}", role, vibe_id);
+            let target_type = if pane { "pane" } else { "tab" };
+            println!("Spawned {} in {}: {}", role, target_type, vibe_id);
         }
         Commands::List { json } => {
             let store = StateStore::new()?;

@@ -1,4 +1,4 @@
-use crate::adapter::{SplitDirection, TerminalAdapter, TerminalMetadata, VibeID};
+use crate::adapter::{SplitDirection, WindowTarget, TerminalAdapter, TerminalMetadata, VibeID};
 use crate::error::{Result, VibeError};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
@@ -14,44 +14,57 @@ struct WezTermPane {
 }
 
 impl TerminalAdapter for WezTermAdapter {
-    fn split(&self, direction: SplitDirection, _size: Option<u32>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
+    fn spawn(&self, target: WindowTarget, command: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
         // Try to detect if we are inside WezTerm
         let is_inside = std::env::var("WEZTERM_PANE").is_ok();
 
         let mut cmd = Command::new("wezterm");
-        cmd.args(["cli", "split-pane"]);
+        cmd.arg("cli");
 
-        match direction {
-            SplitDirection::Horizontal => cmd.arg("--right"),
-            SplitDirection::Vertical => cmd.arg("--bottom"),
-        };
-
-        if !is_inside {
-            cmd.arg("--top-level");
+        match target {
+            WindowTarget::Pane(direction) => {
+                cmd.arg("split-pane");
+                match direction {
+                    SplitDirection::Horizontal => cmd.arg("--right"),
+                    SplitDirection::Vertical => cmd.arg("--bottom"),
+                };
+                if !is_inside {
+                    cmd.arg("--top-level");
+                }
+            }
+            WindowTarget::Tab => {
+                cmd.arg("spawn");
+            }
         }
 
-        // Add env vars if any
-        if !env_vars.is_empty() {
+        // Build the final command to run in the new context
+        if !env_vars.is_empty() || command.is_some() {
             cmd.arg("--");
-            cmd.arg("env");
-            for (k, v) in env_vars {
-                cmd.arg(format!("{}={}", k, v));
+            if !env_vars.is_empty() {
+                cmd.arg("env");
+                for (k, v) in env_vars {
+                    cmd.arg(format!("{}={}", k, v));
+                }
             }
-            cmd.arg("bash");
+            if let Some(c) = command {
+                // Wrap command in bash to keep it open after execution if needed
+                cmd.arg("bash");
+                cmd.arg("-c");
+                cmd.arg(format!("{}; exec bash", c));
+            } else {
+                cmd.arg("bash");
+            }
         }
 
         let output = cmd.output()?;
         if !output.status.success() {
-            // If split-pane failed because no window is available, try to just spawn a new wezterm window
+            // If it failed because no window is available, try to just spawn a new wezterm window
             let output = Command::new("wezterm")
                 .arg("start")
                 .output();
             
             match output {
                 Ok(_) => {
-                    // This is tricky as we don't get the pane-id immediately.
-                    // For Wave 2, we'll just return a placeholder or wait.
-                    // But for now, let's try to get the newly created pane id if possible.
                     return Err(VibeError::TerminalDetectionFailed(
                         "No active WezTerm window found. Started a new one, please retry in a supported environment.".to_string()
                     ));

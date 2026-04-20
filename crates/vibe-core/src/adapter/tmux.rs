@@ -1,27 +1,38 @@
-use crate::adapter::{SplitDirection, TerminalAdapter, TerminalMetadata, VibeID};
+use crate::adapter::{SplitDirection, WindowTarget, TerminalAdapter, TerminalMetadata, VibeID};
 use crate::error::{Result, VibeError};
 use std::process::Command;
 
 pub struct TmuxAdapter;
 
 impl TerminalAdapter for TmuxAdapter {
-    fn split(&self, direction: SplitDirection, _size: Option<u32>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
+    fn spawn(&self, target: WindowTarget, command: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
         let mut cmd = Command::new("tmux");
-        cmd.args(["split-window", "-P", "-F", "#{pane_id}"]);
-
-        match direction {
-            SplitDirection::Horizontal => cmd.arg("-h"),
-            SplitDirection::Vertical => cmd.arg("-v"),
-        };
+        
+        match target {
+            WindowTarget::Pane(direction) => {
+                cmd.args(["split-window", "-P", "-F", "#{pane_id}"]);
+                match direction {
+                    SplitDirection::Horizontal => cmd.arg("-h"),
+                    SplitDirection::Vertical => cmd.arg("-v"),
+                };
+            }
+            WindowTarget::Tab => {
+                cmd.args(["new-window", "-P", "-F", "#{pane_id}"]);
+            }
+        }
 
         for (k, v) in env_vars {
             cmd.arg("-e").arg(format!("{}={}", k, v));
         }
 
+        if let Some(c) = command {
+            cmd.arg(format!("{}; exec bash", c));
+        }
+
         let output = cmd.output()?;
         if !output.status.success() {
             return Err(VibeError::TerminalDetectionFailed(format!(
-                "Tmux split-window failed: {}",
+                "Tmux spawn failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
         }

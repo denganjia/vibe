@@ -8,6 +8,12 @@ pub enum SplitDirection {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WindowTarget {
+    Pane(SplitDirection),
+    Tab,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TerminalMetadata {
     pub pane_id: String,
     pub window_id: String,
@@ -23,8 +29,8 @@ pub mod tmux;
 pub use tmux::TmuxAdapter;
 
 pub trait TerminalAdapter: Send + Sync {
-    /// Split the current pane into a new one.
-    fn split(&self, direction: SplitDirection, size: Option<u32>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID>;
+    /// Spawn a new terminal context (Pane or Tab) with an optional initial command.
+    fn spawn(&self, target: WindowTarget, command: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID>;
 
     /// Send keys to the specified pane (simulates typing and hits Enter).
     fn send_keys(&self, target_id: &VibeID, keys: &str) -> Result<()>;
