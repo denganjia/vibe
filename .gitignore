@@ -1,1 +1,4 @@
 /target
+.planning/debug/
+.planning/phases/*/*-DISCUSS-CHECKPOINT.json
+e2e_test_workdir/
