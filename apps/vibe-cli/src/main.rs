@@ -192,7 +192,15 @@ async fn main() -> anyhow::Result<()> {
                 WindowTarget::Tab
             };
 
-            let vibe_id = adapter.spawn(target, Some(&agent_command), env_vars)?;
+            // Generate a unique vibe_id first if possible, or use the one returned by spawn
+            // For now, we'll use a placeholder and update it if the adapter supports it, 
+            // but the most reliable way is to let spawn return it and then we have a slight chicken-egg problem.
+            // Better: Let's use the physical ID returned by spawn AS the VIBE_ID for now to ensure consistency.
+            let vibe_id = adapter.spawn(target, Some(&agent_command), env_vars.clone())?;
+            
+            // Re-inject the correct VIBE_ID into the already running process env if we could, 
+            // but since we can't easily change env of a running process, we will pass it 
+            // via the injection persona or rely on the state store lookup by physical ID.
 
             // 5. Register in state BEFORE injection to prevent race conditions
             let store = StateStore::new()?;
@@ -202,7 +210,8 @@ async fn main() -> anyhow::Result<()> {
             // Give the new context a moment to initialize its TTY and start the agent
             std::thread::sleep(std::time::Duration::from_secs(2));
 
-            // Inject persona directly into the agent
+            // Inject VIBE_ID and persona directly into the agent
+            adapter.inject_text(&vibe_id, &format!("export VIBE_ID={}\n", vibe_id))?;
             adapter.inject_text(&vibe_id, &persona)?;
             adapter.inject_text(&vibe_id, "\n\n")?;
             
@@ -405,15 +414,20 @@ async fn main() -> anyhow::Result<()> {
         Commands::Report { status, message } => {
             let store = StateStore::new()?;
             
-            // Identify current environment to get our physical_id
-            let physical_id = match detect_current_terminal() {
-                Some(TerminalType::WezTerm) => WezTermAdapter.get_metadata()?.pane_id,
-                Some(TerminalType::Tmux) => TmuxAdapter.get_metadata()?.pane_id,
-                None => std::process::id().to_string(),
-            };
+            // 1. Try to get vibe_id from environment variable first (most reliable)
+            let vibe_id = if let Ok(vid) = std::env::var("VIBE_ID") {
+                vid
+            } else {
+                // 2. Fallback to physical ID detection
+                let physical_id = match detect_current_terminal() {
+                    Some(TerminalType::WezTerm) => WezTermAdapter.get_metadata()?.pane_id,
+                    Some(TerminalType::Tmux) => TmuxAdapter.get_metadata()?.pane_id,
+                    None => std::process::id().to_string(),
+                };
 
-            let vibe_id = store.get_vibe_id_by_physical_id(&physical_id)?
-                .ok_or_else(|| anyhow::anyhow!("Could not identify Vibe ID for current pane"))?;
+                store.get_vibe_id_by_physical_id(&physical_id)?
+                    .ok_or_else(|| anyhow::anyhow!("Could not identify Vibe ID for current pane. Environment VIBE_ID not set and physical ID {} not found.", physical_id))?
+            };
 
             store.update_report(vibe_id.clone(), status, message)?;
             println!("Report submitted for worker {}.", vibe_id);
