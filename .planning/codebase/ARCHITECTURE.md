@@ -1,96 +1,106 @@
 # Architecture
 
-**Analysis Date:** 2025-03-04
+**Analysis Date:** 2024-12-16
 
 ## Pattern Overview
 
-**Overall:** Centralized Agent Bus with JSON State Persistence.
+**Overall:** CLI-driven Terminal Orchestrator with Adapter Abstraction.
 
 **Key Characteristics:**
-- **Master/Worker Topology:** A central master process (`vibe master`) coordinates multiple worker processes running in terminal panes.
-- **Decoupled Communication:** Agents communicate via an NDJSON-based IPC bus rather than direct process calls.
-- **Stateless CLI:** The CLI interacts with either the `StateStore` (for queries) or the `MasterServer` (for actions), keeping the CLI logic focused on UI/UX.
+- **Adapter-based Terminal Integration:** Uses a trait-based system to support multiple terminal multiplexers (WezTerm, Tmux).
+- **Decoupled Core Logic:** Core functionality is isolated in a separate crate (`vibe-core`) from the CLI interface (`vibe-cli`).
+- **File-based State Management:** Uses JSON files with file-level locking for multi-process safe state tracking.
+- **In-band Signaling:** Communicates between the master and worker panes using terminal text injection (stdin/stdout markers).
 
 ## Layers
 
-**IPC Layer (AI Agent Bus):**
-- Purpose: Provides the communication backbone for the entire system.
-- Location: `crates/vibe-core/src/ipc/`
-- Contains: `protocol.rs` (Message types), `server.rs` (Master), `client.rs` (Worker).
-- Depends on: `tokio`, `serde_json`, `tokio-util` (codec).
-- Used by: `vibe-cli` (Master/Run/Inject/Report commands).
+**CLI Layer:**
+- Purpose: High-level user interface and command orchestration.
+- Location: `apps/vibe-cli`
+- Contains: Command-line interface definitions, TUI implementation, and high-level workflow logic.
+- Depends on: `vibe-core`
+- Used by: End users
 
-**State Layer:**
-- Purpose: Persists pane and agent state to disk.
-- Location: `crates/vibe-core/src/state/`
-- Contains: `StateStore` (JSON-based persistence).
-- Depends on: `serde`, `serde_json`, `std::fs`.
-- Used by: `MasterServer` for tracking workers, CLI for listing and status.
+**Core Layer:**
+- Purpose: Domain logic and system abstractions.
+- Location: `crates/vibe-core`
+- Contains: Terminal adapters, state persistence logic, environment detection, and OS abstractions.
+- Depends on: Standard library, tokio, serde
+- Used by: `vibe-cli`
+
+**Protocol/IPC Layer:**
+- Purpose: Standardized message structures for inter-agent communication.
+- Location: `crates/vibe-core/src/ipc`
+- Contains: Message enums and NDJSON serialization logic.
+- Depends on: `serde`
+- Used by: Core and CLI layers for signaling.
 
 **Adapter Layer:**
-- Purpose: Abstracts terminal multiplexer commands (WezTerm, Tmux).
-- Location: `crates/vibe-core/src/adapter/`
-- Contains: `wezterm.rs`, `tmux.rs`.
-- Depends on: CLI tools of respective multiplexers.
-- Used by: CLI for splitting, focusing, and metadata retrieval.
+- Purpose: Abstracting terminal multiplexer commands.
+- Location: `crates/vibe-core/src/adapter`
+- Contains: `TerminalAdapter` trait and implementations for WezTerm and Tmux.
+- Depends on: `std::process::Command`
+- Used by: Core and CLI layers.
 
 ## Data Flow
 
-**Worker Registration:**
-1. `vibe run` starts a `WorkerClient`.
-2. Client connects to `MasterServer` socket (resolved via `crates/vibe-core/src/env.rs`).
-3. Client sends `Register` message with `vibe_id`, `pid`, and metadata.
-4. `MasterServer` updates `StateStore` and broadcasts new state to all `Subscribers`.
+**Command Execution Flow:**
 
-**Command Injection (Intent):**
-1. `vibe inject <vibe_id> <cmd>` sends `ExecuteIntent` to `MasterServer`.
-2. `MasterServer` lookups the connection for `<vibe_id>`.
-3. `MasterServer` forwards the intent to the corresponding `WorkerClient`.
-4. `WorkerClient` executes the command and sends `Ack` or `Report` back.
+1. User invokes `vibe <command>` in `vibe-cli`.
+2. `vibe-cli` parses the command and detects the current terminal type using `vibe-core::env`.
+3. `vibe-cli` instantiates the appropriate `TerminalAdapter` (e.g., `WezTermAdapter`).
+4. Logic in `vibe-cli` calls adapter methods (e.g., `split`, `send_keys`) to manipulate the terminal environment.
+5. `StateStore` in `vibe-core` records the changes (e.g., new pane ID, role) to `.vibe/state/panes.json`.
 
-**State Management:**
-- **In-Memory:** `MasterServer` maintains an `Arc<Mutex<HashMap>>` of active worker connections and their states.
-- **Persistence:** `StateStore` writes state to `panes.json` on every change using atomic write-and-rename.
-- **Actors:** The previous Actor pattern for DB/State has been **removed** in favor of direct shared-state management within the async Master server for simplicity and performance.
+**Signaling Flow:**
+
+1. Master process calls `vibe signal <name> <payload>`.
+2. `vibe-cli` identifies the target pane (usually the Master ID from env or state).
+3. `TerminalAdapter::inject_text` sends a formatted signal string `[vibe-signal:...]` into the target pane's stdin.
+4. The worker process (often `vibe wait`) reads stdin, detects the marker, and parses the payload.
 
 ## Key Abstractions
 
-**`Message` (IPC Protocol):**
-- Purpose: Uniform message format for all agent communications.
-- Examples: `crates/vibe-core/src/ipc/protocol.rs`
-- Pattern: Enums with `#[serde(tag = "type")]` for NDJSON serialization.
-
-**`TerminalAdapter`:**
-- Purpose: Common interface for terminal operations.
+**TerminalAdapter:**
+- Purpose: Provides a unified interface for terminal multiplexer operations like splitting panes and sending keys.
 - Examples: `crates/vibe-core/src/adapter/mod.rs`
-- Pattern: Trait-based abstraction.
+- Pattern: Strategy/Adapter Pattern.
+
+**StateStore:**
+- Purpose: Manages persistent state of active panes, roles, and status.
+- Examples: `crates/vibe-core/src/state/mod.rs`
+- Pattern: Repository Pattern with file-based persistence.
+
+**VibeID:**
+- Purpose: An abstraction over physical terminal pane IDs to identify vibe-managed workers uniquely.
+- Examples: `crates/vibe-core/src/adapter/mod.rs`
 
 ## Entry Points
 
-**CLI Main:**
+**vibe-cli main:**
 - Location: `apps/vibe-cli/src/main.rs`
-- Triggers: User commands via `clap`.
-- Responsibilities: Command parsing, orchestration, starting master/workers.
+- Triggers: User CLI execution.
+- Responsibilities: Routing CLI commands to appropriate core logic and managing terminal adapters.
 
-**Master Server Loop:**
-- Location: `crates/vibe-core/src/ipc/server.rs`
-- Triggers: `vibe master` or automatic spawn by `vibe run`.
-- Responsibilities: Connection management, message routing, state persistence.
+**TUI Status Dashboard:**
+- Location: `apps/vibe-cli/src/tui.rs`
+- Triggers: `vibe status`
+- Responsibilities: Real-time monitoring of agent states using `ratatui`.
 
 ## Error Handling
 
-**Strategy:** Centralized `VibeError` enum in `vibe-core`.
+**Strategy:** Centralized error enum with `thiserror` for library-level errors and `anyhow` for CLI-level context.
 
 **Patterns:**
-- `Result<T, VibeError>` used throughout core.
-- `anyhow::Result` used in CLI for convenient top-level error reporting.
+- `VibeError` enum in `crates/vibe-core/src/error.rs` covers IO, terminal detection, and serialization errors.
+- Automatic conversion from `std::io::Error` and `serde_json::Error` using `#[from]`.
 
 ## Cross-Cutting Concerns
 
-**Logging:** Output is directed to `.vibe/logs/<vibe_id>.log` for worker tasks.
-**Validation:** CLI arguments validated by `clap`; IPC messages validated by `serde`.
-**Authentication:** Relies on OS-level permissions for Unix Domain Sockets/Named Pipes.
+**Logging:** Currently primarily relies on stdout/stderr and file-based state updates. Logs directory is resolved via `resolve_logs_dir` in `crates/vibe-core/src/env.rs`.
+**Validation:** CLI arguments validated by `clap`.
+**State Locking:** Inter-process locking for state files using `.lock` files in `crates/vibe-core/src/state/mod.rs`.
 
 ---
 
-*Architecture analysis: 2025-03-04*
+*Architecture analysis: 2024-12-16*
