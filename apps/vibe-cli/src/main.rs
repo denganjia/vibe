@@ -162,7 +162,19 @@ async fn main() -> anyhow::Result<()> {
             // 2. Determine agent command
             let config_manager = vibe_core::state::ConfigManager::new()?;
             let config = config_manager.load()?;
-            let agent_command = cmd.unwrap_or(config.agent_command);
+            let mut agent_command = cmd.unwrap_or(config.agent_command);
+
+            // Smart detection if command is not found or is default
+            if which::which(&agent_command).is_err() {
+                let fallbacks = ["claude", "gemini", "codex"];
+                for fb in fallbacks {
+                    if which::which(fb).is_ok() {
+                        println!("Configured agent '{}' not found. Falling back to '{}'.", agent_command, fb);
+                        agent_command = fb.to_string();
+                        break;
+                    }
+                }
+            }
             
             // 3. Get master pane ID
             let master_pane_id = match terminal_type {

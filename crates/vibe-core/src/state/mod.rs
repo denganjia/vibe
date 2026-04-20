@@ -225,7 +225,7 @@ pub struct ProjectConfig {
 impl Default for ProjectConfig {
     fn default() -> Self {
         Self {
-            agent_command: "a-agent".to_string(),
+            agent_command: "claude".to_string(),
         }
     }
 }
