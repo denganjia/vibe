@@ -79,12 +79,12 @@ impl TerminalAdapter for WezTermAdapter {
 
     fn send_keys(&self, target_id: &VibeID, keys: &str) -> Result<()> {
         self.inject_text(target_id, keys)?;
-        self.inject_text(target_id, "\n")
+        self.inject_text(target_id, "\r")
     }
 
     fn inject_text(&self, target_id: &VibeID, text: &str) -> Result<()> {
         let output = Command::new("wezterm")
-            .args(["cli", "send-text", "--pane-id", target_id])
+            .args(["cli", "send-text", "--no-paste", "--pane-id", target_id])
             .arg(text)
             .output()?;
 

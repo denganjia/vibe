@@ -208,7 +208,7 @@ async fn main() -> anyhow::Result<()> {
 
             // Inject persona directly into the agent
             adapter.inject_text(&physical_id, &persona)?;
-            adapter.inject_text(&physical_id, "\n\n")?;
+            adapter.inject_text(&physical_id, "\r\r")?;
             
             // Explicitly send Enter to trigger agent processing
             adapter.send_keys(&physical_id, "")?;
