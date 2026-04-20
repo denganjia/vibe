@@ -48,6 +48,8 @@
 ### Phase 16: 全流程集成测试 (E2E Integration)
 **Goal**: 验证完整的自治开发工作流。
 **Requirements**: BUS-11
+**Plans:** 1 plan
+- [ ] 16-01-PLAN.md — Verify full autonomous flow via script
 **Success Criteria**:
 1. 主 Agent 启动 Scanner。
 2. Scanner 完成扫描后发送信号。
@@ -64,4 +66,4 @@
 | 13. Cleanup | 1/1 | Completed | 2026-04-17 |
 | 14. Signal Bus | 2/2 | Completed | 2026-04-17 |
 | 15. Spawner | 2/2 | Complete   | 2026-04-18 |
-| 16. E2E Integration | 0/TBD | Not started | - |
+| 16. E2E Integration | 0/1 | Not started | - |
