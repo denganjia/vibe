@@ -162,18 +162,17 @@ async fn main() -> anyhow::Result<()> {
             // 2. Determine agent command
             let config_manager = vibe_core::state::ConfigManager::new()?;
             let config = config_manager.load()?;
-            let mut agent_command = cmd.unwrap_or(config.agent_command);
+            
+            let mut agent_command = cmd.unwrap_or_else(|| {
+                config.roles.get(&role)
+                    .cloned()
+                    .unwrap_or(config.default_command.clone())
+            });
 
-            // Smart detection if command is not found or is default
-            if which::which(&agent_command).is_err() {
-                let fallbacks = ["claude", "gemini", "codex"];
-                for fb in fallbacks {
-                    if which::which(fb).is_ok() {
-                        println!("Configured agent '{}' not found. Falling back to '{}'.", agent_command, fb);
-                        agent_command = fb.to_string();
-                        break;
-                    }
-                }
+            // Ensure auto-approve mode for common CLIs to prevent hanging
+            if (agent_command.starts_with("claude") || agent_command.starts_with("gemini") || agent_command.starts_with("codex")) 
+                && !agent_command.contains(" -y") && !agent_command.contains(" --yolo") {
+                agent_command.push_str(" -y");
             }
             
             // 3. Get master pane ID

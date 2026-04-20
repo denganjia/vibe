@@ -219,13 +219,20 @@ impl StateStore {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectConfig {
-    pub agent_command: String,
+    pub roles: HashMap<String, String>,
+    pub default_command: String,
 }
 
 impl Default for ProjectConfig {
     fn default() -> Self {
+        let mut roles = HashMap::new();
+        roles.insert("Conductor".to_string(), "claude -y".to_string());
+        roles.insert("Worker".to_string(), "claude -y".to_string());
+        roles.insert("Evaluator".to_string(), "claude -y".to_string());
+        
         Self {
-            agent_command: "claude".to_string(),
+            roles,
+            default_command: "claude -y".to_string(),
         }
     }
 }
