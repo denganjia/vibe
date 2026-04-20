@@ -1,106 +1,104 @@
 # Architecture
 
-**Analysis Date:** 2024-12-16
+**Analysis Date:** 2024-05-23
 
 ## Pattern Overview
 
-**Overall:** CLI-driven Terminal Orchestrator with Adapter Abstraction.
+**Overall:** Client-Server CLI with Terminal Multiplexer Abstraction
 
 **Key Characteristics:**
-- **Adapter-based Terminal Integration:** Uses a trait-based system to support multiple terminal multiplexers (WezTerm, Tmux).
-- **Decoupled Core Logic:** Core functionality is isolated in a separate crate (`vibe-core`) from the CLI interface (`vibe-cli`).
-- **File-based State Management:** Uses JSON files with file-level locking for multi-process safe state tracking.
-- **In-band Signaling:** Communicates between the master and worker panes using terminal text injection (stdin/stdout markers).
+- **Terminal Agnostic:** Core logic interacts with terminal multiplexers (WezTerm, Tmux) via a unified `TerminalAdapter` trait.
+- **Stateful Agent Tracking:** Maintains a persistent mapping between logical agent IDs (`VIBE_ID`) and physical terminal resource IDs.
+- **Environment-Injected Identity:** Uses environment variables to pass identity and context to spawned agent processes.
 
 ## Layers
 
-**CLI Layer:**
-- Purpose: High-level user interface and command orchestration.
-- Location: `apps/vibe-cli`
-- Contains: Command-line interface definitions, TUI implementation, and high-level workflow logic.
+**CLI Application:**
+- Purpose: Entry point for user commands and TUI.
+- Location: `apps/vibe-cli/`
+- Contains: Command parsing, TUI rendering, high-level orchestration logic.
 - Depends on: `vibe-core`
 - Used by: End users
 
-**Core Layer:**
-- Purpose: Domain logic and system abstractions.
-- Location: `crates/vibe-core`
-- Contains: Terminal adapters, state persistence logic, environment detection, and OS abstractions.
-- Depends on: Standard library, tokio, serde
+**Core Library:**
+- Purpose: Shared logic and abstractions.
+- Location: `crates/vibe-core/`
+- Contains: Terminal adapters, state management, IPC protocols, environment handling.
+- Depends on: External crates (`ratatui`, `serde`, `uuid`, etc.)
 - Used by: `vibe-cli`
 
-**Protocol/IPC Layer:**
-- Purpose: Standardized message structures for inter-agent communication.
-- Location: `crates/vibe-core/src/ipc`
-- Contains: Message enums and NDJSON serialization logic.
-- Depends on: `serde`
-- Used by: Core and CLI layers for signaling.
-
-**Adapter Layer:**
-- Purpose: Abstracting terminal multiplexer commands.
-- Location: `crates/vibe-core/src/adapter`
-- Contains: `TerminalAdapter` trait and implementations for WezTerm and Tmux.
-- Depends on: `std::process::Command`
-- Used by: Core and CLI layers.
+**State Management:**
+- Purpose: Persistence of agent metadata and workspace configuration.
+- Location: `crates/vibe-core/src/state/`
+- Contains: `StateStore` (agent tracking), `ConfigManager` (project settings), `RoleManager` (agent personas).
+- Depends on: Filesystem
 
 ## Data Flow
 
-**Command Execution Flow:**
+**Agent Spawning Flow:**
 
-1. User invokes `vibe <command>` in `vibe-cli`.
-2. `vibe-cli` parses the command and detects the current terminal type using `vibe-core::env`.
-3. `vibe-cli` instantiates the appropriate `TerminalAdapter` (e.g., `WezTermAdapter`).
-4. Logic in `vibe-cli` calls adapter methods (e.g., `split`, `send_keys`) to manipulate the terminal environment.
-5. `StateStore` in `vibe-core` records the changes (e.g., new pane ID, role) to `.vibe/state/panes.json`.
+1. `vibe-cli` generates a unique `VIBE_ID` (e.g., `v-a1b2c3d4`).
+2. `vibe-cli` calls `adapter.spawn(target, command, env_vars)` where `env_vars` includes `VIBE_ID`.
+3. The `TerminalAdapter` (WezTerm or Tmux) creates a new `WindowTarget` (Pane or Tab) and returns its `physical_id`.
+4. `StateStore` saves the mapping of `VIBE_ID` to `physical_id` and other metadata (role, cwd) in `.vibe/state/panes.json`.
+5. The spawned process (agent) reads `VIBE_ID` from its environment.
 
-**Signaling Flow:**
+**Agent Reporting Flow:**
 
-1. Master process calls `vibe signal <name> <payload>`.
-2. `vibe-cli` identifies the target pane (usually the Master ID from env or state).
-3. `TerminalAdapter::inject_text` sends a formatted signal string `[vibe-signal:...]` into the target pane's stdin.
-4. The worker process (often `vibe wait`) reads stdin, detects the marker, and parses the payload.
+1. Agent executes `vibe report --status <status> --message <msg>`.
+2. `vibe-cli` (report command) reads `VIBE_ID` from the environment.
+3. If missing, it queries the `TerminalAdapter` for the current `physical_id` and looks up the `VIBE_ID` in `StateStore`.
+4. `StateStore` updates the `PaneRecord` in `panes.json` with the new status and heartbeat.
+
+**State Management:**
+- Handled by `StateStore` in `crates/vibe-core/src/state/mod.rs`.
+- Uses a file-based lock (`panes.lock`) to ensure atomic updates to `panes.json`.
+- State is reloaded before each read/write operation to ensure consistency across multiple processes.
 
 ## Key Abstractions
 
 **TerminalAdapter:**
-- Purpose: Provides a unified interface for terminal multiplexer operations like splitting panes and sending keys.
-- Examples: `crates/vibe-core/src/adapter/mod.rs`
-- Pattern: Strategy/Adapter Pattern.
+- Purpose: Abstract interface for terminal multiplexers.
+- Examples: `crates/vibe-core/src/adapter/wezterm.rs`, `crates/vibe-core/src/adapter/tmux.rs`
+- Pattern: Strategy Pattern
 
-**StateStore:**
-- Purpose: Manages persistent state of active panes, roles, and status.
-- Examples: `crates/vibe-core/src/state/mod.rs`
-- Pattern: Repository Pattern with file-based persistence.
+**WindowTarget:**
+- Purpose: Defines where a new agent process should be spawned.
+- Location: `crates/vibe-core/src/adapter/mod.rs`
+- Variants: `Pane(SplitDirection)` or `Tab`.
 
 **VibeID:**
-- Purpose: An abstraction over physical terminal pane IDs to identify vibe-managed workers uniquely.
-- Examples: `crates/vibe-core/src/adapter/mod.rs`
+- Purpose: Logical identifier for an agent instance, stable even if physical terminal IDs change or are reused.
+- Location: `crates/vibe-core/src/adapter/mod.rs` (type alias to `String`)
 
 ## Entry Points
 
-**vibe-cli main:**
+**CLI Main:**
 - Location: `apps/vibe-cli/src/main.rs`
-- Triggers: User CLI execution.
-- Responsibilities: Routing CLI commands to appropriate core logic and managing terminal adapters.
+- Triggers: User execution of `vibe` command.
+- Responsibilities: Subcommand routing, adapter initialization, state orchestration.
 
-**TUI Status Dashboard:**
+**TUI:**
 - Location: `apps/vibe-cli/src/tui.rs`
-- Triggers: `vibe status`
-- Responsibilities: Real-time monitoring of agent states using `ratatui`.
+- Triggers: `vibe monitor` or `vibe ui`.
+- Responsibilities: Real-time visualization of agent statuses and interactive management.
 
 ## Error Handling
 
-**Strategy:** Centralized error enum with `thiserror` for library-level errors and `anyhow` for CLI-level context.
+**Strategy:** Result-based error propagation using `anyhow` (in CLI) and custom `VibeError` (in core).
 
 **Patterns:**
-- `VibeError` enum in `crates/vibe-core/src/error.rs` covers IO, terminal detection, and serialization errors.
-- Automatic conversion from `std::io::Error` and `serde_json::Error` using `#[from]`.
+- Custom `Result` type in `crates/vibe-core/src/error.rs`.
+- `?` operator for concise propagation.
+- `anyhow::Result` in `apps/vibe-cli` for flexible error context.
 
 ## Cross-Cutting Concerns
 
-**Logging:** Currently primarily relies on stdout/stderr and file-based state updates. Logs directory is resolved via `resolve_logs_dir` in `crates/vibe-core/src/env.rs`.
+**Logging:** Currently uses `println!` and `eprintln!` for CLI output.
 **Validation:** CLI arguments validated by `clap`.
-**State Locking:** Inter-process locking for state files using `.lock` files in `crates/vibe-core/src/state/mod.rs`.
+**Authentication:** N/A (Local execution model).
+**Path Resolution:** Centralized in `crates/vibe-core/src/env.rs` to handle project-local `.vibe` directories and global state.
 
 ---
 
-*Architecture analysis: 2024-12-16*
+*Architecture analysis: 2024-05-23*

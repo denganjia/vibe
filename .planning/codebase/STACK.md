@@ -1,23 +1,70 @@
-# STACK.md
+# Technology Stack
 
-## Languages & Runtime
-- **Rust (v1.82+ or 2024 Edition)**: Core language for both the CLI app and the core library.
-- **Bash/PowerShell**: Used for installation scripts (`scripts/install.sh`, `scripts/install.ps1`) and E2E testing.
+**Analysis Date:** 2025-02-12
 
-## Frameworks & Key Dependencies
-- **Tokio**: Asynchronous runtime for IPC and signal handling.
-- **Clap (v4.5)**: CLI argument parsing with derive macros.
-- **Ratatui (v0.29)** & **Crossterm (v0.28)**: Terminal UI for the dashboard (`vibe status`).
-- **Serde / Serde_JSON**: Data serialization/deserialization for configuration and IPC.
-- **Anyhow / Thiserror**: Structured error handling.
-- **Dirs / Which**: OS-specific path resolution and tool detection.
-- **Windows-sys**: Low-level Windows API bindings for job objects and process management.
+## Languages
+
+**Primary:**
+- Rust 2024 - Core logic, CLI, and terminal orchestration. Used in `apps/vibe-cli/` and `crates/vibe-core/`.
+
+**Secondary:**
+- Bash - Installation and E2E testing scripts (`scripts/install.sh`, `scripts/e2e_test.sh`).
+- PowerShell - Windows installation script (`scripts/install.ps1`).
+
+## Runtime
+
+**Environment:**
+- Tokio 1.0 - Asynchronous runtime for CLI operations and IPC tasks.
+
+**Package Manager:**
+- Cargo - Standard Rust package manager.
+- Lockfile: `Cargo.lock` present.
+
+## Frameworks
+
+**Core:**
+- Clap 4.5 - Command-line argument parsing with derive macros.
+- Ratatui 0.29 - TUI framework for the dashboard (`vibe status`).
+
+**Testing:**
+- Cargo Test - Unit and integration tests in `crates/vibe-core/src/` and `crates/vibe-core/tests/`.
+- Custom E2E - Shell-based testing in `scripts/e2e_test.sh`.
+
+**Build/Dev:**
+- Windows-sys 0.59 - Low-level Windows API for process management.
+- Daemonize 0.5.0 - Unix-specific daemonization support.
+
+## Key Dependencies
+
+**Critical:**
+- `uuid` 1.8 - Generates unique `vibe_id` for tracking terminal panes independently of physical IDs.
+- `serde` / `serde_json` 1.0 - Serialization for project state and "Stateless Bus" messages.
+- `crossterm` 0.28 - Low-level terminal handling and event-stream support.
+
+**Infrastructure:**
+- `anyhow` / `thiserror` - Unified error management across the workspace.
+- `chrono` 0.4 - Time tracking for heartbeats and state updates.
+- `tokio-util` 0.7 - Used for framing/codecs in communication protocols.
+- `dirs` 5.0 - Cross-platform configuration directory resolution.
 
 ## Configuration
-- **.planning/**: GSD-specific project management directory.
-- **.vibe/**: Project-local configuration for agents, roles, and state.
-- **Cargo.toml**: Workspace-level Rust dependency management.
 
-## Build System
-- **Cargo**: Standard Rust build and package manager.
-- **GitHub Actions**: Release workflow configured in `.github/workflows/release.yml`.
+**Environment:**
+- Local environment variables (e.g., `VIBE_ID`, `VIBE_MASTER_ID`).
+- Configuration files in `.vibe/`.
+
+**Build:**
+- `Cargo.toml` (Workspace and crate level).
+
+## Platform Requirements
+
+**Development:**
+- Rust Toolchain (stable).
+- Terminal with WezTerm or Tmux installed.
+
+**Production:**
+- Cross-platform support for Windows (via `windows-sys`) and Unix (via `daemonize`).
+
+---
+
+*Stack analysis: 2025-02-12*

@@ -1,6 +1,6 @@
 # Codebase Structure
 
-**Analysis Date:** 2024-12-16
+**Analysis Date:** 2024-05-23
 
 ## Directory Layout
 
@@ -8,119 +8,110 @@
 vibe-cli/
 ├── apps/
 │   └── vibe-cli/           # Main CLI Application
-│       ├── src/
-│       │   ├── main.rs      # CLI Entry point & Command routing
-│       │   └── tui.rs       # Terminal UI implementation
-│       └── Cargo.toml
+│       └── src/
+│           ├── main.rs     # CLI Entry point & Subcommands
+│           └── tui.rs      # Ratatui-based Monitoring UI
 ├── crates/
-│   └── vibe-core/          # Core Library Shared Logic
-│       ├── src/
-│       │   ├── adapter/     # Terminal Multiplexer Adapters
-│       │   ├── env.rs       # Environment & Path Resolution
-│       │   ├── error.rs     # Error Definitions
-│       │   ├── ipc/         # Communication Protocols
-│       │   ├── lib.rs       # Crate Root
-│       │   ├── os/          # Platform Specific Helpers
-│       │   └── state/       # Persistence & Configuration
-│       └── Cargo.toml
-├── .vibe/                   # Local Project Configuration (Example)
-│   ├── config.json
-│   ├── roles/               # Agent Persona Templates
-│   └── state/               # Persistence state & locks
-├── scripts/                 # Installation & Test Scripts
-├── docs/                    # Documentation
-└── Cargo.toml               # Workspace Configuration
+│   └── vibe-core/          # Core logic and abstractions
+│       └── src/
+│           ├── adapter/    # Terminal Multiplexer Adapters
+│           ├── ipc/        # Communication Protocols
+│           ├── os/         # OS-specific helpers
+│           ├── state/      # Persistence & Management
+│           ├── env.rs      # Path & Environment Resolution
+│           ├── error.rs    # Error types
+│           └── lib.rs      # Core Library Entry
+├── .vibe/                  # Project-local runtime data
+│   ├── config.json         # Project Configuration
+│   ├── roles/              # Role templates (Markdown)
+│   └── state/
+│       └── panes.json      # Active Agent State Mapping
+└── scripts/                # Installation & Test scripts
 ```
 
 ## Directory Purposes
 
-**apps/vibe-cli:**
-- Purpose: Contains the end-user CLI tool.
-- Contains: CLI command definitions, TUI logic.
-- Key files: `src/main.rs`, `src/tui.rs`.
+**apps/vibe-cli/:**
+- Purpose: The user-facing command-line tool.
+- Contains: Command logic, UI rendering, and orchestration of core features.
+- Key files: `apps/vibe-cli/src/main.rs` (subcommands), `apps/vibe-cli/src/tui.rs` (UI).
 
-**crates/vibe-core:**
-- Purpose: Shared logic and system abstractions used by the CLI.
-- Contains: Terminal adapters, state management, IPC protocols.
-- Key files: `src/lib.rs`, `src/adapter/mod.rs`, `src/state/mod.rs`.
+**crates/vibe-core/src/adapter/:**
+- Purpose: Abstraction layer for different terminal multiplexers.
+- Contains: `TerminalAdapter` trait and implementations for WezTerm and Tmux.
+- Key files: `crates/vibe-core/src/adapter/mod.rs`, `crates/vibe-core/src/adapter/wezterm.rs`, `crates/vibe-core/src/adapter/tmux.rs`.
 
-**crates/vibe-core/src/adapter:**
-- Purpose: Abstractions for different terminal multiplexers.
-- Contains: WezTerm and Tmux implementations.
-- Key files: `mod.rs` (trait definition), `wezterm.rs`, `tmux.rs`.
+**crates/vibe-core/src/state/:**
+- Purpose: Persistent storage for agent metadata and project configuration.
+- Contains: `StateStore` for tracking agents, `ConfigManager` for project settings, `RoleManager` for persona management.
+- Key files: `crates/vibe-core/src/state/mod.rs`.
 
-**crates/vibe-core/src/state:**
-- Purpose: Persistence layer for the project.
-- Contains: State file management, locking mechanisms, role management.
-- Key files: `mod.rs`.
+**crates/vibe-core/src/ipc/:**
+- Purpose: Logic for inter-process communication between agents and the controller.
+- Contains: Protocol definitions and messaging structures.
+- Key files: `crates/vibe-core/src/ipc/protocol.rs`.
 
-**crates/vibe-core/src/os:**
-- Purpose: Low-level operating system and shell interactions.
-- Contains: Shell detection, process management helpers.
-- Key files: `windows.rs`, `unix.rs`.
-
-**.vibe:**
+**.vibe/:**
 - Purpose: Project-specific configuration and runtime state.
-- Contains: Persona files, configuration JSON, and active pane state.
-- Key files: `config.json`, `state/panes.json`.
+- Contains: JSON state files and Markdown persona templates.
+- Key files: `.vibe/state/panes.json`, `.vibe/config.json`.
 
 ## Key File Locations
 
 **Entry Points:**
-- `apps/vibe-cli/src/main.rs`: CLI entry point.
-- `crates/vibe-core/src/lib.rs`: Library entry point.
+- `apps/vibe-cli/src/main.rs`: Main CLI entry point.
 
 **Configuration:**
-- `Cargo.toml`: Workspace configuration and shared dependencies.
-- `.vibe/config.json`: Project-level agent settings.
+- `Cargo.toml`: Workspace definition and dependencies.
+- `.vibe/config.json`: Default commands and project-level settings.
 
 **Core Logic:**
-- `crates/vibe-core/src/adapter/mod.rs`: `TerminalAdapter` trait definition.
-- `crates/vibe-core/src/state/mod.rs`: `StateStore` implementation.
+- `crates/vibe-core/src/adapter/mod.rs`: Definition of `WindowTarget` and `TerminalAdapter`.
+- `crates/vibe-core/src/state/mod.rs`: `StateStore` implementation for agent tracking.
+- `crates/vibe-core/src/env.rs`: Workspace and state directory resolution.
 
 **Testing:**
-- `crates/vibe-core/tests/`: Integration tests.
+- `crates/vibe-core/tests/`: Integration tests for core logic.
 - `scripts/e2e_test.sh`: End-to-end testing script.
 
 ## Naming Conventions
 
 **Files:**
-- Rust files: `snake_case.rs` (e.g., `terminal_adapter.rs`).
-- Documentation: `UPPERCASE.md` in `.planning/codebase`, `UPPERCASE.md` or `PascalCase.md` elsewhere.
+- Rust Source: `snake_case.rs`
+- Configuration: `snake_case.json`
+- Roles: `PascalCase.md`
 
 **Directories:**
-- Package directories: `kebab-case` (e.g., `vibe-cli`).
-- Rust modules: `snake_case` (e.g., `vibe-core/src/adapter`).
+- Rust Crates/Apps: `kebab-case`
+- Modules: `snake_case`
 
 ## Where to Add New Code
 
-**New Feature (CLI command):**
-- Primary code: `apps/vibe-cli/src/main.rs` (add to `Commands` enum and match block).
-- Core logic: Add corresponding methods to `vibe-core` if reusable.
+**New CLI Subcommand:**
+- Primary code: `apps/vibe-cli/src/main.rs` (add to `Commands` enum and `match` block).
 
 **New Terminal Adapter:**
-- Implementation: Create `crates/vibe-core/src/adapter/your_term.rs` and implement `TerminalAdapter`.
-- Registration: Export it in `crates/vibe-core/src/adapter/mod.rs`.
+- Implementation: `crates/vibe-core/src/adapter/[name].rs`.
+- Registration: Add to `TerminalAdapter` trait and update factory logic in `vibe-cli`.
 
-**New IPC Message:**
-- Implementation: `crates/vibe-core/src/ipc/protocol.rs` (add to `Message` enum).
+**New State Metadata:**
+- Implementation: Update `PaneRecord` in `crates/vibe-core/src/state/mod.rs`.
 
 **Utilities:**
-- OS/Shell helpers: `crates/vibe-core/src/os/`.
-- General helpers: `crates/vibe-core/src/env.rs`.
+- Shared helpers: `crates/vibe-core/src/os/` (for OS-level) or `crates/vibe-core/src/lib.rs` (for general).
 
 ## Special Directories
 
-**target/:**
-- Purpose: Compiled artifacts.
-- Generated: Yes
-- Committed: No
+**.vibe/:**
+- Purpose: Stores project-local state and roles.
+- Generated: Yes (via `vibe init` or implicitly on spawn).
+- Committed: `config.json` and `roles/` should be committed; `state/` should be ignored.
 
-**.vibe/state/:**
-- Purpose: Active runtime state (panes, reports).
-- Generated: Yes (at runtime).
-- Committed: No (usually ignored via .gitignore, but local to project).
+**target/:**
+- Purpose: Rust build artifacts.
+- Generated: Yes.
+- Committed: No.
 
 ---
 
-*Structure analysis: 2024-12-16*
+*Structure analysis: 2024-05-23*
