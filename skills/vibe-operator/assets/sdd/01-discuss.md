@@ -9,7 +9,8 @@ Establish a clear understanding of the requirements and constraints with the hum
 3. **Establish Constraints**:
    - Identify technical limitations.
    - Confirm desired tech stack (see `role.md` initialization).
-4. **Outcome**: A verbal or written alignment on the scope of work.
+4. **Report**: Use `vibe report` to log the initial alignment status.
+5. **Outcome**: A verbal or written alignment on the scope of work.
 
 ## Next Step
 Transition to `02-research.md` to explore the codebase and technical feasibility.

@@ -9,13 +9,14 @@ Design the implementation steps and obtain human approval.
    - Specify files to be modified or created.
    - Define success criteria for each step.
 2. **Submit for Approval**:
-   - Call `vibe_submit_plan` with the drafted plan in Markdown format.
+   - Print the plan to the terminal.
+   - Call `vibe report --status blocked --message "Waiting for approval of implementation plan"` to update state.
+   - Call `vibe wait approved` to wait for the user's signal.
 3. **Wait for Feedback**:
-   - Call `vibe_query_approval` periodically.
-   - Respond to any human comments or rejections by revising the plan.
+   - If the user signals `rejected`, revise the plan based on feedback and re-request approval.
 
 ## SOP Reference
 - Follow [Human-in-the-Loop Approval SOP](../../sops/approval.md) for the submission and feedback cycle.
 
 ## Next Step
-Transition to `04-implement.md` once the plan is **Approved**.
+Transition to `04-implement.md` once the signal `approved` is received.
