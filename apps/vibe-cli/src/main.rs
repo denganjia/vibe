@@ -183,8 +183,12 @@ async fn main() -> anyhow::Result<()> {
             };
             
             // 4. Spawn and inject
+            // Pre-generate a unique vibe_id to inject as an environment variable
+            let vibe_id = format!("v-{}", uuid::Uuid::new_v4().to_string()[..8].to_string());
+            
             let mut env_vars = std::collections::HashMap::new();
             env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
+            env_vars.insert("VIBE_ID".to_string(), vibe_id.clone());
             
             let target = if pane {
                 WindowTarget::Pane(SplitDirection::Horizontal)
@@ -192,31 +196,22 @@ async fn main() -> anyhow::Result<()> {
                 WindowTarget::Tab
             };
 
-            // Generate a unique vibe_id first if possible, or use the one returned by spawn
-            // For now, we'll use a placeholder and update it if the adapter supports it, 
-            // but the most reliable way is to let spawn return it and then we have a slight chicken-egg problem.
-            // Better: Let's use the physical ID returned by spawn AS the VIBE_ID for now to ensure consistency.
-            let vibe_id = adapter.spawn(target, Some(&agent_command), env_vars.clone())?;
-            
-            // Re-inject the correct VIBE_ID into the already running process env if we could, 
-            // but since we can't easily change env of a running process, we will pass it 
-            // via the injection persona or rely on the state store lookup by physical ID.
+            let physical_id = adapter.spawn(target, Some(&agent_command), env_vars)?;
 
-            // 5. Register in state BEFORE injection to prevent race conditions
+            // 5. Register in state using both our generated vibe_id and the physical_id
             let store = StateStore::new()?;
             let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
-            store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.clone()), cwd)?;
+            store.save_pane(&vibe_id, &physical_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.clone()), cwd)?;
 
             // Give the new context a moment to initialize its TTY and start the agent
             std::thread::sleep(std::time::Duration::from_secs(2));
 
-            // Inject VIBE_ID and persona directly into the agent
-            adapter.inject_text(&vibe_id, &format!("export VIBE_ID={}\n", vibe_id))?;
-            adapter.inject_text(&vibe_id, &persona)?;
-            adapter.inject_text(&vibe_id, "\n\n")?;
+            // Inject persona directly into the agent
+            adapter.inject_text(&physical_id, &persona)?;
+            adapter.inject_text(&physical_id, "\n\n")?;
             
             // Explicitly send Enter to trigger agent processing
-            adapter.send_keys(&vibe_id, "")?;
+            adapter.send_keys(&physical_id, "")?;
             
             let target_type = if pane { "pane" } else { "tab" };
             println!("Spawned {} in {}: {}", role, target_type, vibe_id);
