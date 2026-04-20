@@ -194,6 +194,11 @@ async fn main() -> anyhow::Result<()> {
 
             let vibe_id = adapter.spawn(target, Some(&agent_command), env_vars)?;
 
+            // 5. Register in state BEFORE injection to prevent race conditions
+            let store = StateStore::new()?;
+            let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
+            store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.clone()), cwd)?;
+
             // Give the new context a moment to initialize its TTY and start the agent
             std::thread::sleep(std::time::Duration::from_secs(2));
 
@@ -201,10 +206,8 @@ async fn main() -> anyhow::Result<()> {
             adapter.inject_text(&vibe_id, &persona)?;
             adapter.inject_text(&vibe_id, "\n\n")?;
             
-            // 5. Register in state
-            let store = StateStore::new()?;
-            let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
-            store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.clone()), cwd)?;
+            // Explicitly send Enter to trigger agent processing
+            adapter.send_keys(&vibe_id, "")?;
             
             let target_type = if pane { "pane" } else { "tab" };
             println!("Spawned {} in {}: {}", role, target_type, vibe_id);

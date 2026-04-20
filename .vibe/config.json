@@ -1,8 +1,9 @@
 {
-  "roles": {
-    "Conductor": "claude -y",
-    "Worker": "gemini -y",
-    "Evaluator": "claude -y"
-  },
-  "default_command": "claude -y"
+	"roles": {
+		"Conductor": "claude --dangerously-skip-permissions",
+		"Worker": "gemini -y",
+		"Evaluator": "claude --dangerously-skip-permissions",
+		"Scanner": "codex --yolo"
+	},
+	"default_command": "claude --dangerously-skip-permissions"
 }

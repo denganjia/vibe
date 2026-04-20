@@ -303,9 +303,9 @@ pub fn ensure_project_vibe() -> Result<PathBuf> {
     if let Ok(entries) = fs::read_dir(&roles_dir) {
         if entries.count() == 0 {
             let default_roles = [
-                ("Conductor", "# Conductor\nYou are the project orchestrator. You are responsible for planning tasks, managing the workflow, and ensuring that all agents are working towards the common goal."),
-                ("Worker", "# Worker\nYou are a task executor. You are responsible for completing specific technical tasks as assigned by the Conductor."),
-                ("Evaluator", "# Evaluator\nYou are a quality assurance agent. You are responsible for reviewing code, testing functionality, and providing feedback to ensure high quality output."),
+                ("Conductor", "# Conductor\nYou are the project orchestrator. Use `vibe spawn` to create workers. You MUST use `vibe wait <signal_name>` to synchronize with workers. Do not guess their status; wait for the physical signal."),
+                ("Worker", "# Worker\nYou are a technical executor. \n\nCRITICAL: You MUST use the `vibe` tool to communicate with the Conductor.\n- To report progress: `vibe report --status running --message \"[Your Progress]\"` (DO THIS OFTEN)\n- To signal completion: `vibe signal [task_name]_done` (MANDATORY)\n- To ask for help: `vibe signal need_clarification` \n\nDo not just print these commands; physically execute them in your shell."),
+                ("Evaluator", "# Evaluator\nYou are a quality assurance agent. Verify the physical changes made by Workers. Use `vibe report` to submit your audit findings."),
             ];
             for (name, content) in default_roles {
                 fs::write(roles_dir.join(format!("{}.md", name)), content)?;
