@@ -10,7 +10,7 @@
 - [x] **Phase 13: 架构清理与瘦身 (Cleanup)** - 移除 MCP、审批拦截和沉重的 DB 逻辑。
 - [x] **Phase 14: 信号总线实现 (Bus Core)** - 实现 `vibe signal` 与 `vibe wait` 异步通信机制。
 - [x] **Phase 15: 自治代理启动器 (Autonomous Spawner)** - 实现 `vibe spawn` 及从 `.vibe/roles/` 注入角色。 (completed 2026-04-18)
-- [ ] **Phase 16: 全流程集成测试 (E2E Integration)** - 验证多代理自治闭环流。
+- [x] **Phase 16: 全流程集成测试 (E2E Integration)** - 验证多代理自治闭环流。
 
 ## Phase Details
 
@@ -49,7 +49,7 @@
 **Goal**: 验证完整的自治开发工作流。
 **Requirements**: BUS-11
 **Plans:** 1 plan
-- [ ] 16-01-PLAN.md — Verify full autonomous flow via script
+- [x] 16-01-PLAN.md — Verify full autonomous flow via script
 **Success Criteria**:
 1. 主 Agent 启动 Scanner。
 2. Scanner 完成扫描后发送信号。
@@ -66,4 +66,4 @@
 | 13. Cleanup | 1/1 | Completed | 2026-04-17 |
 | 14. Signal Bus | 2/2 | Completed | 2026-04-17 |
 | 15. Spawner | 2/2 | Complete   | 2026-04-18 |
-| 16. E2E Integration | 0/1 | Not started | - |
+| 16. E2E Integration | 1/1 | Complete | 2026-04-20 |

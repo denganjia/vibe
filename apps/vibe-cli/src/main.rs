@@ -172,8 +172,12 @@ async fn main() -> anyhow::Result<()> {
             env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
             
             let vibe_id = adapter.split(SplitDirection::Horizontal, None, env_vars)?;
-            
+
+            // Give the new pane a moment to initialize its TTY
+            std::thread::sleep(std::time::Duration::from_secs(2));
+
             // Inject persona
+
             adapter.inject_text(&vibe_id, &persona)?;
             adapter.inject_text(&vibe_id, "\n\n")?;
             
