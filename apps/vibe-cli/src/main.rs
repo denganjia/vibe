@@ -352,7 +352,7 @@ async fn main() -> anyhow::Result<()> {
             let adapter = get_adapter(Some(terminal_type));
 
             let cmd_str = if let Some(dir) = cwd {
-                format!("cd {} && {}", dir, command)
+                format!("cd -- {} && {}", shell_quote(&dir), command)
             } else {
                 command
             };
@@ -470,6 +470,10 @@ fn get_adapter(terminal_type: Option<TerminalType>) -> Box<dyn TerminalAdapter> 
             Box::new(WezTermAdapter)
         }
     }
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\"'\"'"))
 }
 
 async fn perform_silent_cleanup(adapter: &dyn TerminalAdapter, store: &StateStore) -> anyhow::Result<()> {
