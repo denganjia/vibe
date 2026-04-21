@@ -491,11 +491,12 @@ async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapte
     });
 
     // Ensure auto-approve mode for common CLIs to prevent hanging, but ONLY if no override was provided
-    if cmd_override.is_none() {
-        let is_claude = agent_command.starts_with("claude");
-        let is_gemini = agent_command.starts_with("gemini");
-        let is_codex = agent_command.starts_with("codex");
+    let is_claude = agent_command.starts_with("claude");
+    let is_gemini = agent_command.starts_with("gemini");
+    let is_codex = agent_command.starts_with("codex");
+    let is_known_cli = is_claude || is_gemini || is_codex;
 
+    if cmd_override.is_none() {
         if is_claude && !agent_command.contains(" --dangerously-skip-permissions") {
             if let Some(first_space) = agent_command.find(' ') {
                 agent_command.insert_str(first_space, " --dangerously-skip-permissions");
@@ -508,6 +509,11 @@ async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapte
             } else {
                 agent_command.push_str(" -y");
             }
+        }
+        
+        // Pass the persona as the initial positional prompt argument to the CLI
+        if is_known_cli {
+            agent_command = format!("{} \"$VIBE_PERSONA\"", agent_command);
         }
     }
     
@@ -525,6 +531,7 @@ async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapte
     let mut env_vars = std::collections::HashMap::new();
     env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
     env_vars.insert("VIBE_ID".to_string(), vibe_id.clone());
+    env_vars.insert("VIBE_PERSONA".to_string(), persona.clone());
     
     let target = if pane {
         WindowTarget::Pane(SplitDirection::Horizontal)
@@ -538,15 +545,14 @@ async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapte
     let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
     store.save_pane(&vibe_id, &physical_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.to_string()), cwd)?;
 
-    // Give the new context a moment to initialize its TTY and start the agent
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
-    // Inject persona directly into the agent
-    adapter.inject_text(&physical_id, &persona)?;
-    adapter.inject_text(&physical_id, "\r\r")?;
-    
-    // Explicitly send Enter to trigger agent processing
-    adapter.send_keys(&physical_id, "")?;
+    // We no longer need to sleep and inject keystrokes for known CLIs because they receive the persona natively!
+    if !is_known_cli || cmd_override.is_some() {
+        println!("Waiting 3s for custom agent TTY initialization before injecting persona...");
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        adapter.inject_text(&physical_id, &persona)?;
+        adapter.inject_text(&physical_id, "\r\r")?;
+        adapter.send_keys(&physical_id, "")?;
+    }
     
     let target_type = if pane { "pane" } else { "tab" };
     println!("Spawned {} in {}: {}", role, target_type, vibe_id);
