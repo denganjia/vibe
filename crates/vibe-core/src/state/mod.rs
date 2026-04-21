@@ -215,12 +215,33 @@ impl StateStore {
         drop(panes);
         self.save()
     }
+
+    pub fn cleanup_stale_panes(&self, active_physical_ids: &[String]) -> Result<()> {
+        let _lock = self.acquire_lock()?;
+        self.load()?;
+        let mut panes = self.panes.lock().unwrap();
+        let stale_ids: Vec<VibeID> = panes.values()
+            .filter(|record| !active_physical_ids.contains(&record.physical_id))
+            .map(|record| record.vibe_id.clone())
+            .collect();
+
+        if stale_ids.is_empty() {
+            return Ok(());
+        }
+
+        for id in stale_ids {
+            panes.remove(&id);
+        }
+        drop(panes);
+        self.save()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectConfig {
     pub roles: HashMap<String, String>,
     pub default_command: String,
+    pub stacks: HashMap<String, Vec<String>>,
 }
 
 impl Default for ProjectConfig {
@@ -230,9 +251,14 @@ impl Default for ProjectConfig {
         roles.insert("Worker".to_string(), "claude -y".to_string());
         roles.insert("Evaluator".to_string(), "claude -y".to_string());
         
+        let mut stacks = HashMap::new();
+        stacks.insert("default".to_string(), vec!["Conductor".to_string(), "Worker".to_string()]);
+        stacks.insert("full".to_string(), vec!["Conductor".to_string(), "Worker".to_string(), "Evaluator".to_string()]);
+
         Self {
             roles,
             default_command: "claude -y".to_string(),
+            stacks,
         }
     }
 }
@@ -250,11 +276,29 @@ impl ConfigManager {
     }
 
     pub fn load(&self) -> Result<ProjectConfig> {
+        let default_config = ProjectConfig::default();
         if self.config_file.exists() {
             let content = fs::read_to_string(&self.config_file)?;
-            Ok(serde_json::from_str(&content)?)
+            let user_val: serde_json::Value = serde_json::from_str(&content)?;
+            let mut default_val = serde_json::to_value(&default_config)?;
+            
+            // Deep merge user_val into default_val
+            Self::merge_values(&mut default_val, user_val);
+            
+            Ok(serde_json::from_value(default_val)?)
         } else {
-            Ok(ProjectConfig::default())
+            Ok(default_config)
+        }
+    }
+
+    fn merge_values(a: &mut serde_json::Value, b: serde_json::Value) {
+        match (a, b) {
+            (serde_json::Value::Object(a), serde_json::Value::Object(b)) => {
+                for (k, v) in b {
+                    Self::merge_values(a.entry(k).or_insert(serde_json::Value::Null), v);
+                }
+            }
+            (a, b) => *a = b,
         }
     }
 

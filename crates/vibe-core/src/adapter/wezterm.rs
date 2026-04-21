@@ -147,6 +147,22 @@ impl TerminalAdapter for WezTermAdapter {
         })
     }
 
+    fn list_all_physical_ids(&self) -> Result<Vec<String>> {
+        let output = Command::new("wezterm")
+            .args(["cli", "list", "--format", "json"])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(VibeError::TerminalDetectionFailed(format!(
+                "WezTerm list failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+
+        let panes: Vec<WezTermPane> = serde_json::from_slice(&output.stdout)?;
+        Ok(panes.into_iter().map(|p| p.pane_id.to_string()).collect())
+    }
+
     fn focus(&self, target_id: &VibeID) -> Result<()> {
         let output = Command::new("wezterm")
             .args(["cli", "activate-pane", "--pane-id", target_id])

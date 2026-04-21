@@ -54,6 +54,9 @@ pub trait TerminalAdapter: Send + Sync {
     /// Get current terminal metadata.
     fn get_metadata(&self) -> Result<TerminalMetadata>;
 
+    /// List all active physical pane IDs in the terminal emulator.
+    fn list_all_physical_ids(&self) -> Result<Vec<String>>;
+
     /// Focus the specified pane.
     fn focus(&self, target_id: &VibeID) -> Result<()>;
 }

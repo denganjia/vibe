@@ -1227,6 +1227,7 @@ dependencies = [
  "anyhow",
  "clap",
  "crossterm",
+ "dialoguer",
  "futures",
  "ratatui",
  "serde",

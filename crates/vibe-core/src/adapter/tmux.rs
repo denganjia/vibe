@@ -115,6 +115,22 @@ impl TerminalAdapter for TmuxAdapter {
         )))
     }
 
+    fn list_all_physical_ids(&self) -> Result<Vec<String>> {
+        let output = Command::new("tmux")
+            .args(["list-panes", "-a", "-F", "#{pane_id}"])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(VibeError::TerminalDetectionFailed(format!(
+                "Tmux list-panes failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Ok(stdout.lines().map(|s| s.to_string()).collect())
+    }
+
     fn focus(&self, target_id: &VibeID) -> Result<()> {
         let output = Command::new("tmux")
             .args(["select-pane", "-t", target_id])

@@ -83,7 +83,7 @@ enum Commands {
     /// Spawn a new agent role in a new tab or pane
     Spawn {
         /// Role name (e.g., Worker, Conductor)
-        role: String,
+        role: Option<String>,
         
         /// Override agent command
         #[arg(long)]
@@ -92,6 +92,10 @@ enum Commands {
         /// Spawn in a new pane instead of a new tab
         #[arg(long)]
         pane: bool,
+
+        /// Spawn a predefined stack of agents
+        #[arg(long)]
+        stack: Option<String>,
     },
     /// Report task summary back to master
     Report {
@@ -103,6 +107,12 @@ enum Commands {
         #[arg(short, long)]
         message: String,
     },
+    /// Initialize project with interactive wizard
+    Init {
+        /// Force re-initialization of configuration and roles
+        #[arg(short, long)]
+        force: bool,
+    },
 }
 
 #[tokio::main]
@@ -113,14 +123,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Split { horizontal: _, vertical } => {
             ensure_project_vibe()?;
             let terminal_type = detect_current_terminal();
-            let adapter: Box<dyn TerminalAdapter> = match terminal_type {
-                Some(TerminalType::WezTerm) => Box::new(WezTermAdapter),
-                Some(TerminalType::Tmux) => Box::new(TmuxAdapter),
-                None => {
-                    println!("No supported terminal detected locally. Attempting external orchestration via WezTerm...");
-                    Box::new(WezTermAdapter)
-                }
-            };
+            let adapter = get_adapter(terminal_type);
             let store = StateStore::new()?;
 
             let split_dir = if vertical {
@@ -143,81 +146,41 @@ async fn main() -> anyhow::Result<()> {
             store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), None, cwd)?;
             println!("Split new pane: {}", vibe_id);
         }
-        Commands::Spawn { role, cmd, pane } => {
+        Commands::Spawn { role, cmd, pane, stack } => {
             ensure_project_vibe()?;
             let terminal_type = detect_current_terminal();
-            let adapter: Box<dyn TerminalAdapter> = match terminal_type {
-                Some(TerminalType::WezTerm) => Box::new(WezTermAdapter),
-                Some(TerminalType::Tmux) => Box::new(TmuxAdapter),
-                None => {
-                    println!("No supported terminal detected locally. Attempting external orchestration via WezTerm...");
-                    Box::new(WezTermAdapter)
-                }
-            };
-            
-            // 1. Load Persona
-            let role_manager = vibe_core::state::RoleManager::new()?;
-            let persona = role_manager.get_persona(&role)?;
-            
-            // 2. Determine agent command
-            let config_manager = vibe_core::state::ConfigManager::new()?;
-            let config = config_manager.load()?;
-            
-            let mut agent_command = cmd.unwrap_or_else(|| {
-                config.roles.get(&role)
-                    .cloned()
-                    .unwrap_or(config.default_command.clone())
-            });
-
-            // Ensure auto-approve mode for common CLIs to prevent hanging
-            if (agent_command.starts_with("claude") || agent_command.starts_with("gemini") || agent_command.starts_with("codex")) 
-                && !agent_command.contains(" -y") && !agent_command.contains(" --yolo") {
-                agent_command.push_str(" -y");
-            }
-            
-            // 3. Get master pane ID
-            let master_pane_id = match terminal_type {
-                Some(TerminalType::WezTerm) => WezTermAdapter.get_metadata()?.pane_id,
-                Some(TerminalType::Tmux) => TmuxAdapter.get_metadata()?.pane_id,
-                None => "0".to_string(),
-            };
-            
-            // 4. Spawn and inject
-            // Pre-generate a unique vibe_id to inject as an environment variable
-            let vibe_id = format!("v-{}", uuid::Uuid::new_v4().to_string()[..8].to_string());
-            
-            let mut env_vars = std::collections::HashMap::new();
-            env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
-            env_vars.insert("VIBE_ID".to_string(), vibe_id.clone());
-            
-            let target = if pane {
-                WindowTarget::Pane(SplitDirection::Horizontal)
-            } else {
-                WindowTarget::Tab
-            };
-
-            let physical_id = adapter.spawn(target, Some(&agent_command), env_vars)?;
-
-            // 5. Register in state using both our generated vibe_id and the physical_id
+            let adapter = get_adapter(terminal_type);
             let store = StateStore::new()?;
-            let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
-            store.save_pane(&vibe_id, &physical_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.clone()), cwd)?;
 
-            // Give the new context a moment to initialize its TTY and start the agent
-            std::thread::sleep(std::time::Duration::from_secs(2));
+            // 0. Perform cleanup
+            perform_silent_cleanup(adapter.as_ref(), &store).await?;
 
-            // Inject persona directly into the agent
-            adapter.inject_text(&physical_id, &persona)?;
-            adapter.inject_text(&physical_id, "\r\r")?;
-            
-            // Explicitly send Enter to trigger agent processing
-            adapter.send_keys(&physical_id, "")?;
-            
-            let target_type = if pane { "pane" } else { "tab" };
-            println!("Spawned {} in {}: {}", role, target_type, vibe_id);
+            if let Some(stack_name) = stack {
+                let config_manager = vibe_core::state::ConfigManager::new()?;
+                let config = config_manager.load()?;
+                let roles_to_spawn = config.stacks.get(&stack_name)
+                    .ok_or_else(|| anyhow::anyhow!("Stack '{}' not found in config.json", stack_name))?;
+                
+                println!("🚀 Spawning stack: {}", stack_name);
+                for r in roles_to_spawn {
+                    spawn_role(r, None, pane, adapter.as_ref(), &store).await?;
+                    // Small delay between spawns to ensure stable TTY initialization
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                }
+            } else if let Some(r) = role {
+                spawn_role(&r, cmd, pane, adapter.as_ref(), &store).await?;
+            } else {
+                anyhow::bail!("Either --role or --stack must be provided.");
+            }
         }
         Commands::List { json } => {
+            let terminal_type = detect_current_terminal();
+            let adapter = get_adapter(terminal_type);
             let store = StateStore::new()?;
+            
+            // 0. Perform cleanup
+            perform_silent_cleanup(adapter.as_ref(), &store).await?;
+            
             let panes = store.list_active_panes()?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&panes)?);
@@ -425,7 +388,142 @@ async fn main() -> anyhow::Result<()> {
             store.update_report(vibe_id.clone(), status, message)?;
             println!("Report submitted for worker {}.", vibe_id);
         }
+        Commands::Init { force } => {
+            let terminal_type = detect_current_terminal();
+            let adapter = get_adapter(terminal_type);
+            let store = StateStore::new()?;
+            
+            // 1. Perform cleanup
+            perform_silent_cleanup(adapter.as_ref(), &store).await?;
+            
+            // 2. Interactive Wizard
+            println!("🚀 Welcome to Vibe-CLI Project Initializer!");
+            
+            let mut config_manager = vibe_core::state::ConfigManager::new()?;
+            let mut config = if force {
+                vibe_core::state::ProjectConfig::default()
+            } else {
+                config_manager.load()?
+            };
+
+            // Detect available CLIs
+            let fallbacks = ["claude", "gemini", "codex"];
+            let mut available_clis = Vec::new();
+            for cli in fallbacks {
+                if which::which(cli).is_ok() {
+                    available_clis.push(cli);
+                }
+            }
+
+            if available_clis.is_empty() {
+                println!("⚠️ No common AI CLIs (claude, gemini, codex) found in your PATH.");
+                println!("Please ensure they are installed and configured.");
+            } else {
+                use dialoguer::{Select, theme::ColorfulTheme};
+                
+                let selection = Select::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Select your default AI CLI")
+                    .items(&available_clis)
+                    .default(0)
+                    .interact()?;
+                
+                let selected_cli = format!("{} -y", available_clis[selection]);
+                println!("✅ Selected: {}", selected_cli);
+                
+                config.default_command = selected_cli.clone();
+                for cmd in config.roles.values_mut() {
+                    *cmd = selected_cli.clone();
+                }
+            }
+
+            config_manager.save(&config)?;
+            ensure_project_vibe()?;
+            
+            println!("\n✨ Vibe-CLI project initialized successfully in .vibe/");
+        }
     }
+
+    Ok(())
+}
+
+fn get_adapter(terminal_type: Option<TerminalType>) -> Box<dyn TerminalAdapter> {
+    match terminal_type {
+        Some(TerminalType::WezTerm) => Box::new(WezTermAdapter),
+        Some(TerminalType::Tmux) => Box::new(TmuxAdapter),
+        None => {
+            println!("No supported terminal detected locally. Attempting external orchestration via WezTerm...");
+            Box::new(WezTermAdapter)
+        }
+    }
+}
+
+async fn perform_silent_cleanup(adapter: &dyn TerminalAdapter, store: &StateStore) -> anyhow::Result<()> {
+    if let Ok(physical_ids) = adapter.list_all_physical_ids() {
+        store.cleanup_stale_panes(&physical_ids)?;
+    }
+    Ok(())
+}
+
+async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapter: &dyn TerminalAdapter, store: &StateStore) -> anyhow::Result<()> {
+    // 1. Load Persona
+    let role_manager = vibe_core::state::RoleManager::new()?;
+    let persona = role_manager.get_persona(role)?;
+    
+    // 2. Determine agent command
+    let config_manager = vibe_core::state::ConfigManager::new()?;
+    let config = config_manager.load()?;
+    
+    let mut agent_command = cmd_override.unwrap_or_else(|| {
+        config.roles.get(role)
+            .cloned()
+            .unwrap_or(config.default_command.clone())
+    });
+
+    // Ensure auto-approve mode for common CLIs to prevent hanging
+    if (agent_command.starts_with("claude") || agent_command.starts_with("gemini") || agent_command.starts_with("codex")) 
+        && !agent_command.contains(" -y") && !agent_command.contains(" --yolo") {
+        agent_command.push_str(" -y");
+    }
+    
+    // 3. Get master pane ID
+    let terminal_type = detect_current_terminal();
+    let master_pane_id = match terminal_type {
+        Some(TerminalType::WezTerm) => WezTermAdapter.get_metadata()?.pane_id,
+        Some(TerminalType::Tmux) => TmuxAdapter.get_metadata()?.pane_id,
+        None => "0".to_string(),
+    };
+    
+    // 4. Spawn and inject
+    let vibe_id = format!("v-{}", uuid::Uuid::new_v4().to_string()[..8].to_string());
+    
+    let mut env_vars = std::collections::HashMap::new();
+    env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
+    env_vars.insert("VIBE_ID".to_string(), vibe_id.clone());
+    
+    let target = if pane {
+        WindowTarget::Pane(SplitDirection::Horizontal)
+    } else {
+        WindowTarget::Tab
+    };
+
+    let physical_id = adapter.spawn(target, Some(&agent_command), env_vars)?;
+
+    // 5. Register in state
+    let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
+    store.save_pane(&vibe_id, &physical_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), Some(role.to_string()), cwd)?;
+
+    // Give the new context a moment to initialize its TTY and start the agent
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    // Inject persona directly into the agent
+    adapter.inject_text(&physical_id, &persona)?;
+    adapter.inject_text(&physical_id, "\r\r")?;
+    
+    // Explicitly send Enter to trigger agent processing
+    adapter.send_keys(&physical_id, "")?;
+    
+    let target_type = if pane { "pane" } else { "tab" };
+    println!("Spawned {} in {}: {}", role, target_type, vibe_id);
 
     Ok(())
 }
