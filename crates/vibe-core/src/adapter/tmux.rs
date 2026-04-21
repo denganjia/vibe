@@ -5,7 +5,7 @@ use std::process::Command;
 pub struct TmuxAdapter;
 
 impl TerminalAdapter for TmuxAdapter {
-    fn spawn(&self, target: WindowTarget, command: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
+    fn spawn(&self, target: WindowTarget, command: Option<&str>, cwd: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
         let mut cmd = Command::new("tmux");
         
         match target {
@@ -19,6 +19,10 @@ impl TerminalAdapter for TmuxAdapter {
             WindowTarget::Tab => {
                 cmd.args(["new-window", "-P", "-F", "#{pane_id}"]);
             }
+        }
+
+        if let Some(path) = cwd {
+            cmd.arg("-c").arg(path);
         }
 
         for (k, v) in env_vars {

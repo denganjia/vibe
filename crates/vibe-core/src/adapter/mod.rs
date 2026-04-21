@@ -32,8 +32,8 @@ pub mod tmux;
 pub use tmux::TmuxAdapter;
 
 pub trait TerminalAdapter: Send + Sync {
-    /// Spawn a new terminal context (Pane or Tab) with an optional initial command.
-    fn spawn(&self, target: WindowTarget, command: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID>;
+    /// Spawn a new terminal context (Pane or Tab) with an optional initial command and working directory.
+    fn spawn(&self, target: WindowTarget, command: Option<&str>, cwd: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID>;
 
     /// Send keys to the specified pane (simulates typing and hits Enter).
     fn send_keys(&self, target_id: &VibeID, keys: &str) -> Result<()>;

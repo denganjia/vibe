@@ -145,7 +145,10 @@ async fn main() -> anyhow::Result<()> {
             let mut env_vars = std::collections::HashMap::new();
             env_vars.insert("VIBE_MASTER_ID".to_string(), master_pane_id);
             
-            let vibe_id = adapter.spawn(WindowTarget::Pane(split_dir), None, env_vars)?;
+            let cwd_opt = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
+            let cwd_ref = cwd_opt.as_deref();
+            
+            let vibe_id = adapter.spawn(WindowTarget::Pane(split_dir), None, cwd_ref, env_vars)?;
             let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
             store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), None, cwd)?;
             println!("Split new pane: {}", vibe_id);
@@ -340,6 +343,10 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Inject { vibe_id, command, cwd } => {
+            let store = StateStore::new()?;
+            let physical_id = store.get_pane(&vibe_id)?
+                .ok_or_else(|| anyhow::anyhow!("Vibe ID {} not found in database", vibe_id))?;
+
             let terminal_type = detect_current_terminal()
                 .ok_or_else(|| anyhow::anyhow!("No supported terminal detected for injection"))?;
             let adapter = get_adapter(Some(terminal_type));
@@ -350,8 +357,8 @@ async fn main() -> anyhow::Result<()> {
                 command
             };
 
-            adapter.send_keys(&vibe_id, &cmd_str)?;
-            println!("Command injected into pane {}.", vibe_id);
+            adapter.send_keys(&physical_id, &cmd_str)?;
+            println!("Command injected into physical pane {}.", physical_id);
         }
         Commands::Focus { vibe_id } => {
             let store = StateStore::new()?;
@@ -536,7 +543,10 @@ async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapte
         WindowTarget::Tab
     };
 
-    let physical_id = adapter.spawn(target, Some(&agent_command), env_vars)?;
+    let cwd_opt = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
+    let cwd_ref = cwd_opt.as_deref();
+
+    let physical_id = adapter.spawn(target, Some(&agent_command), cwd_ref, env_vars)?;
 
     // 5. Register in state
     let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());

@@ -14,7 +14,7 @@ struct WezTermPane {
 }
 
 impl TerminalAdapter for WezTermAdapter {
-    fn spawn(&self, target: WindowTarget, command: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
+    fn spawn(&self, target: WindowTarget, command: Option<&str>, cwd: Option<&str>, env_vars: std::collections::HashMap<String, String>) -> Result<VibeID> {
         // Try to detect if we are inside WezTerm
         let is_inside = std::env::var("WEZTERM_PANE").is_ok();
 
@@ -35,6 +35,10 @@ impl TerminalAdapter for WezTermAdapter {
             WindowTarget::Tab => {
                 cmd.arg("spawn");
             }
+        }
+
+        if let Some(path) = cwd {
+            cmd.arg("--cwd").arg(path);
         }
 
         // Build the final command to run in the new context
