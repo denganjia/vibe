@@ -55,8 +55,11 @@ impl FileBus {
                         if let Ok(signal) = serde_json::from_str::<SignalInfo>(&content) {
                             if signal.name == signal_name {
                                 // Consume the signal
-                                let _ = fs::remove_file(&path);
-                                return Ok(signal.payload);
+                                match fs::remove_file(&path) {
+                                    Ok(()) => return Ok(signal.payload),
+                                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+                                    Err(e) => return Err(e.into()),
+                                }
                             }
                         }
                     }
