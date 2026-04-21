@@ -14,7 +14,7 @@ This SOP defines how AI agents maintain global state awareness and synchronize c
 
 ### 2. File-based Signal Bus (`.vibe/bus/`)
 - Communication is achieved through atomic file writes, eliminating TTY injection lag and buffer clearing issues.
-- `vibe signal <NAME> [PAYLOAD]`: Creates a JSON envelope in `.vibe/bus/` containing the sender, timestamp, and optional payload (supports `@path` for large file references).
+- `vibe signal <NAME> [PAYLOAD]`: Creates a JSON envelope in `.vibe/bus/` containing the signal name and optional payload (supports `@path` for large file references). Signal timestamps are encoded in bus filenames, not in the JSON envelope.
 - `vibe wait <NAME>`: Monitors the `.vibe/bus/` directory. When a matching signal file appears, it reads the payload, consumes (deletes) the file, and outputs the data to the agent.
 
 ### 3. Execution Flow
