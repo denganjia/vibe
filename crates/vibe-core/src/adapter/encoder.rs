@@ -11,14 +11,12 @@ impl TTYEncoder {
     where
         F: FnMut(&str) -> Result<()>,
     {
-        let bytes = text.as_bytes();
         let chunk_size = 64;
-
-        for chunk in bytes.chunks(chunk_size) {
-            let chunk_str = std::str::from_utf8(chunk)
-                .map_err(|e| crate::error::VibeError::Internal(format!("Invalid UTF-8 in chunk: {}", e)))?;
-            
-            inject_fn(chunk_str)?;
+        let mut chars = text.chars().peekable();
+        
+        while chars.peek().is_some() {
+            let chunk_str: String = chars.by_ref().take(chunk_size).collect();
+            inject_fn(&chunk_str)?;
             
             // Throttle to 5ms per chunk
             thread::sleep(Duration::from_millis(5));

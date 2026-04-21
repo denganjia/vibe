@@ -342,10 +342,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Inject { vibe_id, command, cwd } => {
             let terminal_type = detect_current_terminal()
                 .ok_or_else(|| anyhow::anyhow!("No supported terminal detected for injection"))?;
-            let adapter: Box<dyn TerminalAdapter> = match terminal_type {
-                TerminalType::WezTerm => Box::new(WezTermAdapter),
-                TerminalType::Tmux => Box::new(TmuxAdapter),
-            };
+            let adapter = get_adapter(Some(terminal_type));
 
             let cmd_str = if let Some(dir) = cwd {
                 format!("cd {} && {}", dir, command)

@@ -84,7 +84,7 @@ impl TerminalAdapter for WezTermAdapter {
 
     fn inject_raw(&self, target_id: &VibeID, text: &str) -> Result<()> {
         let output = Command::new("wezterm")
-            .args(["cli", "send-text", "--no-paste", "--pane-id", target_id])
+            .args(["cli", "send-text", "--no-paste", "--pane-id", target_id, "--"])
             .arg(text)
             .output()?;
 

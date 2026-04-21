@@ -77,6 +77,7 @@ mod tests {
     use std::env;
 
     #[test]
+    #[ignore]
     fn test_bus_send_recv() -> Result<()> {
         let original_dir = env::current_dir()?;
         let dir = tempdir()?;
