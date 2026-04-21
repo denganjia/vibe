@@ -11,26 +11,27 @@ This skill transforms the terminal into a physical orchestration room for autono
 
 Use these `vibe` shell commands to manage agents and synchronization:
 
+- `vibe init [--force]`: Interactive wizard to initialize `.vibe/config.json` and role templates.
 - `vibe check`: Verify terminal orchestration (WezTerm/Tmux) support.
-- `vibe list`: List all active vibe agents, roles, status, and summaries.
-- `vibe spawn --role <ROLE>`: Create a new pane, inject persona from `.vibe/roles/`, and launch agent.
-- `vibe signal <NAME>`: Inject a signal marker `[vibe-signal:NAME]` into the master bus.
-- `vibe wait <NAME> [--timeout <SEC>]`: Block until a specific signal is received via stdin.
-- `vibe report --status <STATUS> --message <MSG>`: Update state store (`.vibe/state/panes.json`).
+- `vibe list`: List all active vibe agents, roles, status, and summaries. Automatically cleans up stale panes.
+- `vibe spawn [--role <ROLE> | --stack <NAME>]`: Create a new pane/tab, start the agent with auto-approve flags, and securely inject persona via the `$VIBE_PERSONA` environment variable.
+- `vibe signal <NAME> [PAYLOAD]`: Write a signal and optional JSON/file payload to the `.vibe/bus/` file bus.
+- `vibe wait <NAME> [--timeout <SEC>]`: Block until a specific signal is received via the `.vibe/bus/` file bus.
+- `vibe report --status <STATUS> --message <MSG>`: Update state store (`.vibe/state/panes.json`). Declare intent locking here.
 - `vibe focus <ID>`: Switch terminal focus to a specific agent pane.
-- `vibe inject <ID> <CMD>`: Inject text or commands into a running agent's pane.
+- `vibe inject <ID> <CMD>`: Inject text or commands into a running agent's physical pane.
 - `vibe kill`: Terminate all active vibe panes and clear state.
 
 ## Core SOPs
 
 For detailed procedural guidance, refer to these references:
 
-- **Collaboration**: [references/collaboration.md](references/collaboration.md) - Task assignment & signaling protocols.
-- **State & Bus**: [references/state.md](references/state.md) - How the stateless bus and file-locked state work.
+- **Collaboration**: [references/collaboration.md](references/collaboration.md) - Task assignment & A-D-E-V cycle.
+- **State & Bus**: [references/state.md](references/state.md) - How the file-based bus and smart cleanup work.
 - **Approvals**: [references/approval.md](references/approval.md) - Manual gates via `vibe wait approved`.
-- **Orchestration**: [references/orchestration.md](references/orchestration.md) - Layout management and spawning flow.
+- **Orchestration**: [references/orchestration.md](references/orchestration.md) - Stack spawning and project init flow.
 - **Recovery**: [references/recovery.md](references/recovery.md) - Intervening in loops via `vibe inject`.
-- **Roles**: [references/role.md](references/role.md) - Definitions for Conductor, Worker, and Evaluator.
+- **Roles**: [references/role.md](references/role.md) - Intelligence-First logic for Conductor and Worker.
 
 ## Workflow Templates
 
@@ -45,7 +46,7 @@ Use these assets to drive structured development cycles:
 1. **Analyze-Declare-Execute-Verify Loop**: All autonomous tasks must follow this strict lifecycle.
 2. **Intent Locking**: Workers MUST declare target files via `vibe report --status blocked --message "writing:path/to/file"` before modification to prevent race conditions.
 3. **Verification & Retries**: Workers MUST run local tests (e.g., `cargo test`) after execution. If verification fails, automatically attempt to fix up to 3 times before signaling `BLOCKED`.
-4. **Always Signal**: Never assume a worker is done. Use `vibe wait` to synchronize via the `.vibe/bus/` file bus.
-5. **Atomic Reports**: Use `vibe report` at every milestone so the global state remains accurate.
-6. **Master Awareness**: Sub-agents MUST know their `VIBE_MASTER_ID` (provided by `vibe spawn`) to signal correctly.
-7. **Persona Injection**: Trust the persona injected by `vibe spawn`. It contains the role-specific instructions.
+4. **File-based Signaling**: Never assume a worker is done. Use `vibe wait` to synchronize via the highly reliable `.vibe/bus/` file bus.
+5. **Atomic Reports**: Use `vibe report` at every milestone so the global state remains accurate and stale panes can be pruned.
+6. **Master Awareness**: Sub-agents MUST know their `VIBE_MASTER_ID` and `VIBE_ID` (provided via env vars by `vibe spawn`) to signal correctly.
+7. **Native Persona**: The injected `$VIBE_PERSONA` contains the role-specific instructions and MUST be obeyed.
