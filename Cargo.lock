@@ -1222,7 +1222,7 @@ dependencies = [
 
 [[package]]
 name = "vibe-cli"
-version = "0.1.0"
+version = "5.0.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1242,7 +1242,7 @@ dependencies = [
 
 [[package]]
 name = "vibe-core"
-version = "0.1.0"
+version = "5.0.0"
 dependencies = [
  "anyhow",
  "chrono",

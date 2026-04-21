@@ -42,7 +42,10 @@ Use these assets to drive structured development cycles:
 
 ## Critical Protocols
 
-1. **Always Signal**: Never assume a worker is done. Use `vibe wait` to synchronize.
-2. **Atomic Reports**: Use `vibe report` at every milestone so the global state remains accurate.
-3. **Master Awareness**: Sub-agents MUST know their `VIBE_MASTER_ID` (provided by `vibe spawn`) to signal correctly.
-4. **Persona Injection**: Trust the persona injected by `vibe spawn`. It contains the role-specific instructions.
+1. **Analyze-Declare-Execute-Verify Loop**: All autonomous tasks must follow this strict lifecycle.
+2. **Intent Locking**: Workers MUST declare target files via `vibe report --status blocked --message "writing:path/to/file"` before modification to prevent race conditions.
+3. **Verification & Retries**: Workers MUST run local tests (e.g., `cargo test`) after execution. If verification fails, automatically attempt to fix up to 3 times before signaling `BLOCKED`.
+4. **Always Signal**: Never assume a worker is done. Use `vibe wait` to synchronize via the `.vibe/bus/` file bus.
+5. **Atomic Reports**: Use `vibe report` at every milestone so the global state remains accurate.
+6. **Master Awareness**: Sub-agents MUST know their `VIBE_MASTER_ID` (provided by `vibe spawn`) to signal correctly.
+7. **Persona Injection**: Trust the persona injected by `vibe spawn`. It contains the role-specific instructions.
