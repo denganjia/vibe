@@ -7,6 +7,11 @@
 - [ ] **Task 17.2**: 完善 `vibe wait` 的 Payload 解析逻辑，支持从信号中提取更复杂的结构化数据。
 - [ ] **Task 17.3**: 验证 Worker 自动回复链路，确保主会话能基于回复自动推进下一步。
 
+**Plans:** 3 plans
+- [ ] 17-01-PLAN.md — 增强 TTY 注入可靠性（限流与回车优化）
+- [ ] 17-02-PLAN.md — 实现基于文件的信号总线（.vibe/bus）
+- [ ] 17-03-PLAN.md — CLI 命令迁移、回退机制与 E2E 验证
+
 ### Phase 18: Standardization & Init
 - [ ] **Task 18.1**: 实现 `vibe init` 命令，自动扫描环境并生成 `.vibe/config.json` 和角色模板。
 - [ ] **Task 18.2**: 支持通过配置文件批量 `spawn` 智能体（`vibe spawn --config`）。
@@ -21,4 +26,4 @@
 
 ## Past Milestones (Completed)
 - ✓ **v1.0 - v3.0**: 基础窗格管理、MCP 集成、早期状态管理。
-- ✓ **v4.0**: 无状态总线架构重构、UUID 身份注入、WezTerm Tab 支持。
+- ✓ **v4.0**: 无 stateless 总线架构重构、UUID 身份注入、WezTerm Tab 支持。
