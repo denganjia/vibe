@@ -37,7 +37,7 @@ enum Commands {
     /// Check environment compatibility
     Check {
         /// Output in JSON format
-        #[arg(short, long, default_value_t = true)]
+        #[arg(short, long)]
         json: bool,
     },
     /// Kill all active vibe panes
