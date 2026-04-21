@@ -1,6 +1,6 @@
 # Codebase Structure
 
-**Analysis Date:** 2024-05-23
+**Analysis Date:** 2024-10-24
 
 ## Directory Layout
 
@@ -9,20 +9,20 @@ vibe-cli/
 ├── apps/
 │   └── vibe-cli/           # Main CLI Application
 │       └── src/
-│           ├── main.rs     # CLI Entry point & Subcommands
-│           └── tui.rs      # Ratatui-based Monitoring UI
+│           ├── main.rs     # CLI Entry point, Subcommands, spawn_role logic
+│           └── tui.rs      # Ratatui-based Monitoring UI (isolated)
 ├── crates/
 │   └── vibe-core/          # Core logic and abstractions
 │       └── src/
 │           ├── adapter/    # Terminal Multiplexer Adapters
 │           ├── ipc/        # Communication Protocols
 │           ├── os/         # OS-specific helpers
-│           ├── state/      # Persistence & Management
+│           ├── state/      # Persistence, Config & Stacks Management
 │           ├── env.rs      # Path & Environment Resolution
 │           ├── error.rs    # Error types
 │           └── lib.rs      # Core Library Entry
 ├── .vibe/                  # Project-local runtime data
-│   ├── config.json         # Project Configuration
+│   ├── config.json         # Project Config (includes Stacks definitions)
 │   ├── roles/              # Role templates (Markdown)
 │   └── state/
 │       └── panes.json      # Active Agent State Mapping
@@ -33,8 +33,10 @@ vibe-cli/
 
 **apps/vibe-cli/:**
 - Purpose: The user-facing command-line tool.
-- Contains: Command logic, UI rendering, and orchestration of core features.
-- Key files: `apps/vibe-cli/src/main.rs` (subcommands), `apps/vibe-cli/src/tui.rs` (UI).
+- Contains: Command logic, separated UI rendering, and orchestration of core features (like batch spawning via `Stacks`).
+- Key files: 
+  - `apps/vibe-cli/src/main.rs`: Subcommands and `spawn_role` centralized refactoring.
+  - `apps/vibe-cli/src/tui.rs`: Isolated Ratatui UI components and state logic.
 
 **crates/vibe-core/src/adapter/:**
 - Purpose: Abstraction layer for different terminal multiplexers.
@@ -43,7 +45,7 @@ vibe-cli/
 
 **crates/vibe-core/src/state/:**
 - Purpose: Persistent storage for agent metadata and project configuration.
-- Contains: `StateStore` for tracking agents, `ConfigManager` for project settings, `RoleManager` for persona management.
+- Contains: `StateStore` for tracking agents, `ConfigManager` (managing default commands and Stacks), `RoleManager` (persona management).
 - Key files: `crates/vibe-core/src/state/mod.rs`.
 
 **crates/vibe-core/src/ipc/:**
@@ -53,7 +55,7 @@ vibe-cli/
 
 **.vibe/:**
 - Purpose: Project-specific configuration and runtime state.
-- Contains: JSON state files and Markdown persona templates.
+- Contains: JSON state files, Stack declarations, and Markdown persona templates.
 - Key files: `.vibe/state/panes.json`, `.vibe/config.json`.
 
 ## Key File Locations
@@ -63,12 +65,12 @@ vibe-cli/
 
 **Configuration:**
 - `Cargo.toml`: Workspace definition and dependencies.
-- `.vibe/config.json`: Default commands and project-level settings.
+- `.vibe/config.json`: Project-level settings, default commands, and Stack definitions (batch deployments).
 
 **Core Logic:**
 - `crates/vibe-core/src/adapter/mod.rs`: Definition of `WindowTarget` and `TerminalAdapter`.
-- `crates/vibe-core/src/state/mod.rs`: `StateStore` implementation for agent tracking.
-- `crates/vibe-core/src/env.rs`: Workspace and state directory resolution.
+- `crates/vibe-core/src/state/mod.rs`: `StateStore`, `ProjectConfig` (with `stacks` HashMap).
+- `apps/vibe-cli/src/main.rs`: `spawn_role` function for robust environment/persona injection.
 
 **Testing:**
 - `crates/vibe-core/tests/`: Integration tests for core logic.
@@ -90,9 +92,15 @@ vibe-cli/
 **New CLI Subcommand:**
 - Primary code: `apps/vibe-cli/src/main.rs` (add to `Commands` enum and `match` block).
 
+**New UI Views/Components:**
+- Implementation: `apps/vibe-cli/src/tui.rs` (extend the `App` state and `ui` rendering function).
+
 **New Terminal Adapter:**
 - Implementation: `crates/vibe-core/src/adapter/[name].rs`.
 - Registration: Add to `TerminalAdapter` trait and update factory logic in `vibe-cli`.
+
+**New Stack Configuration:**
+- Definition: Add a new key-value pair to the `stacks` object in `.vibe/config.json`.
 
 **New State Metadata:**
 - Implementation: Update `PaneRecord` in `crates/vibe-core/src/state/mod.rs`.
@@ -103,7 +111,7 @@ vibe-cli/
 ## Special Directories
 
 **.vibe/:**
-- Purpose: Stores project-local state and roles.
+- Purpose: Stores project-local state, roles, and stack config.
 - Generated: Yes (via `vibe init` or implicitly on spawn).
 - Committed: `config.json` and `roles/` should be committed; `state/` should be ignored.
 
@@ -114,4 +122,4 @@ vibe-cli/
 
 ---
 
-*Structure analysis: 2024-05-23*
+*Structure analysis: 2024-10-24*

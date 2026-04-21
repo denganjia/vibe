@@ -25,6 +25,7 @@
 **Core:**
 - Clap 4.5 - Command-line argument parsing with derive macros.
 - Ratatui 0.29 - TUI framework for the dashboard (`vibe status`).
+- Dialoguer 0.11 - Used for the interactive CLI wizard (e.g., in `apps/vibe-cli/src/main.rs`).
 
 **Testing:**
 - Cargo Test - Unit and integration tests in `crates/vibe-core/src/` and `crates/vibe-core/tests/`.
@@ -46,11 +47,12 @@
 - `chrono` 0.4 - Time tracking for heartbeats and state updates.
 - `tokio-util` 0.7 - Used for framing/codecs in communication protocols.
 - `dirs` 5.0 - Cross-platform configuration directory resolution.
+- FileBus - Reliable file-based IPC implementation (`crates/vibe-core/src/ipc/bus.rs`).
 
 ## Configuration
 
 **Environment:**
-- Local environment variables (e.g., `VIBE_ID`, `VIBE_MASTER_ID`).
+- Local environment variables (e.g., `VIBE_ID`, `VIBE_MASTER_ID`, `VIBE_PERSONA`).
 - Configuration files in `.vibe/`.
 
 **Build:**

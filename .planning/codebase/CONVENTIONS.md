@@ -1,11 +1,11 @@
 # Coding Conventions
 
-**Analysis Date:** 2025-01-24
+**Analysis Date:** 2025-02-18
 
 ## Naming Patterns
 
 **Files:**
-- Snake case for Rust source files: `tmux.rs`, `wezterm.rs`.
+- Snake case for Rust source files (e.g., `crates/vibe-core/src/adapter/wezterm.rs`).
 - `mod.rs` for module entry points.
 
 **Functions:**
@@ -15,13 +15,14 @@
 - Snake case: `pane_id`, `current_dir`.
 
 **Types:**
-- Pascal case for Structs/Enums: `TerminalAdapter`, `TmuxAdapter`, `WindowTarget`.
+- Pascal case for Structs/Enums: `TerminalAdapter`, `TmuxAdapter`.
 - Type aliases: `VibeID = String`.
 
 ## Code Style
 
 **Formatting:**
 - Default `rustfmt` (standard Rust style).
+- Configuration: Standard defaults (no custom `rustfmt.toml` detected).
 
 **Linting:**
 - Standard `clippy` checks.
@@ -33,33 +34,43 @@
 2. Internal crate modules (`crate::...`)
 3. External dependencies (`serde::...`)
 
+**Path Aliases:**
+- Standard Rust `crate::` paths are used.
+
 ## Error Handling
 
 **Patterns:**
 - Custom `VibeError` enum in `crates/vibe-core/src/error.rs` using `thiserror`.
 - `Result<T>` type alias for `std::result::Result<T, VibeError>`.
 - Use `?` for error propagation.
-- For CLI failures, include `stderr` in the error message for debugging.
+
+**Autonomous Self-Healing (A-D-E-V Verify Phase):**
+- Workers MUST attempt to automatically fix verification/test failures up to 3 times before escalating.
+- If 3 retries fail, the agent MUST emit a `BLOCKED` status via `vibe report --status blocked`.
 
 ## Logging
 
-**Framework:** `println!` for CLI output; custom logging not yet fully implemented for core.
+**Framework:** `println!` for CLI output; `vibe report` for agent status.
 
-## New Adapter Guidelines
+**Patterns:**
+- Raw stdout is for CLI users.
+- Agents MUST use `vibe report --status <STATUS> --message <MSG>` at every milestone to update global state (`.vibe/state/panes.json`).
 
-**Implementation:**
-- Must implement the `TerminalAdapter` trait in `crates/vibe-core/src/adapter/mod.rs`.
-- Use `std::process::Command` to invoke the terminal multiplexer's CLI.
-- Prefer machine-readable output formats (e.g., JSON) from CLI if available (see `wezterm.rs`).
-- Fallback to string parsing (trim/split) for simple outputs (see `tmux.rs`).
+## Comments
 
-**Environment Detection:**
-- Use environment variables (e.g., `TMUX_PANE`, `WEZTERM_PANE`) to detect the current context.
-- Provide meaningful error messages when detection fails.
+**When to Comment:**
+- Use Intent Locking via `vibe report --status blocked --message "writing:path/to/file"` (A-D-E-V Declare phase) instead of standard comments to coordinate multi-agent file modifications.
 
-**Command Execution:**
-- When spawning, use `exec bash` or similar to keep the new pane/window alive after the initial command finishes.
-- Use `env` command or adapter-specific flags to pass environment variables.
+**JSDoc/TSDoc:**
+- Not applicable (Rust codebase). Use standard Rustdoc `///` for public APIs.
+
+## Function Design
+
+**Size:** Keep adapter functions small and focused on one specific CLI interaction.
+
+**Parameters:** Prefer passing context (like `VibeID` or environment maps) explicitly.
+
+**Return Values:** Always return `Result<T>` for fallible terminal operations.
 
 ## Module Design
 
@@ -70,6 +81,10 @@
 **Barrel Files:**
 - `crates/vibe-core/src/adapter/mod.rs` re-exports common adapters for ease of use.
 
----
+## Autonomous Workflow (A-D-E-V)
 
-*Convention analysis: 2025-01-24*
+**Analyze-Declare-Execute-Verify Loop:**
+- **Analyze:** Read target files and context documents before taking action.
+- **Declare:** State intent locks before modification (`vibe report --status blocked --message "writing:<file>"`).
+- **Execute:** Apply code modifications.
+- **Verify:** Run verification (e.g., `cargo test`). If failed, apply Self-Healing (max 3 retries). On success, signal completion (`vibe signal task_done`).

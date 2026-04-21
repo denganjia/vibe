@@ -1,85 +1,55 @@
 # Codebase Concerns
 
-**Analysis Date:** 2025-03-04
+**Analysis Date:** 2024-05-24
 
 ## Tech Debt
 
-**Terminal Signaling Mechanism:**
-- Issue: Signaling between agents relies on raw text injection into the master pane's stdin and string matching in `vibe wait`.
-- Files: `apps/vibe-cli/src/main.rs`, `crates/vibe-core/src/adapter/wezterm.rs`, `crates/vibe-core/src/adapter/tmux.rs`
-- Impact: Highly fragile. Signals can be missed if `vibe wait` is not active, garbled by other output, or intercepted by interactive agents. False positives are possible if agents print similar strings.
-- Fix approach: Implement a more robust IPC mechanism (e.g., Unix Domain Sockets or a local TCP bus) instead of TTY hijacking.
+**FileBus Concurrency:**
+- Issue: `FileBus::recv` uses file polling and deletion without file locks. 
+- Files: `crates/vibe-core/src/ipc/bus.rs`
+- Impact: Potential race condition if multiple consumers listen for the same signal. Both might read the JSON, but only one removes it. The other ignores the remove error (`let _ = fs::remove_file(...)`), leading to duplicate processing. Also, `fs::read_dir` order is not guaranteed, breaking FIFO processing.
+- Fix approach: Implement file locking (e.g., using `fs2` or `fs3` crates) or use a proper IPC mechanism (sockets/named pipes). Sort directory entries by timestamp/filename before processing to enforce FIFO.
 
-**Hardcoded Shell Assumptions:**
-- Issue: Several adapters hardcode `bash -c` and `exec bash` for command execution and environment setup.
-- Files: `crates/vibe-core/src/adapter/wezterm.rs`, `crates/vibe-core/src/adapter/tmux.rs`
-- Impact: Prevents execution on systems where `bash` is not available or where users prefer other shells (zsh, fish, pwsh).
-- Fix approach: Use the `ShellAdapter` in `crates/vibe-core/src/os/shell.rs` to determine the appropriate shell and formatting for the current platform.
-
-**State Store Locking:**
-- Issue: File-based locking (`.lock` file) is used for all state operations without stale lock recovery.
-- Files: `crates/vibe-core/src/state/mod.rs`
-- Impact: If a process crashes while holding the lock, the entire system blocks until the lock is manually removed. High contention on a single JSON file limits scalability.
-- Fix approach: Add PID-based lock validation or use a more robust database like SQLite which handles concurrency and locking more gracefully.
-
-## Known Bugs
-
-**Cmd Environment Variable Injection:**
-- Symptoms: Potential command execution when setting environment variables on Windows `cmd.exe`.
+**TTY ANSI Stripping:**
+- Issue: `strip_ansi` uses a basic regex that covers CSI (Control Sequence Introducer) but might miss OSC (Operating System Command), DCS (Device Control String), or other escape sequences.
 - Files: `crates/vibe-core/src/os/shell.rs`
-- Trigger: Values containing `&`, `|`, or `>` passed to `build_env_command` for `ShellType::Cmd`.
-- Workaround: None currently implemented. Values should be properly quoted or escaped.
-
-**Spurious "No active WezTerm window found":**
-- Symptoms: `vibe spawn` may fail even if WezTerm is running if the environment variables aren't correctly passed or detected.
-- Files: `crates/vibe-core/src/adapter/wezterm.rs`
-- Trigger: Running `vibe spawn` from outside a WezTerm context or in a nested environment.
-
-## Security Considerations
-
-**Command Injection in Shell Adapters:**
-- Risk: Unsanitized input from roles or persona templates can be used to inject shell commands.
-- Files: `crates/vibe-core/src/os/shell.rs`, `apps/vibe-cli/src/main.rs`
-- Current mitigation: Basic escaping for Bash and Pwsh. No escaping for Cmd.
-- Recommendations: Implement strict sanitization for all strings being interpolated into shell commands. Use structured argument passing instead of string concatenation where possible.
-
-## Performance Bottlenecks
-
-**State File Contention:**
-- Problem: Every `vibe report` or heartbeat requires a full read/write of `panes.json` with a global file lock.
-- Files: `crates/vibe-core/src/state/mod.rs`
-- Cause: Monolithic state file and coarse-grained locking.
-- Improvement path: Split state into individual files per pane or use a transactional database.
+- Impact: Terminal output containing complex ANSI sequences (e.g., window titles, hyperlinks) may not be properly cleaned, breaking text parsing logic downstream.
+- Fix approach: Use a dedicated ANSI parsing crate like `vte` or `strip-ansi-escapes` instead of maintaining a custom Regex.
 
 ## Fragile Areas
 
-**Terminal Detection:**
-- Files: `crates/vibe-core/src/env.rs`
-- Why fragile: Relies exclusively on environment variables like `WEZTERM_PANE` or `TMUX`, which can be lost in `sudo` sessions, SSH, or certain shell configurations.
-- Safe modification: Check for terminal-specific escape sequence responses as a fallback.
-- Test coverage: Minimal, ignored tests in `env.rs`.
+**Terminal Text Injection & Throttling:**
+- Files: `crates/vibe-core/src/adapter/encoder.rs`, `crates/vibe-core/src/adapter/tmux.rs`, `crates/vibe-core/src/adapter/wezterm.rs`
+- Why fragile: `TTYEncoder::throttle_inject` hardcodes a 64-byte chunk size and 5ms delay. Different OSes and terminals (Tmux vs WezTerm) might have varying PTY buffer limits, potentially causing dropped characters or stuttering on high-latency systems.
+- Safe modification: Make chunk size and delay configurable or dynamically adaptive. 
+- Test coverage: `throttle_inject` has a basic unit test, but lacks integration tests verifying end-to-end injection reliability with `tmux` or `wezterm` CLIs.
 
-## Scaling Limits
+## Known Bugs
 
-**Signal Bus (Master Pane):**
-- Current capacity: Single master pane for all signals.
-- Limit: Becomes a bottleneck and a single point of failure. If the master pane is flooded with output, `vibe wait` performance degrades.
-- Scaling path: Decentralized signal distribution or a dedicated background bus process.
+**Tmux Availability on Windows:**
+- Symptoms: Tmux adapter will fail on native Windows environments since Tmux is Unix-centric.
+- Files: `crates/vibe-core/src/adapter/tmux.rs`
+- Trigger: Running Vibe with a Tmux target on Windows natively (outside WSL/MSYS2).
+- Workaround: Gracefully disable the Tmux adapter on Windows and default to WezTerm, or surface a clear environment error.
 
-## Test Coverage Gaps
+## Performance Bottlenecks
 
-**Terminal Adapters:**
-- What's not tested: Real interaction with `tmux` or `wezterm` CLIs.
-- Files: `crates/vibe-core/src/adapter/tmux.rs`, `crates/vibe-core/src/adapter/wezterm.rs`
-- Risk: Changes to CLI output or behavior in new terminal versions can break the adapters without notice.
-- Priority: High
+**FileBus Polling:**
+- Problem: `FileBus::recv` sleeps for 100ms in a busy loop repeatedly reading the `.vibe/bus/` directory.
+- Files: `crates/vibe-core/src/ipc/bus.rs`
+- Cause: Lack of event-driven file system monitoring.
+- Improvement path: Migrate to the `notify` crate to watch the directory for `Create` events instead of manually polling, drastically reducing CPU and Disk I/O.
 
-**Windows Compatibility:**
-- What's not tested: Cross-platform behavior of terminal splitting and command injection on Windows.
-- Files: `crates/vibe-core/src/os/windows.rs`, `crates/vibe-core/src/os/shell.rs`
-- Risk: Windows-specific bugs remain undetected until manual testing.
-- Priority: Medium
+## Security Considerations
 
----
+**Shell Command Escaping:**
+- Risk: `ShellAdapter::build_env_command` and `build_cd_command` use basic string replacement for escaping (`'\'\''` for Bash, `''` for Pwsh).
+- Files: `crates/vibe-core/src/os/shell.rs`
+- Current mitigation: Basic single-quote escaping is applied.
+- Recommendations: Complex nested quotes or unescaped variables might lead to syntax errors or command injection. Whenever possible, pass environment variables directly to the `std::process::Command` builder via `.env()` instead of serializing them into shell evaluation strings.
 
-*Concerns audit: 2025-03-04*
+## Missing Critical Features
+
+**Cross-Platform Injection Edge Cases:**
+- Problem: `wezterm cli send-text --no-paste` handles literal text well, but injecting large payloads with mixed line endings (CRLF vs LF) hasn't been normalized before dispatching.
+- Blocks: Consistent behavior of multiline script injection across Windows (CRLF) and Unix (LF) targets.

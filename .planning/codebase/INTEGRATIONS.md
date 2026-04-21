@@ -14,7 +14,8 @@
 
 **AI Agents (Targeted):**
 - Claude/Gemini/Codex - CLI-based agents.
-  - Integration: Spawned as child processes in terminal panes with pre-injected "Persona" prompts.
+  - Integration: Spawned as child processes in terminal panes.
+  - Auth/Persona: Securely injected via the `$VIBE_PERSONA` environment variable which passes role-specific instructions (`skills/vibe-operator/SKILL.md`).
 
 ## Data Storage
 
@@ -58,6 +59,7 @@
 - `VIBE_ID`: Unique identifier for the current pane.
 - `VIBE_MASTER_ID`: Physical ID of the master/orchestrator pane for signaling.
 - `WEZTERM_PANE` / `TMUX_PANE`: Provided by the terminal emulator for context detection.
+- `VIBE_PERSONA`: Injected securely to pass role-specific instructions to spawned AI agents (`apps/vibe-cli/src/main.rs`).
 
 **Secrets location:**
 - Not applicable (No external secrets required).
@@ -68,7 +70,8 @@
 - None.
 
 **Outgoing (Stateless Bus Signals):**
-- Terminal Text Injection: `[vibe-signal:NAME] {payload}` markers injected into terminal buffers for cross-pane communication.
+- FileBus IPC: Primary cross-pane communication method using reliable file-based transmission (`crates/vibe-core/src/ipc/bus.rs`).
+- Terminal Text Injection: Fallback method utilizing `[vibe-signal:NAME] {payload}` markers injected into terminal buffers.
 
 ---
 
