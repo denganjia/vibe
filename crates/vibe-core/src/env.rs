@@ -57,8 +57,7 @@ pub fn resolve_project_vibe_dir() -> Result<PathBuf> {
             break;
         }
     }
-    // Return a default if not found? No, let's return error if we want it explicit
-    // Actually, for auto-init, we might want to return current_dir/.vibe if not found
+    // Return a default if not found
     Ok(env::current_dir()?.join(".vibe"))
 }
 
@@ -78,6 +77,15 @@ pub fn resolve_plans_dir() -> Result<PathBuf> {
         let _ = std::fs::create_dir_all(&path);
     }
     Ok(path)
+}
+
+pub fn resolve_bus_dir() -> Result<PathBuf> {
+    let vibe_dir = resolve_project_vibe_dir()?;
+    let bus_dir = vibe_dir.join("bus");
+    if !bus_dir.exists() {
+        std::fs::create_dir_all(&bus_dir)?;
+    }
+    Ok(bus_dir)
 }
 
 #[cfg(test)]

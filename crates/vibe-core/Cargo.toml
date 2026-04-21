@@ -12,6 +12,7 @@ anyhow = { workspace = true }
 futures = { workspace = true }
 dirs = { workspace = true }
 which = { workspace = true }
+uuid = { workspace = true }
 tokio-util = { workspace = true }
 dialoguer = { workspace = true }
 regex = { workspace = true }

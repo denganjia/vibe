@@ -42,23 +42,11 @@ impl TerminalAdapter for TmuxAdapter {
     }
 
     fn send_keys(&self, target_id: &VibeID, keys: &str) -> Result<()> {
-        let output = Command::new("tmux")
-            .args(["send-keys", "-t", target_id])
-            .arg(keys)
-            .arg("ENTER")
-            .output()?;
-
-        if !output.status.success() {
-            return Err(VibeError::TerminalDetectionFailed(format!(
-                "Tmux send-keys failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            )));
-        }
-
-        Ok(())
+        self.inject_text(target_id, keys)?;
+        self.inject_raw(target_id, "\r")
     }
 
-    fn inject_text(&self, target_id: &VibeID, text: &str) -> Result<()> {
+    fn inject_raw(&self, target_id: &VibeID, text: &str) -> Result<()> {
         let output = Command::new("tmux")
             .args(["send-keys", "-t", target_id, "-l", text])
             .output()?;

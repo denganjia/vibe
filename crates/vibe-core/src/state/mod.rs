@@ -350,7 +350,7 @@ mod tests {
         
         let config_manager = ConfigManager::new()?;
         let config = config_manager.load()?;
-        assert_eq!(config.agent_command, "a-agent");
+        assert_eq!(config.default_command, "claude -y");
         
         let role_manager = RoleManager::new()?;
         let persona = role_manager.get_persona("Conductor")?;

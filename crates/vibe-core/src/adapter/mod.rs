@@ -22,6 +22,9 @@ pub struct TerminalMetadata {
 
 pub type VibeID = String;
 
+pub mod encoder;
+use encoder::TTYEncoder;
+
 pub mod wezterm;
 pub use wezterm::WezTermAdapter;
 
@@ -36,7 +39,14 @@ pub trait TerminalAdapter: Send + Sync {
     fn send_keys(&self, target_id: &VibeID, keys: &str) -> Result<()>;
 
     /// Inject raw text to the specified pane without automatically hitting Enter.
-    fn inject_text(&self, target_id: &VibeID, text: &str) -> Result<()>;
+    /// This should be implemented by adapters to provide the underlying transport.
+    fn inject_raw(&self, target_id: &VibeID, text: &str) -> Result<()>;
+
+    /// Inject text with throttling and proper line-ending handling.
+    /// Default implementation uses TTYEncoder to throttle calls to inject_raw.
+    fn inject_text(&self, target_id: &VibeID, text: &str) -> Result<()> {
+        TTYEncoder::throttle_inject(text, |chunk| self.inject_raw(target_id, chunk))
+    }
 
     /// Close the specified pane.
     fn close(&self, target_id: &VibeID) -> Result<()>;

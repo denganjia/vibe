@@ -2,8 +2,8 @@ use clap::{Parser, Subcommand};
 use vibe_core::adapter::{SplitDirection, WindowTarget, TerminalAdapter, WezTermAdapter, TmuxAdapter};
 use vibe_core::env::{detect_current_terminal, TerminalType};
 use vibe_core::state::{StateStore, ensure_project_vibe};
+use vibe_core::ipc::bus::FileBus;
 use tokio::process::Command;
-use std::time::Duration;
 
 mod tui;
 
@@ -288,66 +288,64 @@ async fn main() -> anyhow::Result<()> {
             println!("All active vibe panes killed.");
         }
         Commands::Signal { name, payload } => {
-            let terminal_type = detect_current_terminal()
-                .ok_or_else(|| anyhow::anyhow!("No supported terminal detected for signaling"))?;
-            let adapter: Box<dyn TerminalAdapter> = match terminal_type {
-                TerminalType::WezTerm => Box::new(WezTermAdapter),
-                TerminalType::Tmux => Box::new(TmuxAdapter),
-            };
-
-            let target_pane = std::env::var("VIBE_MASTER_ID").or_else(|_| {
-                let store = StateStore::new()?;
-                store.get_master_pane().map(|p| p.unwrap_or_default())
-            })?;
-
-            if target_pane.is_empty() {
-                anyhow::bail!("Could not identify Master Pane for signaling.");
-            }
-
-            let payload_json = if let Some(p) = payload {
+            let payload_value = if let Some(p) = payload {
                 if p.starts_with('@') {
-                    std::fs::read_to_string(&p[1..])?
+                    let content = std::fs::read_to_string(&p[1..])?;
+                    serde_json::from_str(&content).unwrap_or(serde_json::Value::String(content))
                 } else {
-                    p
+                    serde_json::from_str(&p).unwrap_or(serde_json::Value::String(p))
                 }
             } else {
-                "null".to_string()
+                serde_json::Value::Null
             };
 
-            let signal_str = format!("\n[vibe-signal:{}] {}\n", name, payload_json);
-            adapter.inject_text(&target_pane, &signal_str)?;
-            println!("Signal '{}' injected into pane {}.", name, target_pane);
+            // 1. Try FileBus first
+            match FileBus::send(&name, payload_value.clone()) {
+                Ok(_) => {
+                    println!("Signal '{}' sent via FileBus.", name);
+                }
+                Err(e) => {
+                    eprintln!("FileBus failed: {}. Falling back to TTY injection...", e);
+                    
+                    // 2. Fallback to TTY injection
+                    let terminal_type = detect_current_terminal()
+                        .ok_or_else(|| anyhow::anyhow!("No supported terminal detected for fallback signaling"))?;
+                    let adapter: Box<dyn TerminalAdapter> = match terminal_type {
+                        TerminalType::WezTerm => Box::new(WezTermAdapter),
+                        TerminalType::Tmux => Box::new(TmuxAdapter),
+                    };
+
+                    let target_pane = std::env::var("VIBE_MASTER_ID").or_else(|_| {
+                        let store = StateStore::new()?;
+                        store.get_master_pane().map(|p| p.unwrap_or_default())
+                    })?;
+
+                    if target_pane.is_empty() {
+                        anyhow::bail!("Could not identify Master Pane for fallback signaling.");
+                    }
+
+                    let payload_json = serde_json::to_string(&payload_value)?;
+                    let signal_str = format!("\n[vibe-signal:{}] {}\r", name, payload_json);
+                    adapter.inject_text(&target_pane, &signal_str)?;
+                    println!("Signal '{}' injected into pane {} (fallback).", name, target_pane);
+                }
+            }
         }
         Commands::Wait { name, timeout } => {
-            use std::io::{BufRead, BufReader};
-            let marker = format!("[vibe-signal:{}]", name);
             println!("Waiting for signal '{}' (timeout: {}s)...", name, timeout);
 
-            let (tx, mut rx) = tokio::sync::mpsc::channel(1);
-            
-            // Move stdin reading to a dedicated thread because it's blocking
-            std::thread::spawn(move || {
-                let stdin = std::io::stdin();
-                let reader = BufReader::new(stdin);
-                for line in reader.lines() {
-                    if let Ok(l) = line {
-                        if l.contains(&marker) {
-                            let payload = l.split(&marker).nth(1).unwrap_or("").trim().to_string();
-                            let _ = tx.blocking_send(payload);
-                            break;
-                        }
+            match FileBus::recv(&name, timeout) {
+                Ok(payload) => {
+                    if payload.is_null() {
+                        println!("Signal '{}' received.", name);
+                    } else if let Some(s) = payload.as_str() {
+                        println!("{}", s);
+                    } else {
+                        println!("{}", serde_json::to_string_pretty(&payload)?);
                     }
                 }
-            });
-
-            tokio::select! {
-                res = rx.recv() => {
-                    if let Some(payload) = res {
-                        println!("{}", payload);
-                    }
-                }
-                _ = tokio::time::sleep(Duration::from_secs(timeout)) => {
-                    anyhow::bail!("Wait timed out after {} seconds.", timeout);
+                Err(e) => {
+                    anyhow::bail!("Wait failed: {}", e);
                 }
             }
         }
