@@ -250,10 +250,10 @@ async fn main() -> anyhow::Result<()> {
             let panes = store.list_active_panes()?;
             for state in panes {
                 println!("Killing pane: {}", state.vibe_id);
-                if let Err(e) = adapter.close(&state.vibe_id) {
-                    eprintln!("Failed to close pane {}: {}", state.vibe_id, e);
+                match adapter.close(&state.physical_id) {
+                    Ok(()) => store.remove_pane(&state.vibe_id)?,
+                    Err(e) => eprintln!("Failed to close pane {}: {}", state.physical_id, e),
                 }
-                store.remove_pane(&state.vibe_id)?;
             }
             println!("All active vibe panes killed.");
         }
