@@ -516,7 +516,9 @@ async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapte
         }
         
         // Pass the persona as the initial positional prompt argument to the CLI
-        if is_known_cli {
+        if is_claude {
+            agent_command = format!("{} --system-prompt \"$VIBE_PERSONA\"", agent_command);
+        } else if is_known_cli {
             agent_command = format!("{} \"$VIBE_PERSONA\"", agent_command);
         }
     }
