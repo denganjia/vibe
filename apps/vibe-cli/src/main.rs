@@ -83,6 +83,10 @@ enum Commands {
     /// Spawn a new agent role in a new tab or pane
     Spawn {
         /// Role name (e.g., Worker, Conductor)
+        #[arg(long = "role")]
+        role_flag: Option<String>,
+
+        /// Positional role name
         role: Option<String>,
         
         /// Override agent command
@@ -146,7 +150,7 @@ async fn main() -> anyhow::Result<()> {
             store.save_pane(&vibe_id, &vibe_id, &format!("{:?}", terminal_type.unwrap_or(TerminalType::WezTerm)), None, cwd)?;
             println!("Split new pane: {}", vibe_id);
         }
-        Commands::Spawn { role, cmd, pane, stack } => {
+        Commands::Spawn { role_flag, role, cmd, pane, stack } => {
             ensure_project_vibe()?;
             let terminal_type = detect_current_terminal();
             let adapter = get_adapter(terminal_type);
@@ -167,10 +171,10 @@ async fn main() -> anyhow::Result<()> {
                     // Small delay between spawns to ensure stable TTY initialization
                     std::thread::sleep(std::time::Duration::from_millis(500));
                 }
-            } else if let Some(r) = role {
+            } else if let Some(r) = role_flag.or(role) {
                 spawn_role(&r, cmd, pane, adapter.as_ref(), &store).await?;
             } else {
-                anyhow::bail!("Either --role or --stack must be provided.");
+                anyhow::bail!("Either --role (or positional role) or --stack must be provided.");
             }
         }
         Commands::List { json } => {
@@ -427,7 +431,14 @@ async fn main() -> anyhow::Result<()> {
                     .default(0)
                     .interact()?;
                 
-                let selected_cli = format!("{} -y", available_clis[selection]);
+                let selected_cli_name = available_clis[selection];
+                let auto_flag = if selected_cli_name.starts_with("claude") {
+                    "--dangerously-skip-permissions"
+                } else {
+                    "-y"
+                };
+
+                let selected_cli = format!("{} {}", selected_cli_name, auto_flag);
                 println!("✅ Selected: {}", selected_cli);
                 
                 config.default_command = selected_cli.clone();
@@ -473,16 +484,31 @@ async fn spawn_role(role: &str, cmd_override: Option<String>, pane: bool, adapte
     let config_manager = vibe_core::state::ConfigManager::new()?;
     let config = config_manager.load()?;
     
-    let mut agent_command = cmd_override.unwrap_or_else(|| {
+    let mut agent_command = cmd_override.clone().unwrap_or_else(|| {
         config.roles.get(role)
             .cloned()
             .unwrap_or(config.default_command.clone())
     });
 
-    // Ensure auto-approve mode for common CLIs to prevent hanging
-    if (agent_command.starts_with("claude") || agent_command.starts_with("gemini") || agent_command.starts_with("codex")) 
-        && !agent_command.contains(" -y") && !agent_command.contains(" --yolo") {
-        agent_command.push_str(" -y");
+    // Ensure auto-approve mode for common CLIs to prevent hanging, but ONLY if no override was provided
+    if cmd_override.is_none() {
+        let is_claude = agent_command.starts_with("claude");
+        let is_gemini = agent_command.starts_with("gemini");
+        let is_codex = agent_command.starts_with("codex");
+
+        if is_claude && !agent_command.contains(" --dangerously-skip-permissions") {
+            if let Some(first_space) = agent_command.find(' ') {
+                agent_command.insert_str(first_space, " --dangerously-skip-permissions");
+            } else {
+                agent_command.push_str(" --dangerously-skip-permissions");
+            }
+        } else if (is_gemini || is_codex) && !agent_command.contains(" -y") && !agent_command.contains(" --yolo") {
+            if let Some(first_space) = agent_command.find(' ') {
+                agent_command.insert_str(first_space, " -y");
+            } else {
+                agent_command.push_str(" -y");
+            }
+        }
     }
     
     // 3. Get master pane ID
