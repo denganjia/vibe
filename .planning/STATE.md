@@ -1,58 +1,23 @@
+# Project State: Milestone 5.0
+
+## Overview
+- **Active Milestone**: Milestone 5.0 - 多 Agent 交互增强与 CLI 初始化标准化
+- **Status**: 🟢 Planning Completed. Starting Phase 17.
+- **Current Phase**: Phase 17 (Bi-directional Flow & Reliability)
+
+## Progress Tracker
+- [ ] **Phase 17: Bi-directional Flow & Reliability** (0%)
+- [ ] **Phase 18: Standardization & Init** (0%)
+- [ ] **Phase 19: Full Autonomous Workflow (E2E)** (0%)
+
+## Key Metrics
+- **Logic Integrity**: 100% (Stateless bus architecture validated)
+- **Identity Reliability**: 100% (UUID-based injection verified)
+- **Interaction Seamlessness**: 70% (Need to fix \r reliability across CLIs)
+
+## Blockers & Risks
+- **Race conditions**: 高并发下的 `vibe signal` 可能会在主会话繁忙时丢失（由于 stdin 缓冲区限制）。
+- **CLI Behavior**: 不同 AI CLI 对模拟按键的响应深度不同。
+
 ---
-gsd_state_version: 1.0
-milestone: v5.0
-milestone_name: Stability & Scale
-status: planning next milestone
-last_updated: "2026-04-20T15:30:00Z"
-progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
----
-
-# STATE
-
-## Project Reference
-
-See: .planning/PROJECT.md (updated 2026-04-20)
-
-**Core Value**: Strategic Pivot to "Agent Collaboration Bus" - High autonomy, local context (.vibe), and simple signaling.
-**Current Focus**: Milestone 5.0 - Planning Next Milestone
-
-## Current Position
-
-**Phase**: Planning
-**Plan**: TBD
-**Status**: Milestone 4.0 Shipped
-**Last activity**: 2026-04-20 — Milestone 4.0 complete. Archives created.
-**Progress**: [░░░░░░░░░░░░░░░░░░░░] 0%
-
-## Accumulated Context
-
-### Decisions (W4)
-
-- **Pivot 4.0**: Moving from command-level interception to task-level autonomous signaling.
-- **Stateless Bus**: Removed Master daemon and UDS; communication via terminal text injection and stdin polling.
-- **Persona Injection**: `vibe spawn` will use terminal injection to dump persona Markdown before launching the agent CLI.
-- **Project Config**: Added `.vibe/config.json` for project-level settings (e.g., `agent_command`).
-
-### Todos
-
-- [ ] Define Milestone 5.0 goals
-- [ ] Research OS stability improvements
-
-### Blockers
-
-- None.
-
-## Session Continuity
-
-### Current Intent
-
-Transitioning to next milestone planning.
-
-### Next Steps
-
-1. Run `/gsd-new-milestone` to start the next cycle.
+*Last updated: 2026-04-20*

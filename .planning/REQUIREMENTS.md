@@ -1,52 +1,31 @@
-# Requirements: vibe-cli (Milestone 4.0 - AI Agent Bus)
+# Milestone 5.0 Requirements: Interaction & Initialization
 
-**Defined:** 2026-04-17
-**Core Value:** Strategic Pivot to "Agent Collaboration Bus" - High autonomy, local context (.vibe), and simple signaling.
+## 1. 双向交互闭环 (Bi-directional Interaction)
 
-## v1 Requirements (Milestone 4.0: AI Agent Bus)
+### 1.1 主会话输入增强 (Master Input Enhancement)
+- **需求**: 支持主会话通过 `vibe inject` 向特定 Worker 发送补充指令，而无需重启 Worker。
+- **验证**: 主会话执行 `vibe inject v-xxxx "new instruction"`，Worker 的交互式 CLI 能够即时接收并处理。
 
-### 1. 架构净化 (Architecture Cleanup)
-- [ ] **BUS-01**: 移除现有的 MCP 代码 (`mcp.rs`) 与复杂的人工审批逻辑。
-- [ ] **BUS-02**: 移除沉重的 SQLite 强业务逻辑，仅保留内存中的轻量级 Session 表。
-- [ ] **BUS-03**: 简化 IPC 协议，支持 `Signal` 和 `Wait` (基于连接挂起模式) 消息类型。
+### 1.2 Worker 自动回复 (Worker Auto-reply)
+- **需求**: Worker 任务完成后，必须通过 `vibe signal [name]` 返回结果。
+- **验证**: Conductor 能够通过 `vibe wait [name]` 捕获到结果，并将数据流式传递给后续任务。
 
-### 2. 信号总线 (The Bus)
-- [ ] **BUS-04**: 实现 `vibe signal <MSG>`。通过总线通知所有关注该消息的订阅者。
-- [ ] **BUS-05**: 实现 `vibe wait [SIGNAL]`。进入阻塞状态，监听 UDS 消息直至信号到达。
-- [ ] **BUS-06**: 实现多项目隔离的消息路由，基于项目哈希生成的 UDS 路径 (`/tmp/vibe-<hash>.sock`)。
+### 1.3 交互可靠性 (Interaction Reliability)
+- **需求**: 解决 `\r` 注入在不同 AI CLI（Claude vs Gemini）中的行为不一致问题。
+- **验证**: 确保所有主流 AI CLI 都能在不按回车的情况下开始工作。
 
-### 3. 自治代理启动 (Autonomous Spawner)
-- [x] **BUS-07**: 实现 `vibe spawn --role <ROLE>`。
-    - 自动通过终端适配器 (Wezterm/Tmux) 拆分窗格。
-    - 读取 `.vibe/roles/<ROLE>.md` 作为 Persona。
-- [x] **BUS-08**: 角色注入协议。在子进程启动时通过 `stdin` 管道注入 Persona 提示词。
-- [x] **BUS-09**: 实现交互交接。注入完成后，自动将主 `stdin` 桥接到子进程。
+## 2. CLI 初始化标准化 (Initialization Standardization)
 
-### 4. 项目本地上下文 (Local Context)
-- [x] **BUS-10**: 建立 `.vibe/` 规范目录结构。
-- [x] **BUS-11**: 实现跨 Agent 上下文共享。子 Agent 任务完成后自动更新 `.vibe/state/`。
+### 2.1 项目根目录配置 (`.vibe/config.json`)
+- **需求**: 支持在项目根目录通过配置文件定义所有角色的默认命令。
+- **验证**: 运行 `vibe init` 或 `vibe check` 时，如果不存在配置，则自动生成标准化的 `.vibe/config.json`。
 
-## Traceability
+### 2.2 环境一键就绪
+- **需求**: `vibe spawn --all` 能够根据配置自动启动全套智能体（Conductor + Worker）。
+- **验证**: 一个命令即可打开所有必要的 Tab 并初始化好各自的 Persona。
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| BUS-01 | Phase 13 | Complete |
-| BUS-02 | Phase 13 | Complete |
-| BUS-03 | Phase 13 | Complete |
-| BUS-04 | Phase 14 | Complete |
-| BUS-05 | Phase 14 | Complete |
-| BUS-06 | Phase 14 | Complete |
-| BUS-07 | Phase 15 | Complete |
-| BUS-08 | Phase 15 | Complete |
-| BUS-09 | Phase 15 | Complete |
-| BUS-10 | Phase 15 | Complete |
-| BUS-11 | Phase 16 | Complete |
+## 3. 高自治工作流 (Autonomous Workflow)
 
-**Coverage:**
-- Milestone 4.0 requirements: 11 total
-- Mapped to phases: 11
-- Unmapped: 0 ✓
-
----
-*Requirements defined: 2026-04-17*
-*Last updated: 2026-04-17 after Implementation Research*
+### 3.1 减少人力介入
+- **需求**: 通过增强 Persona 模板，让智能体具备“遇到错误自动尝试修复”和“完成后主动发信号”的本能。
+- **成功标准**: 至少完成一个中等复杂度的任务（如“重构一个包含 3 个文件的模块”），且 Conductor 不需要用户输入任何物理命令。

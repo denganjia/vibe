@@ -1,13 +1,13 @@
 # vibe-cli
 
-## Current Milestone: Milestone 5.0 - [Planning Next Milestone]
+## Current Milestone: Milestone 5.0 - 多 Agent 交互增强与 CLI 初始化标准化
 
-**Goal:** 持续优化 AI 代理协同总线，提升稳定性并探索多代理复杂协作场景。
+**Goal:** 完善多智能体间的双向通信机制，实现高自治的开发流水线，并标准化项目级的环境初始化流程。
 
 **Strategic Pivot:**
-- **From Control to Bus**: 从“主从命令注入”转向“分布式自治代理通信”。 (Completed in v4.0)
-- **Zero Friction**: 信任子 Agent 行为，仅在任务交付时进行人工 Review。
-- **Lightweight**: 移除 MCP 与 SQLite DB，转而使用项目本地 `.vibe/` 目录。
+- **Autonomous Flow**: 从“手动干预”转向“信号驱动的自动化”。
+- **Config-First**: 强化 `.vibe` 配置文件的核心地位，通过配置定义角色行为和交互逻辑。
+- **Closed Loop**: 确保主会话与 Worker 之间的“启动-任务-回复-关闭”链路完全打通。
 
 ## What This Is
 
@@ -28,13 +28,14 @@
 - ✓ **架构极简化 (Cleanup)** — v4.0 (Removed MCP & SQLite)
 - ✓ **物理层编排 (Spawner)** — v4.0 (Implemented vibe spawn)
 - ✓ **信号总线 (Bus Core)** — v4.0 (Implemented vibe signal/wait)
-- ✓ **全流程集成 (E2E Integration)** — v4.0
+- ✓ **按角色配置命令** — v4.0 (v5.0 Pre-work)
 
 ### Active
 
-- [ ] **多平台适配 (OS Compatibility)**: 进一步优化 Windows 下的终端适配稳定性。
-- [ ] **性能监控 (Performance Metrics)**: 统计代理任务耗时与资源消耗。
-- [ ] **调试工具 (Debugger)**: 提供更直观的信号总线调试视图。
+- [ ] **双向通信闭环**: 完善 Worker 对主会话的自动化回复与数据传递机制。
+- [ ] **CLI 初始化增强**: 实现项目根目录 `.vibe` 配置文件驱动的快速环境初始化。
+- [ ] **全自动流水线**: 实现从任务分配到最终交付的端到端自动化。
+- [ ] **高可靠性交互**: 解决交互式 CLI（如 Claude/Gemini）在不同环境下的输入输出解析问题。
 
 ### Out of Scope
 
