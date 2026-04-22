@@ -1,31 +1,108 @@
-# Milestone 5.0 Requirements: Interaction & Initialization
+# Milestone 6.0 Requirements: Task Flow Automation
 
-## 1. 双向交互闭环 (Bi-directional Interaction)
+**Defined:** 2026-04-22
+**Core Value:** 打破 AI 与本地开发环境之间的“次元壁”，将终端从单纯的字符输入框升级为分布式 AI 协作的物理调度室。
 
-### 1.1 主会话输入增强 (Master Input Enhancement)
-- **需求**: 支持主会话通过 `vibe inject` 向特定 Worker 发送补充指令，而无需重启 Worker。
-- **验证**: 主会话执行 `vibe inject v-xxxx "new instruction"`，Worker 的交互式 CLI 能够即时接收并处理。
+## v6.0 Requirements
 
-### 1.2 Worker 自动回复 (Worker Auto-reply)
-- **需求**: Worker 任务完成后，必须通过 `vibe signal [name]` 返回结果。
-- **验证**: Conductor 能够通过 `vibe wait [name]` 捕获到结果，并将数据流式传递给后续任务。
+### Task Assignment
 
-### 1.3 交互可靠性 (Interaction Reliability)
-- **需求**: 解决 `\r` 注入在不同 AI CLI（Claude vs Gemini）中的行为不一致问题。
-- **验证**: 确保所有主流 AI CLI 都能在不按回车的情况下开始工作。
+- [ ] **ASSIGN-01**: Conductor can create a structured task request with goal, file scope, constraints, expected output, and verification command.
+- [ ] **ASSIGN-02**: System can classify tasks by type, required skills, affected files, dependency risk, and expected execution cost.
+- [ ] **ASSIGN-03**: System can match a task to an available Worker role using declared capabilities, current load, and conflict rules.
+- [ ] **ASSIGN-04**: System can split a multi-step objective into ordered or parallelizable task units with explicit handoff contracts.
+- [ ] **ASSIGN-05**: System can detect assignment conflicts, including overlapping file ownership, dependency ordering, and duplicate task intent.
 
-## 2. CLI 初始化标准化 (Initialization Standardization)
+### `.vibe` Configuration
 
-### 2.1 项目根目录配置 (`.vibe/config.json`)
-- **需求**: 支持在项目根目录通过配置文件定义所有角色的默认命令。
-- **验证**: 运行 `vibe init` 或 `vibe check` 时，如果不存在配置，则自动生成标准化的 `.vibe/config.json`。
+- [ ] **CONF-01**: `.vibe/config.json` has a versioned schema covering roles, commands, stacks, capabilities, task templates, state paths, and release settings.
+- [ ] **CONF-02**: `vibe check` validates `.vibe/config.json` and reports actionable errors for missing fields, invalid role references, and unsupported schema versions.
+- [ ] **CONF-03**: `vibe init` can create or migrate `.vibe/config.json` without overwriting user customizations.
+- [ ] **CONF-04**: Runtime commands load configuration through one shared config path with deterministic defaults and project-level overrides.
+- [ ] **CONF-05**: Role templates and configured capabilities stay consistent, so task assignment uses the same role names and capabilities that spawn uses.
 
-### 2.2 环境一键就绪
-- **需求**: `vibe spawn --all` 能够根据配置自动启动全套智能体（Conductor + Worker）。
-- **验证**: 一个命令即可打开所有必要的 Tab 并初始化好各自的 Persona。
+### Filesystem State
 
-## 3. 高自治工作流 (Autonomous Workflow)
+- [ ] **STATE-01**: `.vibe/state` records tasks, workers, assignments, leases, locks, heartbeats, results, failures, and completed task history as inspectable files.
+- [ ] **STATE-02**: State writes are atomic enough to avoid partial JSON reads during concurrent Worker and Conductor activity.
+- [ ] **STATE-03**: File ownership and task locks prevent two Workers from writing the same owned path unless the task explicitly allows shared ownership.
+- [ ] **STATE-04**: Stale leases and dead Worker heartbeats can be detected and recovered without deleting valid task results.
+- [ ] **STATE-05**: Users can inspect current task flow state through CLI output that distinguishes queued, assigned, running, blocked, complete, and failed work.
 
-### 3.1 减少人力介入
-- **需求**: 通过增强 Persona 模板，让智能体具备“遇到错误自动尝试修复”和“完成后主动发信号”的本能。
-- **成功标准**: 至少完成一个中等复杂度的任务（如“重构一个包含 3 个文件的模块”），且 Conductor 不需要用户输入任何物理命令。
+### Task Flow Automation
+
+- [ ] **FLOW-01**: Conductor can enqueue tasks, dispatch them to Workers, wait for completion signals, and aggregate results without manual terminal interaction.
+- [ ] **FLOW-02**: Worker lifecycle reports include accepted, writing, verifying, blocked, failed, and completed states with structured payloads.
+- [ ] **FLOW-03**: Failed tasks can be retried according to policy with retry count, last error, and changed assignment context preserved.
+- [ ] **FLOW-04**: Parallel tasks only run when their file scopes and dependency graph allow safe concurrent execution.
+- [ ] **FLOW-05**: A task flow can resume after interruption by reading filesystem state and continuing from the last durable checkpoint.
+
+### GitHub Release Summaries
+
+- [ ] **REL-01**: Release command can determine a commit range from the latest tag or an explicit `--from/--to` range.
+- [ ] **REL-02**: Release summary groups commits into features, fixes, docs, tests, refactors, and internal changes using deterministic rules.
+- [ ] **REL-03**: Release summary includes changed files and phase references when commit messages or planning artifacts provide them.
+- [ ] **REL-04**: Release command can write a GitHub release notes draft without requiring network access.
+- [ ] **REL-05**: Release workflow validates that the changelog source range is non-empty and warns about uncommitted changes before drafting.
+
+## Future Requirements
+
+### Assignment Intelligence
+
+- **ASSIGN-F01**: System learns Worker success rates over time and uses historical quality as assignment input.
+- **ASSIGN-F02**: System supports pluggable assignment strategies for different project types.
+
+### Release Automation
+
+- **REL-F01**: Release command can publish directly to GitHub when `gh` is authenticated.
+- **REL-F02**: Release summaries can include issue and PR metadata from GitHub APIs.
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Network-required GitHub publishing | v6.0 focuses on deterministic local release summaries; publishing can build on the draft output later. |
+| Central daemon or database | The product direction remains project-local filesystem state, not a long-running service. |
+| ML-based assignment scoring | Accurate deterministic assignment comes first; learning from history is deferred. |
+| Cross-repository task orchestration | v6.0 scopes state and assignment to one project root. |
+
+## Traceability
+
+Traceability will be filled during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| ASSIGN-01 | TBD | Pending |
+| ASSIGN-02 | TBD | Pending |
+| ASSIGN-03 | TBD | Pending |
+| ASSIGN-04 | TBD | Pending |
+| ASSIGN-05 | TBD | Pending |
+| CONF-01 | TBD | Pending |
+| CONF-02 | TBD | Pending |
+| CONF-03 | TBD | Pending |
+| CONF-04 | TBD | Pending |
+| CONF-05 | TBD | Pending |
+| STATE-01 | TBD | Pending |
+| STATE-02 | TBD | Pending |
+| STATE-03 | TBD | Pending |
+| STATE-04 | TBD | Pending |
+| STATE-05 | TBD | Pending |
+| FLOW-01 | TBD | Pending |
+| FLOW-02 | TBD | Pending |
+| FLOW-03 | TBD | Pending |
+| FLOW-04 | TBD | Pending |
+| FLOW-05 | TBD | Pending |
+| REL-01 | TBD | Pending |
+| REL-02 | TBD | Pending |
+| REL-03 | TBD | Pending |
+| REL-04 | TBD | Pending |
+| REL-05 | TBD | Pending |
+
+**Coverage:**
+- v6.0 requirements: 25 total
+- Mapped to phases: 0
+- Unmapped: 25 pending roadmap
+
+---
+*Requirements defined: 2026-04-22*
+*Last updated: 2026-04-22 after milestone definition*
