@@ -36,10 +36,10 @@ Milestone 6.0 是一次产品形态转型：从独立重型 `vibe-cli` 编排系
   5. 旧 Rust CLI 能力被分类为 migrate-to-script、compatibility 或 remove，并说明理由。
 **Plans**: 4 plans
 Plans:
-- [ ] 20-01-PLAN.md — scaffold `plugin/vibe/` package, scripts boundary, `.vibe` templates, and examples index.
-- [ ] 20-02-PLAN.md — create model-readable plugin architecture, workspace, collaboration, task, Agent, and review references.
+- [x] 20-01-PLAN.md — scaffold `plugin/vibe/` package, scripts boundary, `.vibe` templates, and examples index.
+- [x] 20-02-PLAN.md — create model-readable plugin architecture, workspace, collaboration, task, Agent, and review references.
 - [ ] 20-03-PLAN.md — create Conductor skill and init/plan/run-task/review-task/status/release-summary command contracts.
-- [ ] 20-04-PLAN.md — classify old Rust CLI commands, state, env, and bus concepts for migration.
+- [x] 20-04-PLAN.md — classify old Rust CLI commands, state, env, and bus concepts for migration.
 
 ### Phase 21: `.vibe` 工作区与 Agent 定义
 **Goal**: Plugin 启用后可以非破坏性创建项目级 `.vibe` 工作区，并用 `.vibe/Agents` 定义 planner、executor、reviewer、release 等角色和模型命令。
@@ -95,7 +95,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 20. Plugin-first 架构与迁移边界 | v6.0 | 0/4 | Ready to execute | - |
+| 20. Plugin-first 架构与迁移边界 | v6.0 | 3/4 | In Progress | - |
 | 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 0/TBD | Not started | - |
 | 22. 轻量 scripts runtime | v6.0 | 0/TBD | Not started | - |
 | 23. 多模型执行与审查闭环 | v6.0 | 0/TBD | Not started | - |
