@@ -68,41 +68,41 @@
 
 ## Traceability
 
-Traceability will be filled during roadmap creation.
+Milestone 6.0 需求已映射到 Phase 20-24。每条 v6.0 requirement 只归属一个 phase。
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ASSIGN-01 | TBD | Pending |
-| ASSIGN-02 | TBD | Pending |
-| ASSIGN-03 | TBD | Pending |
-| ASSIGN-04 | TBD | Pending |
-| ASSIGN-05 | TBD | Pending |
-| CONF-01 | TBD | Pending |
-| CONF-02 | TBD | Pending |
-| CONF-03 | TBD | Pending |
-| CONF-04 | TBD | Pending |
-| CONF-05 | TBD | Pending |
-| STATE-01 | TBD | Pending |
-| STATE-02 | TBD | Pending |
-| STATE-03 | TBD | Pending |
-| STATE-04 | TBD | Pending |
-| STATE-05 | TBD | Pending |
-| FLOW-01 | TBD | Pending |
-| FLOW-02 | TBD | Pending |
-| FLOW-03 | TBD | Pending |
-| FLOW-04 | TBD | Pending |
-| FLOW-05 | TBD | Pending |
-| REL-01 | TBD | Pending |
-| REL-02 | TBD | Pending |
-| REL-03 | TBD | Pending |
-| REL-04 | TBD | Pending |
-| REL-05 | TBD | Pending |
+| ASSIGN-01 | Phase 20 | Pending |
+| ASSIGN-02 | Phase 20 | Pending |
+| ASSIGN-03 | Phase 20 | Pending |
+| ASSIGN-04 | Phase 20 | Pending |
+| ASSIGN-05 | Phase 20 | Pending |
+| CONF-01 | Phase 21 | Pending |
+| CONF-02 | Phase 21 | Pending |
+| CONF-03 | Phase 21 | Pending |
+| CONF-04 | Phase 21 | Pending |
+| CONF-05 | Phase 21 | Pending |
+| STATE-01 | Phase 22 | Pending |
+| STATE-02 | Phase 22 | Pending |
+| STATE-03 | Phase 22 | Pending |
+| STATE-04 | Phase 22 | Pending |
+| STATE-05 | Phase 22 | Pending |
+| FLOW-01 | Phase 23 | Pending |
+| FLOW-02 | Phase 23 | Pending |
+| FLOW-03 | Phase 23 | Pending |
+| FLOW-04 | Phase 23 | Pending |
+| FLOW-05 | Phase 23 | Pending |
+| REL-01 | Phase 24 | Pending |
+| REL-02 | Phase 24 | Pending |
+| REL-03 | Phase 24 | Pending |
+| REL-04 | Phase 24 | Pending |
+| REL-05 | Phase 24 | Pending |
 
 **Coverage:**
 - v6.0 requirements: 25 total
-- Mapped to phases: 0
-- Unmapped: 25 pending roadmap
+- Mapped to phases: 25
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-22*
-*Last updated: 2026-04-22 after milestone definition*
+*Last updated: 2026-04-22 after roadmap creation*
