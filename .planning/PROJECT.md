@@ -1,13 +1,14 @@
 # vibe-cli
 
-## Current Milestone: Milestone 5.0 - 多 Agent 交互增强与 CLI 初始化标准化
+## Current Milestone: Milestone 6.0 - 智能任务流与配置化状态系统
 
-**Goal:** 完善多智能体间的双向通信机制，实现高自治的开发流水线，并标准化项目级的环境初始化流程。
+**Goal:** 将 `vibe-cli` 从可运行的多 Agent 协作总线推进到可规划、可分配、可恢复、可发布的自动化任务流系统。
 
 **Strategic Pivot:**
-- **Autonomous Flow**: 从“手动干预”转向“信号驱动的自动化”。
-- **Config-First**: 强化 `.vibe` 配置文件的核心地位，通过配置定义角色行为和交互逻辑。
-- **Closed Loop**: 确保主会话与 Worker 之间的“启动-任务-回复-关闭”链路完全打通。
+- **Assignment Intelligence**: 从“能 spawn Worker”升级到“能高效且准确地拆分、匹配、派发任务”。
+- **Config as System Contract**: `.vibe` 不只是初始化产物，而是角色、能力、任务流、状态目录和发布流程的项目级配置合同。
+- **Filesystem State Machine**: 用文件系统表达任务、Worker、信号、锁、结果和恢复点，让状态可观察、可调试、可版本化。
+- **Release Intelligence**: 发布时自动从 git commit 历史生成可信的变更总结，减少手写 release note 成本。
 
 ## What This Is
 
@@ -29,13 +30,18 @@
 - ✓ **物理层编排 (Spawner)** — v4.0 (Implemented vibe spawn)
 - ✓ **信号总线 (Bus Core)** — v4.0 (Implemented vibe signal/wait)
 - ✓ **按角色配置命令** — v4.0 (v5.0 Pre-work)
+- ✓ **双向通信闭环** — v5.0
+- ✓ **CLI 初始化增强** — v5.0
+- ✓ **全自动流水线验证** — v5.0
+- ✓ **高可靠性交互修复** — v5.0
 
 ### Active
 
-- [ ] **双向通信闭环**: 完善 Worker 对主会话的自动化回复与数据传递机制。
-- [ ] **CLI 初始化增强**: 实现项目根目录 `.vibe` 配置文件驱动的快速环境初始化。
-- [ ] **全自动流水线**: 实现从任务分配到最终交付的端到端自动化。
-- [ ] **高可靠性交互**: 解决交互式 CLI（如 Claude/Gemini）在不同环境下的输入输出解析问题。
+- [ ] **高效且准确的任务分配**: 根据任务类型、文件范围、依赖关系、Worker 能力和当前负载自动拆分与派发任务。
+- [ ] **完善的 `.vibe` 配置系统**: 支持配置 schema、校验、合并、默认值、角色能力、任务流模板和项目级覆盖。
+- [ ] **基于文件系统的状态机制**: 将任务队列、租约、锁、心跳、结果、失败原因和恢复点持久化到 `.vibe`。
+- [ ] **任务流自动化**: 支持任务生命周期从创建、分配、执行、等待、聚合、重试到完成的自动推进。
+- [ ] **GitHub release commit 总结**: 发布时从 commit 区间生成结构化 changelog 和 release notes 草稿。
 
 ### Out of Scope
 
@@ -44,10 +50,11 @@
 
 ## Context
 
-Shipped Milestone 4.0 (AI Agent Bus).
-Current LOC: ~1600 (Core Rust code reduced after removing MCP/SQLite).
+Shipped Milestone 5.0 (Interaction & Initialization).
+Current LOC: Rust core and CLI continue to center on `.vibe`, terminal adapters, file bus, and role templates.
 Tech stack: Rust, Tokio, Ratatui, WezTerm/Tmux integration.
-Established a stateless signaling bus based on terminal injection.
+Established project-local `.vibe/config.json`, `.vibe/state`, `.vibe/bus`, role templates, `vibe spawn --stack`, `vibe signal/wait`, and autonomous loop SOPs.
+Current risk: task assignment is still mostly prompt/SOP-driven rather than enforced by a durable task model and scheduler.
 
 ## Key Decisions
 
@@ -57,6 +64,25 @@ Established a stateless signaling bus based on terminal injection.
 | 移除 MCP | AI 代理直接调用 CLI 更加符合 Unix 哲学且性能更高。 | ✓ Good |
 | 使用 .vibe 目录 | 简化状态管理，方便版本控制（git）与上下文感知。 | ✓ Good |
 | 无状态信号总线 | 移除守护进程，通过终端注入和 stdin 轮询实现轻量级通信。 | ✓ Good |
+| 优先强化任务分配准确性 | 多 Agent 数量增加后，错误分配比单 Worker 执行失败更昂贵。 | — Pending |
+| 继续使用文件系统状态 | 保持可观察、可恢复、无需守护进程的架构方向。 | — Pending |
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `$gsd-transition`):
+1. Requirements invalidated? -> Move to Out of Scope with reason
+2. Requirements validated? -> Move to Validated with phase reference
+3. New requirements emerged? -> Add to Active
+4. Decisions to log? -> Add to Key Decisions
+5. "What This Is" still accurate? -> Update if drifted
+
+**After each milestone** (via `$gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
 
 ---
-*Last updated: 2026-04-20 after v4.0 milestone completion*
+*Last updated: 2026-04-22 after starting Milestone 6.0*
