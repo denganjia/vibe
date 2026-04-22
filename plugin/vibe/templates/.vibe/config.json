@@ -1,0 +1,18 @@
+{
+  "workspace_version": "0.1.0",
+  "product": "Vibe",
+  "agents_dir": "Agents",
+  "tasks_dir": "tasks",
+  "runs_dir": "runs",
+  "locks_dir": "locks",
+  "reviews_dir": "reviews",
+  "logs_dir": "logs",
+  "default_agent": "planner",
+  "concurrency": {
+    "max_parallel_tasks": 2
+  },
+  "runtime": {
+    "scripts": "js",
+    "terminal_panes": "compatibility"
+  }
+}
