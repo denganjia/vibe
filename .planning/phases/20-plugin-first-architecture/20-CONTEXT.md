@@ -33,6 +33,13 @@ Phase 20 不实现完整 runtime，也不迁移全部旧 CLI。它只锁定 plug
 - **D-11:** executor Agent 执行 task 后，reviewer Agent 审查执行结果并要求修复，主模型聚合最终结果。
 - **D-12:** 子 Agent 通过 shell/subprocess 启动 claude、gemini、codex 等 CLI；不要求 terminal pane 编排作为默认路径。
 
+### Phase 20 规划取舍
+- **D-13:** Plugin 包结构采用通用 plugin 目录设计，但 Phase 20 先适配 Codex plugin 格式，避免过早绑定单一平台。
+- **D-14:** Scripts runtime 默认使用 JS 实现；Python 可作为未来可选 runtime，但 Phase 20 不做双实现。
+- **D-15:** 旧 Rust CLI 暂时保留为 compatibility reference，用于迁移分类和行为对照，不在 Phase 20 直接大规模删除。
+- **D-16:** 子 Agent 默认通过 subprocess 非交互执行；terminal pane 编排保留为可选兼容模式，不作为默认执行路径。
+- **D-17:** Phase 20 不只产出架构文档和迁移表，也要 scaffold 最小 plugin 目录，让后续 Phase 21/22 能直接接着扩展。
+
 ### the agent's Discretion
 - Plugin 具体文件夹命名、JS 或 Python 的默认选择、task JSON 字段命名和 release notes 模板格式可由 planner 在 Phase 20 plan 中提出具体方案。
 - 只要不违背 plugin-first 与 scripts-thin-runtime 的边界，planner 可以保留少量兼容旧 Rust CLI 的过渡方案。
@@ -46,6 +53,7 @@ Phase 20 不实现完整 runtime，也不迁移全部旧 CLI。它只锁定 plug
 - 新判断：市面上主流模型已经支持 skills/commands/plugins，系统应作为 plugin 注入协作能力，而不是要求用户学习独立 CLI 编排系统。
 - 代码可以放在 plugin references 供模型阅读，但可执行能力应放在 plugin scripts，通过 commands/skills 调用。
 - `.vibe/Agents` 中应保存不同角色的详细定义和使用模型，而不是硬编码在 Rust CLI 中。
+- Phase 20 最小 scaffold 应体现最终产品方向：plugin package、references、skills/commands hooks、scripts 入口，以及示例 `.vibe` 工作区模板。
 
 </specifics>
 
