@@ -95,7 +95,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 20. Plugin-first 架构与迁移边界 | v6.0 | 0/TBD | Not started | - |
+| 20. Plugin-first 架构与迁移边界 | v6.0 | 0/4 | Ready to execute | - |
 | 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 0/TBD | Not started | - |
 | 22. 轻量 scripts runtime | v6.0 | 0/TBD | Not started | - |
 | 23. 多模型执行与审查闭环 | v6.0 | 0/TBD | Not started | - |
