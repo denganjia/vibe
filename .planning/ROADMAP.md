@@ -53,7 +53,7 @@ Plans:
   5. `.vibe` 格式足够直观，当前模型可以直接读取并理解当前协作状态。
 **Plans**: 2 plans
 Plans:
-- [ ] 21-01-PLAN.md — Update the `.vibe` workspace templates to use a pure JSON schema.
+- [x] 21-01-PLAN.md — Update the `.vibe` workspace templates to use a pure JSON schema.
 - [ ] 21-02-PLAN.md — Implement the plugin initialization script to safely scaffold `.vibe` workspaces.
 
 ### Phase 22: 轻量 scripts runtime
@@ -99,7 +99,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 20. Plugin-first 架构与迁移边界 | v6.0 | 3/4 | In Progress | - |
-| 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 0/TBD | Not started | - |
+| 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 1/2 | In Progress|  |
 | 22. 轻量 scripts runtime | v6.0 | 0/TBD | Not started | - |
 | 23. 多模型执行与审查闭环 | v6.0 | 0/TBD | Not started | - |
 | 24. Release 总结与 CLI 瘦身收束 | v6.0 | 0/TBD | Not started | - |

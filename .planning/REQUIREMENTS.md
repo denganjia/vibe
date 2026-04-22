@@ -16,10 +16,10 @@
 ### `.vibe` Workspace
 
 - [ ] **VIBE-01**: Plugin initialization creates a project-local `.vibe` workspace with `Agents/`, `tasks/`, `runs/`, `locks/`, `reviews/`, `logs/`, and config files.
-- [ ] **VIBE-02**: `.vibe/Agents` can define planner, executor, reviewer, and release roles, including model command, prompt/reference files, allowed tools, and expected outputs.
-- [ ] **VIBE-03**: `.vibe/config.json` records default models, Agent definitions, concurrency limits, task paths, lock policy, review policy, and release summary settings.
+- [x] **VIBE-02**: `.vibe/Agents` can define planner, executor, reviewer, and release roles, including model command, prompt/reference files, allowed tools, and expected outputs.
+- [x] **VIBE-03**: `.vibe/config.json` records default models, Agent definitions, concurrency limits, task paths, lock policy, review policy, and release summary settings.
 - [ ] **VIBE-04**: Initialization is non-destructive: existing `.vibe` files and user-edited Agent definitions are never overwritten unless explicitly forced.
-- [ ] **VIBE-05**: The workspace format is simple enough that the current model can inspect and reason about it without relying on hidden daemon state.
+- [x] **VIBE-05**: The workspace format is simple enough that the current model can inspect and reason about it without relying on hidden daemon state.
 
 ### Scripts Runtime
 
@@ -84,10 +84,10 @@ Milestone 6.0 requirements are mapped to Phase 20-24. Each v6.0 requirement belo
 | PLUG-04 | Phase 20 | Pending |
 | PLUG-05 | Phase 20 | Pending |
 | VIBE-01 | Phase 21 | Pending |
-| VIBE-02 | Phase 21 | Pending |
-| VIBE-03 | Phase 21 | Pending |
+| VIBE-02 | Phase 21 | Complete |
+| VIBE-03 | Phase 21 | Complete |
 | VIBE-04 | Phase 21 | Pending |
-| VIBE-05 | Phase 21 | Pending |
+| VIBE-05 | Phase 21 | Complete |
 | RUN-01 | Phase 22 | Pending |
 | RUN-02 | Phase 22 | Pending |
 | RUN-03 | Phase 22 | Pending |

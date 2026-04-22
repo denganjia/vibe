@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v6.0
-milestone_name: Plugin-first 多模型协作转型
+milestone: v1.0
+milestone_name: milestone
 status: executing
-stopped_at: Phase 20 wave 1 complete; next action is execute wave 2 plan 20-03.
-last_updated: "2026-04-22T08:07:47.529Z"
-last_activity: 2026-04-22 -- Phase 20 execution started
+stopped_at: Completed 21-01-PLAN.md
+last_updated: "2026-04-22T09:30:37.140Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 20 of 24 (Plugin-first 架构与迁移边界) -- EXECUTING
-Plan: 3 of 4 complete; next 20-03
-Status: Executing Phase 20
-Last activity: 2026-04-22 -- Phase 20 execution started
+Plan: 4 of 4 complete; next 20-03
+Status: Ready to execute
+Last activity: 2026-04-22
 
 Progress: [███████░░░] 75%
 
@@ -55,6 +55,8 @@ Progress: [███████░░░] 75%
 - Last 5 plans: None in Milestone 6.0 after pivot
 - Trend: Pending
 
+| Phase 21 P01 | 60 | 2 tasks | 5 files |
+
 ## Accumulated Context
 
 ### Decisions
@@ -66,6 +68,8 @@ Recent decisions affecting current work:
 - [Milestone 6.0]: 原 CLI 的必要能力迁入 plugin/scripts，优先使用 JS/Python 小脚本实现 init、task、lock、agent launch、logs、release summary。
 - [Milestone 6.0]: `.vibe/Agents` 定义 planner、executor、reviewer、release 等角色及其模型命令。
 - [Milestone 6.0]: `.vibe` 继续作为项目级可观察工作区，不引入中央 daemon 或数据库。
+- [Phase 21]: Migrated configuration to a nested schema to improve parsability by lightweight scripts.
+- [Phase 21]: Used pure JSON for agent templates instead of Markdown to simplify native extraction.
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None recorded in .planning/todos/pending/.
 
 ## Session Continuity
 
-Last session: 2026-04-22
-Stopped at: Phase 20 wave 1 complete; next action is execute wave 2 plan 20-03.
+Last session: 2026-04-22T09:30:37.138Z
+Stopped at: Completed 21-01-PLAN.md
 Resume file: None
