@@ -40,12 +40,13 @@ created: 2026-04-22
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 20-01-01 | 01 | 1 | PLUG-01 | T-20-01 | Plugin manifest and package layout are explicit and local | filesystem | `test -f plugin/vibe/.codex-plugin/plugin.json` | no | pending |
 | 20-01-02 | 01 | 1 | PLUG-01 | T-20-01 | Required plugin surfaces exist | filesystem | `test -d plugin/vibe/skills && test -d plugin/vibe/references && test -d plugin/vibe/scripts` | no | pending |
+| 20-01-03 | 01 | 1 | PLUG-01 | T-20-01 | Repo-local marketplace example documents Codex discovery path | filesystem/content | `test -f .agents/plugins/marketplace.json && rg './plugin/vibe|vibe' .agents/plugins/marketplace.json` | no | pending |
 | 20-02-01 | 02 | 1 | PLUG-02 | T-20-02 | Protocol references are model-readable files, not hidden state | filesystem | `test -f plugin/vibe/references/collaboration-protocol.md && test -f plugin/vibe/references/task-contract.md` | no | pending |
 | 20-02-02 | 02 | 1 | PLUG-02 | T-20-02 | Agent and review contracts are explicit | filesystem | `test -f plugin/vibe/references/agent-contract.md && test -f plugin/vibe/references/review-protocol.md` | no | pending |
 | 20-03-01 | 03 | 1 | PLUG-03 | T-20-03 | Conductor skill exists with Codex skill frontmatter | content | `rg '^name:|^description:' plugin/vibe/skills/conductor/SKILL.md` | no | pending |
 | 20-03-02 | 03 | 1 | PLUG-03 | T-20-03 | Conductor skill references clarify-plan-task-review loop | content | `rg 'clarify|task|review|aggregate|Conductor' plugin/vibe/skills/conductor/SKILL.md` | no | pending |
-| 20-04-01 | 04 | 1 | PLUG-04 | T-20-04 | Command stubs for core workflow entry points exist | filesystem | `test -f plugin/vibe/commands/init.md && test -f plugin/vibe/commands/plan.md && test -f plugin/vibe/commands/run-task.md && test -f plugin/vibe/commands/review-task.md && test -f plugin/vibe/commands/status.md && test -f plugin/vibe/commands/release-summary.md` | no | pending |
-| 20-05-01 | 05 | 1 | PLUG-05 | T-20-05 | Legacy CLI migration classification exists | content | `rg 'Migrate-to-script|Compatibility|Remove' plugin/vibe/references/migration-classification.md` | no | pending |
+| 20-03-03 | 03 | 2 | PLUG-04 | T-20-04 | Command stubs for core workflow entry points exist and are labeled contracts only | filesystem/content | `test -f plugin/vibe/commands/init.md && test -f plugin/vibe/commands/plan.md && test -f plugin/vibe/commands/run-task.md && test -f plugin/vibe/commands/review-task.md && test -f plugin/vibe/commands/status.md && test -f plugin/vibe/commands/release-summary.md && rg 'Command contract only' plugin/vibe/commands/*.md` | no | pending |
+| 20-04-01 | 04 | 1 | PLUG-05 | T-20-05 | Legacy CLI migration classification exists | content | `rg 'Migrate-to-script|Compatibility|Remove' plugin/vibe/references/migration-classification.md` | no | pending |
 
 *Status: pending / green / red / flaky*
 
@@ -54,6 +55,7 @@ created: 2026-04-22
 ## Wave 0 Requirements
 
 - [ ] `plugin/vibe/.codex-plugin/plugin.json` - covers PLUG-01.
+- [ ] `.agents/plugins/marketplace.json` - covers PLUG-01 discovery path.
 - [ ] `plugin/vibe/skills/conductor/SKILL.md` - covers PLUG-03.
 - [ ] `plugin/vibe/references/collaboration-protocol.md` - covers PLUG-02.
 - [ ] `plugin/vibe/references/task-contract.md` - covers PLUG-02.

@@ -448,17 +448,19 @@ Source: Codex skill structure and Vibe Conductor decisions. [CITED: https://deve
 | A2 | Commands should be entry-point docs/wrappers and policy belongs in references. | Anti-Patterns | Planner might split command and reference content differently if Codex command docs impose stricter format. |
 | A3 | Warning signs listed under pitfalls are predictive heuristics. | Common Pitfalls | Low implementation risk; planner should treat them as review checklist items, not hard requirements. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 20 create `.agents/plugins/marketplace.json` now?**
    - What we know: Codex supports repo marketplace files and local plugin paths. [CITED: https://developers.openai.com/codex/plugins/build]
    - What's unclear: The locked root is `plugin/vibe/`, while official examples commonly use `plugins/<name>/`; docs allow local paths, but the team may prefer deferring install wiring. [CITED: https://developers.openai.com/codex/plugins/build] [VERIFIED: 20-CONTEXT.md]
-   - Recommendation: Include marketplace JSON only if Phase 20 success criteria require local Codex discovery; otherwise document the example in references. [ASSUMED]
+   - Resolution: Phase 20 should create a repo-local `.agents/plugins/marketplace.json` example that points to `./plugin/vibe`, because PLUG-01 requires a concrete loading/discovery path, not just a package directory. This remains a local Codex discovery scaffold, not external marketplace publishing. [RESOLVED]
+   - Planning impact: Plan 20-01 must include `.agents/plugins/marketplace.json` in `files_modified`, a task action that creates it, and verification that the file references `./plugin/vibe`. [RESOLVED]
 
 2. **What exact Codex command file semantics should Vibe use?**
    - What we know: OpenAI plugin examples mention plugin-level `commands/`. [CITED: https://github.com/openai/plugins]
    - What's unclear: The official build page emphasizes manifest/skills/marketplaces more than command file schema. [CITED: https://developers.openai.com/codex/plugins/build]
-   - Recommendation: Treat Phase 20 `commands/` as documented command contracts and stubs, then verify executable command binding in a later implementation task. [ASSUMED]
+   - Resolution: Phase 20 `plugin/vibe/commands/*.md` files are documented command contracts and stubs only. They must not claim executable command binding until a later implementation phase verifies provider-specific command semantics. [RESOLVED]
+   - Planning impact: Plan 20-03 must require command files to contain explicit wording such as `Command contract only` and must avoid language implying that Codex already loads these `.md` files as executable commands. [RESOLVED]
 
 ## Environment Availability
 
