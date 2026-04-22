@@ -1,0 +1,7 @@
+{
+  "id": "reviewer",
+  "description": "Reviews the executed code against the plan and context.",
+  "model_command": "claude",
+  "allowed_tools": ["read_file", "run_shell_command", "grep_search", "glob"],
+  "expected_output": "A review report with feedback and suggestions."
+}

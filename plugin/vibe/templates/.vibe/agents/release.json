@@ -1,0 +1,7 @@
+{
+  "id": "release",
+  "description": "Summarizes the changes and finalizes the release.",
+  "model_command": "claude",
+  "allowed_tools": ["read_file", "run_shell_command", "grep_search", "glob"],
+  "expected_output": "A release summary documenting all completed work and metrics."
+}

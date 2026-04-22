@@ -1,0 +1,7 @@
+{
+  "id": "executor",
+  "description": "Executes tasks according to the plan.",
+  "model_command": "gemini -y",
+  "allowed_tools": ["read_file", "write_file", "replace", "run_shell_command", "grep_search", "glob"],
+  "expected_output": "Execution of all tasks in the plan, commits, and a summary document."
+}
