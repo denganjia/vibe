@@ -34,7 +34,12 @@ Milestone 6.0 是一次产品形态转型：从独立重型 `vibe-cli` 编排系
   3. skills 明确当前主模型作为 Conductor 的行为：澄清需求、拆计划、派任务、调 reviewer、聚合结果。
   4. commands 明确暴露 init、plan、run task、review task、status、release summary 等主要入口。
   5. 旧 Rust CLI 能力被分类为 migrate-to-script、compatibility 或 remove，并说明理由。
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 20-01-PLAN.md — scaffold `plugin/vibe/` package, scripts boundary, `.vibe` templates, and examples index.
+- [ ] 20-02-PLAN.md — create model-readable plugin architecture, workspace, collaboration, task, Agent, and review references.
+- [ ] 20-03-PLAN.md — create Conductor skill and init/plan/run-task/review-task/status/release-summary command contracts.
+- [ ] 20-04-PLAN.md — classify old Rust CLI commands, state, env, and bus concepts for migration.
 
 ### Phase 21: `.vibe` 工作区与 Agent 定义
 **Goal**: Plugin 启用后可以非破坏性创建项目级 `.vibe` 工作区，并用 `.vibe/Agents` 定义 planner、executor、reviewer、release 等角色和模型命令。
