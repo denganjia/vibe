@@ -51,7 +51,10 @@ Plans:
   3. `.vibe/config.json` 可以记录默认模型、Agent 定义、并发限制、任务路径、锁策略、review 策略和 release 设置。
   4. 初始化不会覆盖用户修改过的 `.vibe` 文件，除非显式 force。
   5. `.vibe` 格式足够直观，当前模型可以直接读取并理解当前协作状态。
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Update the `.vibe` workspace templates to use a pure JSON schema.
+- [ ] 21-02-PLAN.md — Implement the plugin initialization script to safely scaffold `.vibe` workspaces.
 
 ### Phase 22: 轻量 scripts runtime
 **Goal**: 用小型 JS/Python scripts 提供 plugin 必需的 runtime 原语，替代独立重型 CLI 的核心执行职责。
