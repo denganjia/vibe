@@ -32,3 +32,37 @@ This document classifies the legacy standalone Rust CLI responsibilities for the
 - Do not convert terminal pane orchestration into the default plugin-first runtime path.
 - Do not introduce a hidden daemon, database, or opaque state store while migrating old responsibilities.
 - Do not treat `.vibe/state/panes.json` as the primary progress source for plugin-first tasks.
+
+## State And Workspace Concepts
+
+| Legacy concept | Category | New owner | Rationale |
+| --- | --- | --- | --- |
+| `.vibe/roles/*.md` | `Migrate-to-script` | `.vibe/Agents/*.md` templates and init script | Existing Markdown role files prove that Agent personas should stay inspectable and project-local. Phase 21 should move the concept into `.vibe/Agents` with explicit model/command metadata. |
+| `.vibe/config.json` | `Migrate-to-script` | Plugin workspace config template and init script | Existing roles, default command, and stacks map to plugin-first Agent command configuration. Scripts should create and validate the config without hiding state. |
+| `.vibe/state/panes.json` | `Compatibility` | Legacy pane compatibility state | Pane records are tied to WezTerm/Tmux physical IDs. Keep this file as reference for optional pane mode, not as the default source of task truth. |
+| `FileBus signal files` | `Migrate-to-script` | File-based task, run, and review artifacts | Atomic write and consume semantics are valuable. Future scripts should adapt them to explicit `.vibe` task/result files with bounded waits and auditable payloads. |
+| `terminal adapter pane lifecycle` | `Compatibility` | Optional terminal adapter mode | Pane split, focus, inject, close, and stale cleanup remain compatibility behavior because plugin-first execution defaults to subprocess Agents. |
+
+## Environment Variables
+
+- `VIBE_ID` identifies a legacy worker or subprocess Agent instance. Future scripts may pass it only when the receiving Agent needs a stable run identity.
+- `VIBE_MASTER_ID` identifies the legacy master pane. Plugin-first scripts should not require it unless compatibility pane mode is explicitly selected.
+- `VIBE_PERSONA` currently carries role instructions into spawned CLI Agents. Future scripts should prefer explicit task files and Agent files over large persona blobs in environment variables.
+- Environment variables passed to subprocess Agents must be allowlisted to avoid secret leakage. Scripts must not forward arbitrary process environments, shell dumps, credentials, tokens, or unrelated local configuration.
+- Task file paths and Agent file references must be resolved inside the project `.vibe` workspace or declared repository scope, with path traversal rejected before subprocess launch.
+
+## Compatibility Reference Files
+
+- `apps/vibe-cli/src/main.rs` - command inventory, subprocess launch behavior, FileBus fallback, report handling, and pane adapter calls.
+- `apps/vibe-cli/src/tui.rs` - status TUI behavior over pane state and logs.
+- `crates/vibe-core/src/state/mod.rs` - `.vibe/config.json`, `.vibe/roles`, `.vibe/state/panes.json`, file locks, and atomic state writes.
+- `crates/vibe-core/src/ipc/bus.rs` - FileBus atomic signal write, polling, consume-on-read, and timeout behavior.
+- `crates/vibe-core/src/ipc/protocol.rs` - legacy message, worker state, signal, wait, report, and execute-intent structures.
+
+## Migration Validation Checklist
+
+- [ ] no Phase 20 Rust deletion: `apps/` and `crates/` remain available as compatibility reference material.
+- [ ] no terminal pane default: subprocess Agents and `.vibe` task files are the default plugin-first path.
+- [ ] no hidden daemon/database state: state stays project-local, file-based, and directly inspectable by the current model.
+- [ ] no arbitrary env dump to subprocess Agents: only allowlisted `VIBE_ID`, `VIBE_MASTER_ID`, `VIBE_PERSONA`, and task-specific variables may be passed.
+- [ ] no path traversal in task file scopes: scripts must constrain task, Agent, run, review, and log paths to the declared workspace or repository scope.
