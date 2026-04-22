@@ -1,4 +1,4 @@
-# vibe-cli
+# Vibe
 
 ## Current Milestone: Milestone 6.0 - Plugin-first 多模型协作转型
 
@@ -69,6 +69,7 @@ Current risk: if runtime scripts are too thin, execution and recovery become unr
 | 转向 plugin-first | 主流 AI CLI 已支持 skills/commands/plugins，用户不应先学习独立编排 CLI。 | — Pending |
 | CLI 瘦身为 plugin/scripts runtime | 初始化、任务落盘、锁、Agent 启动和结果收集代码量小，适合放进 plugin scripts。 | — Pending |
 | `.vibe/Agents` 定义角色与模型 | 角色定义、模型选择和执行策略应成为项目可读配置，而不是硬编码 CLI 状态。 | — Pending |
+| 产品名保留为 Vibe | `.vibe`、`vibe` 命令和既有心智都围绕 Vibe；`vibe-cli` 只作为旧实现名。 | — Pending |
 
 ## Evolution
 
