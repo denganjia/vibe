@@ -1,56 +1,61 @@
-# Milestone 6.0 Requirements: Task Flow Automation
+# Milestone 6.0 Requirements: Plugin-first Multi-model Collaboration
 
 **Defined:** 2026-04-22
 **Core Value:** 打破 AI 与本地开发环境之间的“次元壁”，将终端从单纯的字符输入框升级为分布式 AI 协作的物理调度室。
 
 ## v6.0 Requirements
 
-### Task Assignment
+### Plugin Architecture
 
-- [ ] **ASSIGN-01**: Conductor can create a structured task request with goal, file scope, constraints, expected output, and verification command.
-- [ ] **ASSIGN-02**: System can classify tasks by type, required skills, affected files, dependency risk, and expected execution cost.
-- [ ] **ASSIGN-03**: System can match a task to an available Worker role using declared capabilities, current load, and conflict rules.
-- [ ] **ASSIGN-04**: System can split a multi-step objective into ordered or parallelizable task units with explicit handoff contracts.
-- [ ] **ASSIGN-05**: System can detect assignment conflicts, including overlapping file ownership, dependency ordering, and duplicate task intent.
+- [ ] **PLUG-01**: Project defines a plugin package layout that can inject skills, commands, references, and executable scripts into supported AI terminal environments.
+- [ ] **PLUG-02**: Plugin references define the collaboration protocol, task contract, Agent contract, review protocol, and `.vibe` workspace layout in model-readable documents.
+- [ ] **PLUG-03**: Plugin skills teach the current model to act as Conductor: clarify the user request, produce a plan, split tasks, launch executors, request reviews, and aggregate results.
+- [ ] **PLUG-04**: Plugin commands expose the main workflow actions, including init, plan, run task, review task, status, and release summary.
+- [ ] **PLUG-05**: The old standalone CLI responsibilities are classified into migrate-to-script, keep-as-compatibility, or remove categories.
 
-### `.vibe` Configuration
+### `.vibe` Workspace
 
-- [ ] **CONF-01**: `.vibe/config.json` has a versioned schema covering roles, commands, stacks, capabilities, task templates, state paths, and release settings.
-- [ ] **CONF-02**: `vibe check` validates `.vibe/config.json` and reports actionable errors for missing fields, invalid role references, and unsupported schema versions.
-- [ ] **CONF-03**: `vibe init` can create or migrate `.vibe/config.json` without overwriting user customizations.
-- [ ] **CONF-04**: Runtime commands load configuration through one shared config path with deterministic defaults and project-level overrides.
-- [ ] **CONF-05**: Role templates and configured capabilities stay consistent, so task assignment uses the same role names and capabilities that spawn uses.
+- [ ] **VIBE-01**: Plugin initialization creates a project-local `.vibe` workspace with `Agents/`, `tasks/`, `runs/`, `locks/`, `reviews/`, `logs/`, and config files.
+- [ ] **VIBE-02**: `.vibe/Agents` can define planner, executor, reviewer, and release roles, including model command, prompt/reference files, allowed tools, and expected outputs.
+- [ ] **VIBE-03**: `.vibe/config.json` records default models, Agent definitions, concurrency limits, task paths, lock policy, review policy, and release summary settings.
+- [ ] **VIBE-04**: Initialization is non-destructive: existing `.vibe` files and user-edited Agent definitions are never overwritten unless explicitly forced.
+- [ ] **VIBE-05**: The workspace format is simple enough that the current model can inspect and reason about it without relying on hidden daemon state.
 
-### Filesystem State
+### Scripts Runtime
 
-- [ ] **STATE-01**: `.vibe/state` records tasks, workers, assignments, leases, locks, heartbeats, results, failures, and completed task history as inspectable files.
-- [ ] **STATE-02**: State writes are atomic enough to avoid partial JSON reads during concurrent Worker and Conductor activity.
-- [ ] **STATE-03**: File ownership and task locks prevent two Workers from writing the same owned path unless the task explicitly allows shared ownership.
-- [ ] **STATE-04**: Stale leases and dead Worker heartbeats can be detected and recovered without deleting valid task results.
-- [ ] **STATE-05**: Users can inspect current task flow state through CLI output that distinguishes queued, assigned, running, blocked, complete, and failed work.
+- [ ] **RUN-01**: Plugin scripts can create task JSON files with goal, context, file scope, constraints, expected output, verification command, and reviewer requirements.
+- [ ] **RUN-02**: Plugin scripts can acquire and release file locks for task-owned paths using project-local lock files.
+- [ ] **RUN-03**: Plugin scripts can launch claude, gemini, codex, or another configured Agent command as a subprocess with task file and Agent definition injected.
+- [ ] **RUN-04**: Plugin scripts capture stdout, stderr, exit code, timestamps, and result artifacts into `.vibe/runs` and `.vibe/logs`.
+- [ ] **RUN-05**: Plugin scripts are implemented as small JS or Python modules with no standalone server, database, or long-running daemon requirement.
 
-### Task Flow Automation
+### Multi-model Workflow
 
-- [ ] **FLOW-01**: Conductor can enqueue tasks, dispatch them to Workers, wait for completion signals, and aggregate results without manual terminal interaction.
-- [ ] **FLOW-02**: Worker lifecycle reports include accepted, writing, verifying, blocked, failed, and completed states with structured payloads.
-- [ ] **FLOW-03**: Failed tasks can be retried according to policy with retry count, last error, and changed assignment context preserved.
-- [ ] **FLOW-04**: Parallel tasks only run when their file scopes and dependency graph allow safe concurrent execution.
-- [ ] **FLOW-05**: A task flow can resume after interruption by reading filesystem state and continuing from the last durable checkpoint.
+- [ ] **FLOW-01**: Current model can conduct multi-round clarification with the user before task execution and persist the resulting plan into `.vibe/tasks`.
+- [ ] **FLOW-02**: Current model can split a plan into independent or ordered tasks, respecting file scopes and dependency order.
+- [ ] **FLOW-03**: Current model can choose executor Agents based on role definition, model command, task type, and file ownership constraints.
+- [ ] **FLOW-04**: Reviewer Agents can inspect executor outputs, produce structured findings, and request fixes before a task is marked complete.
+- [ ] **FLOW-05**: The workflow can resume from `.vibe` files after interruption, showing queued, running, blocked, review-needed, failed, and completed tasks.
 
-### GitHub Release Summaries
+### Release and Migration
 
-- [ ] **REL-01**: Release command can determine a commit range from the latest tag or an explicit `--from/--to` range.
+- [ ] **REL-01**: Plugin release command can determine a commit range from the latest tag or explicit `--from/--to` parameters.
 - [ ] **REL-02**: Release summary groups commits into features, fixes, docs, tests, refactors, and internal changes using deterministic rules.
-- [ ] **REL-03**: Release summary includes changed files and phase references when commit messages or planning artifacts provide them.
-- [ ] **REL-04**: Release command can write a GitHub release notes draft without requiring network access.
-- [ ] **REL-05**: Release workflow validates that the changelog source range is non-empty and warns about uncommitted changes before drafting.
+- [ ] **REL-03**: Release summary can include changed files, phase references, and task/review artifacts when available.
+- [ ] **REL-04**: Release summary writes a local GitHub release notes draft without requiring network access.
+- [ ] **REL-05**: Rust CLI code is slimmed or archived according to the migration classification, with any retained functionality callable from plugin scripts only when justified.
 
 ## Future Requirements
 
-### Assignment Intelligence
+### Plugin Distribution
 
-- **ASSIGN-F01**: System learns Worker success rates over time and uses historical quality as assignment input.
-- **ASSIGN-F02**: System supports pluggable assignment strategies for different project types.
+- **PLUG-F01**: Plugin can be published to multiple plugin marketplaces or registries with compatibility metadata.
+- **PLUG-F02**: Plugin can generate provider-specific command wrappers for Claude, Gemini, Codex, and future AI terminals.
+
+### Runtime Intelligence
+
+- **RUN-F01**: Runtime tracks Agent success history and uses it for assignment scoring.
+- **RUN-F02**: Runtime supports remote or containerized executor Agents.
 
 ### Release Automation
 
@@ -61,32 +66,33 @@
 
 | Feature | Reason |
 |---------|--------|
-| Network-required GitHub publishing | v6.0 focuses on deterministic local release summaries; publishing can build on the draft output later. |
-| Central daemon or database | The product direction remains project-local filesystem state, not a long-running service. |
-| ML-based assignment scoring | Accurate deterministic assignment comes first; learning from history is deferred. |
-| Cross-repository task orchestration | v6.0 scopes state and assignment to one project root. |
+| Standalone heavy CLI as the primary interface | v6.0 product direction is plugin-first; scripts are runtime helpers, not the main UX. |
+| Central daemon or database | The system remains project-local, inspectable, and file-based. |
+| Terminal pane orchestration as the only execution path | Subprocess Agent launch from plugin scripts is the default; terminal adapters are compatibility only. |
+| Network-required GitHub publishing | v6.0 focuses on deterministic local release notes drafts. |
+| Marketplace publishing | v6.0 builds the plugin package locally first; distribution hardening comes later. |
 
 ## Traceability
 
-Milestone 6.0 需求已映射到 Phase 20-24。每条 v6.0 requirement 只归属一个 phase。
+Milestone 6.0 requirements are mapped to Phase 20-24. Each v6.0 requirement belongs to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ASSIGN-01 | Phase 20 | Pending |
-| ASSIGN-02 | Phase 20 | Pending |
-| ASSIGN-03 | Phase 20 | Pending |
-| ASSIGN-04 | Phase 20 | Pending |
-| ASSIGN-05 | Phase 20 | Pending |
-| CONF-01 | Phase 21 | Pending |
-| CONF-02 | Phase 21 | Pending |
-| CONF-03 | Phase 21 | Pending |
-| CONF-04 | Phase 21 | Pending |
-| CONF-05 | Phase 21 | Pending |
-| STATE-01 | Phase 22 | Pending |
-| STATE-02 | Phase 22 | Pending |
-| STATE-03 | Phase 22 | Pending |
-| STATE-04 | Phase 22 | Pending |
-| STATE-05 | Phase 22 | Pending |
+| PLUG-01 | Phase 20 | Pending |
+| PLUG-02 | Phase 20 | Pending |
+| PLUG-03 | Phase 20 | Pending |
+| PLUG-04 | Phase 20 | Pending |
+| PLUG-05 | Phase 20 | Pending |
+| VIBE-01 | Phase 21 | Pending |
+| VIBE-02 | Phase 21 | Pending |
+| VIBE-03 | Phase 21 | Pending |
+| VIBE-04 | Phase 21 | Pending |
+| VIBE-05 | Phase 21 | Pending |
+| RUN-01 | Phase 22 | Pending |
+| RUN-02 | Phase 22 | Pending |
+| RUN-03 | Phase 22 | Pending |
+| RUN-04 | Phase 22 | Pending |
+| RUN-05 | Phase 22 | Pending |
 | FLOW-01 | Phase 23 | Pending |
 | FLOW-02 | Phase 23 | Pending |
 | FLOW-03 | Phase 23 | Pending |
@@ -105,4 +111,4 @@ Milestone 6.0 需求已映射到 Phase 20-24。每条 v6.0 requirement 只归属
 
 ---
 *Requirements defined: 2026-04-22*
-*Last updated: 2026-04-22 after roadmap creation*
+*Last updated: 2026-04-22 after plugin-first pivot*

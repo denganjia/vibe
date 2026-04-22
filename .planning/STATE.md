@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** 打破 AI 与本地开发环境之间的“次元壁”，将终端从单纯的字符输入框升级为分布式 AI 协作的物理调度室。
-**Current focus:** Phase 20 - 智能任务分配与拆解
+**Current focus:** Phase 20 - Plugin-first 架构与迁移边界
 
 ## Current Position
 
-Phase: 20 of 24 (智能任务分配与拆解)
+Phase: 20 of 24 (Plugin-first 架构与迁移边界)
 Plan: Not planned yet
-Status: Ready to plan
-Last activity: 2026-04-22 — Created Milestone 6.0 roadmap and mapped all v6.0 requirements to phases 20-24.
+Status: Ready to discuss and plan
+Last activity: 2026-04-22 — Pivoted Milestone 6.0 from standalone CLI task-flow automation to plugin-first multi-model collaboration.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -27,14 +27,14 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 20. 智能任务分配与拆解 | 0/TBD | Pending | Pending |
-| 21. `.vibe` 配置系统 | 0/TBD | Pending | Pending |
-| 22. 文件系统状态机制 | 0/TBD | Pending | Pending |
-| 23. 任务流自动化 | 0/TBD | Pending | Pending |
-| 24. GitHub Release Commit 总结 | 0/TBD | Pending | Pending |
+| 20. Plugin-first 架构与迁移边界 | 0/TBD | Pending | Pending |
+| 21. `.vibe` 工作区与 Agent 定义 | 0/TBD | Pending | Pending |
+| 22. 轻量 scripts runtime | 0/TBD | Pending | Pending |
+| 23. 多模型执行与审查闭环 | 0/TBD | Pending | Pending |
+| 24. Release 总结与 CLI 瘦身收束 | 0/TBD | Pending | Pending |
 
 **Recent Trend:**
-- Last 5 plans: None in Milestone 6.0
+- Last 5 plans: None in Milestone 6.0 after pivot
 - Trend: Pending
 
 ## Accumulated Context
@@ -44,9 +44,10 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Milestone 6.0]: 优先实现高效且准确的任务分配，Phase 20 聚焦任务拆解、分类、匹配和冲突检测。
-- [Milestone 6.0]: `.vibe/config.json` 是角色、能力、任务模板、状态路径和 release 设置的项目级合同。
-- [Milestone 6.0]: 继续使用文件系统状态，不引入中央 daemon 或数据库。
+- [Milestone 6.0]: 产品形态转向彻底 plugin-first，用户入口是 plugin skills/commands/references，而不是独立重型 CLI。
+- [Milestone 6.0]: 原 CLI 的必要能力迁入 plugin/scripts，优先使用 JS/Python 小脚本实现 init、task、lock、agent launch、logs、release summary。
+- [Milestone 6.0]: `.vibe/Agents` 定义 planner、executor、reviewer、release 等角色及其模型命令。
+- [Milestone 6.0]: `.vibe` 继续作为项目级可观察工作区，不引入中央 daemon 或数据库。
 
 ### Pending Todos
 
@@ -54,19 +55,21 @@ None recorded in .planning/todos/pending/.
 
 ### Blockers/Concerns
 
-- [Phase 20]: 分配准确性需要覆盖任务分类、能力匹配、文件范围冲突和依赖顺序，否则后续自动化会放大错误。
-- [Phase 22]: 文件状态需要原子写入、锁、租约和心跳恢复策略，避免并发 Worker 覆盖有效结果。
-- [Phase 24]: release 总结必须基于明确 commit 区间和确定性分类规则，避免生成不可审计的 notes。
+- [Phase 20]: 需要严格定义 plugin、references、skills、commands、scripts 和 `.vibe` 的边界，避免把重 CLI 复杂度搬进 scripts。
+- [Phase 22]: scripts runtime 必须足够薄，但仍要处理锁、日志、exit code、结果 artifact 和中断恢复所需的最低状态。
+- [Phase 23]: 多模型协作必须有结构化任务和 review 合同，否则 executor/reviewer 的输出会变成不可验证的聊天文本。
+- [Phase 24]: Rust CLI 瘦身需要保留迁移判断记录，避免误删仍有价值的兼容能力。
 
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| Assignment Intelligence | Worker 历史成功率学习 | Deferred to future milestone | v6.0 requirements |
+| Plugin Distribution | 多 marketplace 发布 | Deferred to future milestone | v6.0 pivot |
+| Runtime Intelligence | Agent 历史成功率学习 | Deferred to future milestone | v6.0 requirements |
 | Release Automation | 通过 GitHub API 直接发布 | Deferred to future milestone | v6.0 requirements |
 
 ## Session Continuity
 
 Last session: 2026-04-22
-Stopped at: Milestone 6.0 roadmap is ready; next action is `/gsd-plan-phase 20`.
+Stopped at: Milestone 6.0 pivot is documented; next action is `$gsd-discuss-phase 20` or `$gsd-plan-phase 20`.
 Resume file: None

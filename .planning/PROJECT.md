@@ -1,18 +1,19 @@
 # vibe-cli
 
-## Current Milestone: Milestone 6.0 - 智能任务流与配置化状态系统
+## Current Milestone: Milestone 6.0 - Plugin-first 多模型协作转型
 
-**Goal:** 将 `vibe-cli` 从可运行的多 Agent 协作总线推进到可规划、可分配、可恢复、可发布的自动化任务流系统。
+**Goal:** 将项目从独立重型 CLI 编排系统转型为 plugin-first 的多模型协作系统，把必要的运行时代码瘦身后整合进 plugin/scripts。
 
 **Strategic Pivot:**
-- **Assignment Intelligence**: 从“能 spawn Worker”升级到“能高效且准确地拆分、匹配、派发任务”。
-- **Config as System Contract**: `.vibe` 不只是初始化产物，而是角色、能力、任务流、状态目录和发布流程的项目级配置合同。
-- **Filesystem State Machine**: 用文件系统表达任务、Worker、信号、锁、结果和恢复点，让状态可观察、可调试、可版本化。
-- **Release Intelligence**: 发布时自动从 git commit 历史生成可信的变更总结，减少手写 release note 成本。
+- **Plugin as Product**: 用户入口从 `vibe-cli` 命令迁移到当前 AI CLI 可安装的 plugin，由 skills/commands/references 注入协作协议。
+- **Scripts as Thin Runtime**: 原 CLI 中必要的初始化、任务落盘、锁、Agent 启动、结果收集能力迁移为轻量 JS/Python scripts。
+- **`.vibe` as Project Workspace**: `.vibe/Agents`、`.vibe/tasks`、`.vibe/runs`、`.vibe/locks`、`.vibe/reviews` 成为 plugin-first 协作状态与配置目录。
+- **Current Model as Conductor**: 当前主会话模型通过 plugin skill 自动多轮澄清、拆分任务、启动 claude/gemini/codex 子 Agent、调用 Reviewer 并聚合修复。
+- **Release Intelligence**: 发布时从 git commit 历史生成可信的变更总结，作为 plugin command/script 能力提供。
 
 ## What This Is
 
-`vibe-cli` 是一个基于 Rust 构建的 **AI 代理协同总线**。它将终端窗格转化为受控的“工作站”， 让 AI 能够自主操控多窗格协作、通过 `.vibe` 目录管理项目进度，并利用 `signal/wait` 机制实现复杂的任务闭环。
+`vibe` 是一个 plugin-first 的 **多模型协作协议与轻量运行时**。它让当前 AI 终端模型成为 Conductor，通过 plugin 注入的 skills、commands、references 和 scripts，在项目 `.vibe` 目录中定义 Agent、任务、状态、审查和发布流程，并按需启动 claude/gemini/codex 等子 Agent 处理任务。
 
 ## Core Value
 
@@ -37,24 +38,25 @@
 
 ### Active
 
-- [ ] **高效且准确的任务分配**: 根据任务类型、文件范围、依赖关系、Worker 能力和当前负载自动拆分与派发任务。
-- [ ] **完善的 `.vibe` 配置系统**: 支持配置 schema、校验、合并、默认值、角色能力、任务流模板和项目级覆盖。
-- [ ] **基于文件系统的状态机制**: 将任务队列、租约、锁、心跳、结果、失败原因和恢复点持久化到 `.vibe`。
-- [ ] **任务流自动化**: 支持任务生命周期从创建、分配、执行、等待、聚合、重试到完成的自动推进。
-- [ ] **GitHub release commit 总结**: 发布时从 commit 区间生成结构化 changelog 和 release notes 草稿。
+- [ ] **Plugin-first 架构合同**: 明确 plugin、references、skills、commands、scripts 与 `.vibe` 工作区的边界。
+- [ ] **`.vibe` 项目工作区初始化**: plugin 安装/启用后可生成 `.vibe/Agents`、配置、任务目录和轻量运行时脚本入口。
+- [ ] **轻量 scripts runtime**: 用 JS/Python 实现任务落盘、锁、状态、Agent 启动、日志和结果收集，替代独立重型 CLI。
+- [ ] **多模型执行与审查闭环**: 主模型自动澄清需求、拆分任务、启动 executor、调用 reviewer、触发修复并汇总交付。
+- [ ] **GitHub release commit 总结**: 作为 plugin command/script，从 commit 区间生成结构化 changelog 和 release notes 草稿。
 
 ### Out of Scope
 
 - **命令级强实时审计** — v4.0 转向任务级自治，不再审批每一个输入的 shell 命令。
 - **全局同步数据库** — 放弃复杂的 DB 同步，专注于本地项目级 `.vibe` 持久化。
+- **独立重型 CLI 作为主产品形态** — v6.0 转向 plugin-first，CLI 能力只保留为 scripts runtime 或迁移兼容层。
+- **终端 pane 编排作为唯一执行方式** — 子 Agent 优先通过 shell/subprocess 启动，terminal adapter 仅作为可选兼容能力。
 
 ## Context
 
 Shipped Milestone 5.0 (Interaction & Initialization).
-Current LOC: Rust core and CLI continue to center on `.vibe`, terminal adapters, file bus, and role templates.
-Tech stack: Rust, Tokio, Ratatui, WezTerm/Tmux integration.
-Established project-local `.vibe/config.json`, `.vibe/state`, `.vibe/bus`, role templates, `vibe spawn --stack`, `vibe signal/wait`, and autonomous loop SOPs.
-Current risk: task assignment is still mostly prompt/SOP-driven rather than enforced by a durable task model and scheduler.
+Existing Rust CLI proved the core ideas: `.vibe` project directory, role templates, file bus, state files, stack spawning, signal/wait, and autonomous loop SOPs.
+New v6.0 direction: preserve those validated concepts but move the product surface into plugin skills/commands/references and implement only the necessary runtime primitives as small JS/Python scripts inside the plugin.
+Current risk: if runtime scripts are too thin, execution and recovery become unreliable; if they grow too large, the project recreates the heavy CLI in another language.
 
 ## Key Decisions
 
@@ -64,8 +66,9 @@ Current risk: task assignment is still mostly prompt/SOP-driven rather than enfo
 | 移除 MCP | AI 代理直接调用 CLI 更加符合 Unix 哲学且性能更高。 | ✓ Good |
 | 使用 .vibe 目录 | 简化状态管理，方便版本控制（git）与上下文感知。 | ✓ Good |
 | 无状态信号总线 | 移除守护进程，通过终端注入和 stdin 轮询实现轻量级通信。 | ✓ Good |
-| 优先强化任务分配准确性 | 多 Agent 数量增加后，错误分配比单 Worker 执行失败更昂贵。 | — Pending |
-| 继续使用文件系统状态 | 保持可观察、可恢复、无需守护进程的架构方向。 | — Pending |
+| 转向 plugin-first | 主流 AI CLI 已支持 skills/commands/plugins，用户不应先学习独立编排 CLI。 | — Pending |
+| CLI 瘦身为 plugin/scripts runtime | 初始化、任务落盘、锁、Agent 启动和结果收集代码量小，适合放进 plugin scripts。 | — Pending |
+| `.vibe/Agents` 定义角色与模型 | 角色定义、模型选择和执行策略应成为项目可读配置，而不是硬编码 CLI 状态。 | — Pending |
 
 ## Evolution
 
@@ -85,4 +88,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-22 after starting Milestone 6.0*
+*Last updated: 2026-04-22 after plugin-first v6.0 pivot*
