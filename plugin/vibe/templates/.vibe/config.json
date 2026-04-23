@@ -1,6 +1,8 @@
 {
   "workspace_version": "0.1.0",
   "product": "Vibe",
+  "default_model": "claude",
+  "lock_policy": {},
   "agents_dir": "agents",
   "tasks_dir": "tasks",
   "runs_dir": "runs",
