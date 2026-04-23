@@ -27,8 +27,20 @@ try {
   // Test 1: Given an empty directory, creates .vibe/ with all subdirectories and copies all template files.
   setup();
   runInit([TEST_DIR]);
-  assert.ok(fs.existsSync(path.join(TEST_DIR, '.vibe', 'config.json')), 'config.json should exist');
-  assert.ok(fs.existsSync(path.join(TEST_DIR, '.vibe', 'agents', 'planner.json')), 'planner.json should exist');
+  const configPath = path.join(TEST_DIR, '.vibe', 'config.json');
+  assert.ok(fs.existsSync(configPath), 'config.json should exist');
+  
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  assert.strictEqual(config.default_model, 'claude', 'config.json should have default_model');
+  assert.ok(config.lock_policy, 'config.json should have lock_policy');
+
+  const plannerPath = path.join(TEST_DIR, '.vibe', 'agents', 'planner.json');
+  assert.ok(fs.existsSync(plannerPath), 'planner.json should exist');
+  
+  const planner = JSON.parse(fs.readFileSync(plannerPath, 'utf8'));
+  assert.ok(planner.prompt, 'planner.json should have prompt');
+  assert.ok(planner.reference, 'planner.json should have reference');
+
   assert.ok(fs.existsSync(path.join(TEST_DIR, '.vibe', 'tasks')), 'tasks dir should exist');
   assert.ok(fs.existsSync(path.join(TEST_DIR, '.vibe', 'runs')), 'runs dir should exist');
   assert.ok(fs.existsSync(path.join(TEST_DIR, '.vibe', 'locks')), 'locks dir should exist');
