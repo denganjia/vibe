@@ -33,7 +33,7 @@
 
 - [x] **FLOW-01**: Current model can conduct multi-round clarification with the user before task execution and persist the resulting plan into `.vibe/tasks`.
 - [x] **FLOW-02**: Current model can split a plan into independent or ordered tasks, respecting file scopes and dependency order.
-- [ ] **FLOW-03**: Current model can choose executor Agents based on role definition, model command, task type, and file ownership constraints.
+- [x] **FLOW-03**: Current model can choose executor Agents based on role definition, model command, task type, and file ownership constraints.
 - [ ] **FLOW-04**: Reviewer Agents can inspect executor outputs, produce structured findings, and request fixes before a task is marked complete.
 - [ ] **FLOW-05**: The workflow can resume from `.vibe` files after interruption, showing queued, running, blocked, review-needed, failed, and completed tasks.
 
@@ -95,7 +95,7 @@ Milestone 6.0 requirements are mapped to Phase 20-24. Each v6.0 requirement belo
 | RUN-05 | Phase 22 | Pending |
 | FLOW-01 | Phase 23 | Complete |
 | FLOW-02 | Phase 23 | Complete |
-| FLOW-03 | Phase 23 | Pending |
+| FLOW-03 | Phase 23 | Complete |
 | FLOW-04 | Phase 23 | Pending |
 | FLOW-05 | Phase 23 | Pending |
 | REL-01 | Phase 24 | Pending |
