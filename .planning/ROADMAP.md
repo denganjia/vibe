@@ -83,7 +83,7 @@ Plans:
   5. 中断后可以从 `.vibe` 恢复，区分 queued, running, blocked, review-needed, failed 和 completed。
 **Plans**: 4 plans
 Plans:
-- [ ] 23-01-PLAN.md — Manifest & Dependency Enforcement
+- [x] 23-01-PLAN.md — Manifest & Dependency Enforcement (completed 2026-04-23)
 - [ ] 23-02-PLAN.md — Conductor Skill - Planning & Clarification
 - [ ] 23-03-PLAN.md — Review Loop & Fix Logic
 - [ ] 23-04-PLAN.md — Recovery & Synchronization
@@ -109,5 +109,5 @@ Plans:
 | 20. Plugin-first 架构与迁移边界 | v6.0 | 3/4 | In Progress | - |
 | 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 3/3 | Complete   | 2026-04-23 |
 | 22. 轻量 scripts runtime | v6.0 | 1/1 | Complete | 2026-04-23 |
-| 23. 多模型执行与审查闭环 | v6.0 | 4/4 | In Progress | - |
+| 23. 多模型执行与审查闭环 | v6.0 | 1/4 | In Progress | - |
 | 24. Release 总结与 CLI 瘦身收束 | v6.0 | 0/TBD | Not started | - |
