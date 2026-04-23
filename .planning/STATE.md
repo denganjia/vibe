@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 21-02-PLAN.md
-last_updated: "2026-04-22T09:32:06.219Z"
-last_activity: 2026-04-22
+stopped_at: Completed 21-03-PLAN.md
+last_updated: "2026-04-23T01:50:08.376Z"
+last_activity: 2026-04-23
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 Phase: 20 of 24 (Plugin-first 架构与迁移边界) -- EXECUTING
 Plan: 4 of 4 complete; next 20-03
 Status: Phase complete — ready for verification
-Last activity: 2026-04-22
+Last activity: 2026-04-23
 
 Progress: [███████░░░] 75%
 
@@ -57,6 +57,7 @@ Progress: [███████░░░] 75%
 
 | Phase 21 P01 | 60 | 2 tasks | 5 files |
 | Phase 21 P02 | 90 | 1 tasks | 2 files |
+| Phase 21 P03 | 10m | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 21]: Used pure JSON for agent templates instead of Markdown to simplify native extraction.
 - [Phase 21]: Used plain CommonJS Node.js script without external dependencies for the init command.
 - [Phase 21]: Implemented non-destructive file copying to prevent overwriting existing configurations unless --force is specified.
+- [Phase 21]: 将 Agent prompt 和 reference 固化在模板中，确保初始化即具备引导能力。
+- [Phase 21]: 在全局配置中引入 default_model，简化后续多 Agent 执行时的参数传递。
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ None recorded in .planning/todos/pending/.
 
 ## Session Continuity
 
-Last session: 2026-04-22T09:32:06.217Z
-Stopped at: Completed 21-02-PLAN.md
+Last session: 2026-04-23T01:50:08.374Z
+Stopped at: Completed 21-03-PLAN.md
 Resume file: None

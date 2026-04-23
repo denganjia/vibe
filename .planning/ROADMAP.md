@@ -17,7 +17,7 @@ Milestone 6.0 是一次产品形态转型：从独立重型 `vibe-cli` 编排系
 ## Phases
 
 - [ ] **Phase 20: Plugin-first 架构与迁移边界** - 定义 plugin 包结构、协作协议、skills/commands/references/scripts 分工，并分类旧 CLI 能力的迁移去向。
-- [ ] **Phase 21: `.vibe` 工作区与 Agent 定义** - 实现 plugin 初始化后的 `.vibe` 目录、Agent 文件格式、项目配置和非破坏性迁移规则。 (Gaps Found)
+- [x] **Phase 21: `.vibe` 工作区与 Agent 定义** - 实现 plugin 初始化后的 `.vibe` 目录、Agent 文件格式、项目配置和非破坏性迁移规则。 (Gaps Found) (completed 2026-04-23)
 - [ ] **Phase 22: 轻量 scripts runtime** - 用 JS/Python 实现任务落盘、文件锁、Agent subprocess 启动、日志和结果收集。
 - [ ] **Phase 23: 多模型执行与审查闭环** - 让主模型通过 plugin 协议完成澄清、拆分、执行、review、修复和恢复。
 - [ ] **Phase 24: Release 总结与 CLI 瘦身收束** - 将 release commit 总结做成 plugin command/script，并按迁移分类瘦身或归档 Rust CLI。
@@ -55,7 +55,7 @@ Plans:
 Plans:
 - [x] 21-01-PLAN.md — Update the `.vibe` workspace templates to use a pure JSON schema.
 - [x] 21-02-PLAN.md — Implement the plugin initialization script to safely scaffold `.vibe` workspaces.
-- [ ] 21-03-PLAN.md — Close gaps: add missing prompt, reference, and default_model fields to templates.
+- [x] 21-03-PLAN.md — Close gaps: add missing prompt, reference, and default_model fields to templates.
 
 ### Phase 22: 轻量 scripts runtime
 **Goal**: 用小型 JS/Python scripts 提供 plugin 必需的 runtime 原语，替代独立重型 CLI 的核心执行职责。
@@ -100,7 +100,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 20. Plugin-first 架构与迁移边界 | v6.0 | 3/4 | In Progress | - |
-| 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 2/3 | In Progress | - |
+| 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 3/3 | Complete   | 2026-04-23 |
 | 22. 轻量 scripts runtime | v6.0 | 0/TBD | Not started | - |
 | 23. 多模型执行与审查闭环 | v6.0 | 0/TBD | Not started | - |
 | 24. Release 总结与 CLI 瘦身收束 | v6.0 | 0/TBD | Not started | - |
