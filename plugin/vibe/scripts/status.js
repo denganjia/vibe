@@ -13,7 +13,8 @@ const ALLOWED_STATUSES = [
   'review-needed',
   'fix-needed',
   'failed',
-  'completed'
+  'completed',
+  'interrupted'
 ];
 
 function setTaskStatus(workspaceRoot, taskId, status, metadata = {}) {
