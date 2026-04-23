@@ -98,7 +98,11 @@ Plans:
   3. release 总结可以在可用时包含 changed files, phase references 和 task/review artifacts。
   4. release 总结可以在无网络生成本地 GitHub release notes 草稿。
   5. Rust CLI 被按 Phase 20 的分类瘦身或归档，保留功能必须能解释为什么不能迁入 plugin scripts。
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 24-01-PLAN.md — Release Automation & Plugin Integration
+- [ ] 24-02-PLAN.md — CLI Dispatcher Refactor
+- [ ] 24-03-PLAN.md — CLI Core Slimming & Archiving
 
 ## Progress
 
@@ -110,4 +114,4 @@ Plans:
 | 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 3/3 | Complete   | 2026-04-23 |
 | 22. 轻量 scripts runtime | v6.0 | 1/1 | Complete | 2026-04-23 |
 | 23. 多模型执行与审查闭环 | v6.0 | 2/4 | In Progress | - |
-| 24. Release 总结与 CLI 瘦身收束 | v6.0 | 0/TBD | Not started | - |
+| 24. Release 总结与 CLI 瘦身收束 | v6.0 | 0/3 | In Progress | - |
