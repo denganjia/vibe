@@ -12,13 +12,13 @@ Milestone 6.0 是一次产品形态转型：从独立重型 `vibe-cli` 编排系
 
 ## Milestone 6.0: Plugin-first 多模型协作转型
 
-**Milestone Goal:** 让用户通过安装 plugin 启用多模型协作，而不是学习和操作独立重型 CLI；把必要 runtime 能力瘦身为 plugin/scripts，并保留 `.vibe` 作为可观察、可恢复的项目工作区。
+**Milestone Goal:** 让用户通过安装 plugin 启用多模型协作，而不是学习 and 操作独立重型 CLI；把必要 runtime 能力瘦身为 plugin/scripts，并保留 `.vibe` 作为可观察、可恢复的项目工作区。
 
 ## Phases
 
 - [ ] **Phase 20: Plugin-first 架构与迁移边界** - 定义 plugin 包结构、协作协议、skills/commands/references/scripts 分工，并分类旧 CLI 能力的迁移去向。
 - [x] **Phase 21: `.vibe` 工作区与 Agent 定义** - 实现 plugin 初始化后的 `.vibe` 目录、Agent 文件格式、项目配置和非破坏性迁移规则。 (Gaps Found) (completed 2026-04-23)
-- [ ] **Phase 22: 轻量 scripts runtime** - 用 JS/Python 实现任务落盘、文件锁、Agent subprocess 启动、日志和结果收集。
+- [x] **Phase 22: 轻量 scripts runtime** - 用 JS/Python 实现任务落盘、文件锁、Agent subprocess 启动、日志 and 结果收集。 (completed 2026-04-23)
 - [ ] **Phase 23: 多模型执行与审查闭环** - 让主模型通过 plugin 协议完成澄清、拆分、执行、review、修复和恢复。
 - [ ] **Phase 24: Release 总结与 CLI 瘦身收束** - 将 release commit 总结做成 plugin command/script，并按迁移分类瘦身或归档 Rust CLI。
 
@@ -67,7 +67,9 @@ Plans:
   3. scripts 可以按 `.vibe/Agents` 配置启动 claude, gemini, codex 或其他 Agent 命令作为 subprocess。
   4. scripts 可以把 stdout, stderr, exit code, 时间戳和结果 artifact 写入 `.vibe/runs` 与 `.vibe/logs`。
   5. runtime 不需要独立 server、数据库或 daemon，代码保持可读、可移植、可由 plugin 调用。
-**Plans**: TBD
+**Plans**: 1 plans
+Plans:
+- [x] 22-01-PLAN.md — Implementation of core scripts (task, lock, run, status). (completed 2026-04-23)
 
 ### Phase 23: 多模型执行与审查闭环
 **Goal**: 当前主模型通过 plugin 协议完成从用户澄清到 executor/reviewer 协作、修复循环和中断恢复的完整任务闭环。
@@ -79,7 +81,12 @@ Plans:
   3. 主模型可以根据 Agent 定义、模型命令、任务类型和文件所有权选择 executor。
   4. Reviewer Agent 可以检查 executor 输出，产出结构化 findings，并在完成前触发修复。
   5. 中断后可以从 `.vibe` 恢复，区分 queued, running, blocked, review-needed, failed 和 completed。
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 23-01-PLAN.md — Manifest & Dependency Enforcement
+- [ ] 23-02-PLAN.md — Conductor Skill - Planning & Clarification
+- [ ] 23-03-PLAN.md — Review Loop & Fix Logic
+- [ ] 23-04-PLAN.md — Recovery & Synchronization
 
 ### Phase 24: Release 总结与 CLI 瘦身收束
 **Goal**: 将 release commit 总结作为 plugin command/script 提供，并按迁移分类瘦身或归档旧 Rust CLI 能力。
@@ -89,7 +96,7 @@ Plans:
   1. release command 可以从最新 tag 或显式 `--from/--to` 参数确定 commit 区间。
   2. release 总结可以用确定性规则把 commits 分为 features, fixes, docs, tests, refactors 和 internal changes。
   3. release 总结可以在可用时包含 changed files, phase references 和 task/review artifacts。
-  4. release command 可以无网络生成本地 GitHub release notes 草稿。
+  4. release 总结可以在无网络生成本地 GitHub release notes 草稿。
   5. Rust CLI 被按 Phase 20 的分类瘦身或归档，保留功能必须能解释为什么不能迁入 plugin scripts。
 **Plans**: TBD
 
@@ -101,6 +108,6 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 20. Plugin-first 架构与迁移边界 | v6.0 | 3/4 | In Progress | - |
 | 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 3/3 | Complete   | 2026-04-23 |
-| 22. 轻量 scripts runtime | v6.0 | 0/TBD | Not started | - |
-| 23. 多模型执行与审查闭环 | v6.0 | 0/TBD | Not started | - |
+| 22. 轻量 scripts runtime | v6.0 | 1/1 | Complete | 2026-04-23 |
+| 23. 多模型执行与审查闭环 | v6.0 | 4/4 | In Progress | - |
 | 24. Release 总结与 CLI 瘦身收束 | v6.0 | 0/TBD | Not started | - |
