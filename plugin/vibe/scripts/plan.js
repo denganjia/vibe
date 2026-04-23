@@ -15,6 +15,12 @@ function main() {
   const args = process.argv.slice(2);
   let inputStr = '';
 
+  const processReviewArg = args.find(a => a.startsWith('--process-review='));
+  if (processReviewArg) {
+    const taskId = processReviewArg.split('=')[1];
+    return processReview(taskId);
+  }
+
   const mockInputArg = args.find(a => a.startsWith('--mock-input='));
   if (mockInputArg) {
     inputStr = mockInputArg.split('=')[1];
@@ -94,6 +100,65 @@ function main() {
   fs.writeFileSync(notesPath, notesContent);
 
   console.log('Successfully generated plan manifest and task files.');
+}
+
+function processReview(taskId) {
+  const vibeDir = path.resolve(process.cwd(), '.vibe');
+  const taskPath = path.join(vibeDir, 'tasks', `${taskId}.json`);
+  const reviewsDir = path.join(vibeDir, 'reviews');
+
+  if (!fs.existsSync(taskPath)) {
+    console.error(`Error: Task ${taskId} not found.`);
+    process.exit(1);
+  }
+
+  const task = JSON.parse(fs.readFileSync(taskPath, 'utf8'));
+
+  // Find latest review for this task
+  if (!fs.existsSync(reviewsDir)) {
+    console.error(`Error: No reviews found for task ${taskId}.`);
+    process.exit(1);
+  }
+
+  const reviews = fs.readdirSync(reviewsDir)
+    .filter(f => f.startsWith(`${taskId}_`) && f.endsWith('.json'))
+    .map(f => ({
+      name: f,
+      time: fs.statSync(path.join(reviewsDir, f)).mtime.getTime()
+    }))
+    .sort((a, b) => b.time - a.time);
+
+  if (reviews.length === 0) {
+    console.error(`Error: No reviews found for task ${taskId}.`);
+    process.exit(1);
+  }
+
+  const latestReviewPath = path.join(reviewsDir, reviews[0].name);
+  const review = JSON.parse(fs.readFileSync(latestReviewPath, 'utf8'));
+
+  if (review.status === 'pass') {
+    task.status = 'completed';
+    console.log(`Task ${taskId} review passed. Status set to completed.`);
+  } else {
+    task.status = 'fix-needed';
+    // Aggregate findings
+    task.review_findings = review.findings;
+    
+    // Add findings to goal or context for visibility
+    const findingsSummary = review.findings
+      .map(f => `- [${f.severity}] ${f.file}:${f.line}: ${f.message}`)
+      .join('\n');
+    
+    if (!task.original_goal) {
+      task.original_goal = task.goal;
+    }
+    
+    task.goal = `${task.original_goal}\n\n### Fix Needed (from review)\n${findingsSummary}`;
+    
+    console.log(`Task ${taskId} review failed. Status set to fix-needed. Findings aggregated.`);
+  }
+
+  fs.writeFileSync(taskPath, JSON.stringify(task, null, 2));
 }
 
 function hasCircularDependencies(tasks) {
