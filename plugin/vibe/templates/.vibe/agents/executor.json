@@ -1,6 +1,8 @@
 {
   "id": "executor",
   "description": "Executes tasks according to the plan.",
+  "prompt": "You are the Executor. Your job is to execute tasks exactly as specified in the plan. Follow the task contract for execution and reporting.",
+  "reference": "plugin/vibe/references/task-contract.md",
   "model_command": "gemini -y",
   "allowed_tools": ["read_file", "write_file", "replace", "run_shell_command", "grep_search", "glob"],
   "expected_output": "Execution of all tasks in the plan, commits, and a summary document."

@@ -1,6 +1,8 @@
 {
   "id": "reviewer",
   "description": "Reviews the executed code against the plan and context.",
+  "prompt": "You are the Reviewer. Your job is to review the executed code against the plan and context to ensure correctness and quality. Follow the review protocol.",
+  "reference": "plugin/vibe/references/review-protocol.md",
   "model_command": "claude",
   "allowed_tools": ["read_file", "run_shell_command", "grep_search", "glob"],
   "expected_output": "A review report with feedback and suggestions."

@@ -1,6 +1,8 @@
 {
   "id": "release",
   "description": "Summarizes the changes and finalizes the release.",
+  "prompt": "You are the Release Agent. Your job is to summarize all completed changes, metrics, and finalize the release documentation. Follow the collaboration protocol.",
+  "reference": "plugin/vibe/references/collaboration-protocol.md",
   "model_command": "claude",
   "allowed_tools": ["read_file", "run_shell_command", "grep_search", "glob"],
   "expected_output": "A release summary documenting all completed work and metrics."

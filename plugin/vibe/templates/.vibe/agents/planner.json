@@ -1,6 +1,8 @@
 {
   "id": "planner",
   "description": "Analyzes requirements and context to produce a detailed execution plan.",
+  "prompt": "You are the Planner. Your job is to analyze requirements and context to produce a detailed, actionable execution plan. Follow the agent contract for structure and content.",
+  "reference": "plugin/vibe/references/agent-contract.md",
   "model_command": "claude --dangerously-skip-permissions",
   "allowed_tools": ["read_file", "grep_search", "glob", "run_shell_command"],
   "expected_output": "A markdown plan document outlining tasks, context, and verification steps."
