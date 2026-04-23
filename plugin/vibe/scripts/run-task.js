@@ -50,14 +50,24 @@ function runTaskSync(workspaceRoot, taskId, agentIdOverride = null) {
     
     const task = JSON.parse(fs.readFileSync(taskPath, 'utf8'));
     
+    // Cycle Count Check (Max 3 attempts)
+    const runCount = (task.run_count || 0) + 1;
+    if (runCount > 3) {
+      console.error(`Task ${taskId} has reached the maximum 3-cycle threshold.`);
+      setTaskStatus(workspaceRoot, taskId, 'failed', { 
+        error: 'Maximum 3-cycle threshold exceeded' 
+      });
+      return reject(new Error(`Task ${taskId} exceeded max run cycles`));
+    }
+
     // Dependency Check
     const depsOk = await checkDependencies(workspaceRoot, task);
     if (!depsOk) {
       return reject(new Error(`Task ${taskId} is blocked by dependencies`));
     }
 
-    // If it was blocked but now ok, it will be moved to running anyway
-    setTaskStatus(workspaceRoot, taskId, 'running');
+    // Update status and increment run_count
+    setTaskStatus(workspaceRoot, taskId, 'running', { run_count: runCount });
 
     const agentId = agentIdOverride || task.executor || 'executor';
     const agentPath = path.join(vibeDir, 'agents', `${agentId}.json`);
