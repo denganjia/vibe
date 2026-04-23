@@ -9,6 +9,12 @@ This file documents the intended workflow contract and does not claim executable
 Turn a user request into one or more `.vibe` task contracts that executor and
 reviewer Agents can run through the Vibe collaboration protocol.
 
+## Execution Pattern
+
+1. **Clarify**: The Conductor uses the Conservative Planning Checklist (in `plugin/vibe/roles/Conductor.md`) to ensure the goal, scope, and verification are clear.
+2. **Decompose**: Split the objective into discrete tasks with explicit dependencies.
+3. **Artifact Generation**: Call `plugin/vibe/scripts/plan.js` with a structured JSON payload containing the goal, tasks, and planning notes.
+
 ## Inputs
 
 - User goal, constraints, expected output, and verification expectations.
@@ -17,23 +23,18 @@ reviewer Agents can run through the Vibe collaboration protocol.
 
 ## Reads
 
-- `plugin/vibe/skills/conductor/SKILL.md`
-- `plugin/vibe/references/collaboration-protocol.md`
+- `plugin/vibe/roles/Conductor.md`
+- `plugin/vibe/skills/Conductor.md`
 - `plugin/vibe/references/task-contract.md`
 - `.vibe/config.json`
-- `.vibe/Agents/`
 
 ## Writes
 
-- Task JSON files under `.vibe/tasks/`.
-- Planning notes or decisions only when they are needed for later executor or
-  reviewer context.
+- `.vibe/plan.json`: The master plan manifest.
+- `.vibe/tasks/*.json`: Individual task contracts.
+- `.vibe/planning_notes.md`: Contextual notes for executors.
 
 ## Expected Output
 
-The Conductor clarifies before writing task JSON. When enough detail is known,
-it uses `references/task-contract.md` to write task files under `.vibe/tasks/`
-with repo-root-relative `file_scope`, verification, and reviewer requirements.
-
-If the request is not ready to plan, the expected output is a focused
-clarification question instead of a partial task artifact.
+When enough detail is known, the Conductor calls `plan.js` to write the plan and task artifacts. 
+If the request is not ready to plan, the expected output is a focused clarification question.
