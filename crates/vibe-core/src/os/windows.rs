@@ -1,40 +1,15 @@
 use crate::error::{Result, VibeError};
 use std::os::windows::io::AsRawHandle;
-use std::os::windows::process::CommandExt;
 use std::process::Child;
 use std::sync::Mutex;
 use windows_sys::Win32::Foundation::*;
 use windows_sys::Win32::System::JobObjects::*;
-use windows_sys::Win32::System::Threading::{CREATE_NO_WINDOW, DETACHED_PROCESS};
 
 struct SafeHandle(HANDLE);
 unsafe impl Send for SafeHandle {}
 unsafe impl Sync for SafeHandle {}
 
 static JOB_OBJECT: Mutex<Option<SafeHandle>> = Mutex::new(None);
-
-/// Spawns the current process as a detached daemon.
-/// On Windows, this re-executes the current executable with a VIBE_DAEMON environment variable.
-pub fn spawn_daemon() -> Result<()> {
-    if std::env::var("VIBE_DAEMON").is_ok() {
-        return Ok(());
-    }
-
-    let exe = std::env::current_exe()?;
-    let args: Vec<String> = std::env::args().skip(1).collect();
-
-    std::process::Command::new(exe)
-        .args(args)
-        .env("VIBE_DAEMON", "1")
-        .creation_flags(DETACHED_PROCESS | CREATE_NO_WINDOW)
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .map_err(|e| VibeError::Internal(format!("Failed to spawn daemon: {}", e)))?;
-
-    std::process::exit(0);
-}
 
 /// Assigns a child process to a global job object that will kill the process tree when the handle is closed.
 pub fn assign_to_job(child: &Child) -> Result<()> {

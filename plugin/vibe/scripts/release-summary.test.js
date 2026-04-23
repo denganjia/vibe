@@ -4,18 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 // We will implement these in release-summary.js
-// For now, we'll try to require them and handle the failure if the file doesn't exist yet
-let releaseSummary;
-try {
-  releaseSummary = require('./release-summary.js');
-} catch (e) {
-  // Mock for initial Red state in TDD
-  releaseSummary = {
-    categorize: () => 'Internal Changes',
-    getTaskInfo: () => null,
-    generateMarkdown: () => ''
-  };
-}
+const releaseSummary = require('./release-summary.js');
 
 test('Categorization logic', async (t) => {
   await t.test('should identify standard CC feat', () => {

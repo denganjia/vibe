@@ -35,14 +35,14 @@
 - [x] **FLOW-02**: Current model can split a plan into independent or ordered tasks, respecting file scopes and dependency order.
 - [x] **FLOW-03**: Current model can choose executor Agents based on role definition, model command, task type, and file ownership constraints.
 - [ ] **FLOW-04**: Reviewer Agents can inspect executor outputs, produce structured findings, and request fixes before a task is marked complete.
-- [ ] **FLOW-05**: The workflow can resume from `.vibe` files after interruption, showing queued, running, blocked, review-needed, failed, and completed tasks.
+- [x] **FLOW-05**: The workflow can resume from `.vibe` files after interruption, showing queued, running, blocked, review-needed, failed, and completed tasks.
 
 ### Release and Migration
 
-- [ ] **REL-01**: Plugin release command can determine a commit range from the latest tag or explicit `--from/--to` parameters.
-- [ ] **REL-02**: Release summary groups commits into features, fixes, docs, tests, refactors, and internal changes using deterministic rules.
-- [ ] **REL-03**: Release summary can include changed files, phase references, and task/review artifacts when available.
-- [ ] **REL-04**: Release summary writes a local GitHub release notes draft without requiring network access.
+- [x] **REL-01**: Plugin release command can determine a commit range from the latest tag or explicit `--from/--to` parameters.
+- [x] **REL-02**: Release summary groups commits into features, fixes, docs, tests, refactors, and internal changes using deterministic rules.
+- [x] **REL-03**: Release summary can include changed files, phase references, and task/review artifacts when available.
+- [x] **REL-04**: Release summary writes a local GitHub release notes draft without requiring network access.
 - [ ] **REL-05**: Rust CLI code is slimmed or archived according to the migration classification, with any retained functionality callable from plugin scripts only when justified.
 
 ## Future Requirements
@@ -97,11 +97,11 @@ Milestone 6.0 requirements are mapped to Phase 20-24. Each v6.0 requirement belo
 | FLOW-02 | Phase 23 | Complete |
 | FLOW-03 | Phase 23 | Complete |
 | FLOW-04 | Phase 23 | Pending |
-| FLOW-05 | Phase 23 | Pending |
-| REL-01 | Phase 24 | Pending |
-| REL-02 | Phase 24 | Pending |
-| REL-03 | Phase 24 | Pending |
-| REL-04 | Phase 24 | Pending |
+| FLOW-05 | Phase 23 | Complete |
+| REL-01 | Phase 24 | Complete |
+| REL-02 | Phase 24 | Complete |
+| REL-03 | Phase 24 | Complete |
+| REL-04 | Phase 24 | Complete |
 | REL-05 | Phase 24 | Pending |
 
 **Coverage:**

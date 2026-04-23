@@ -159,10 +159,10 @@ function categorize(message) {
 | A1 | Node.js exists on user machine | Standard Stack | 瘦身后的 Rust CLI 依赖 Node.js 执行脚本。 |
 | A2 | .vibe/state/panes.json 格式稳定 | Runtime State | 如果格式变化，Rust 的 PaneRecord 结构需同步更新。 |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Dispatcher Implementation**: 是否需要 Rust CLI 静态链接某些脚本，还是完全通过文件系统调用？
-   - Recommendation: 优先通过 `plugin/vibe/scripts/` 调用，方便用户自定义。
+   - **RESOLVED:** 优先通过 `plugin/vibe/scripts/` 目录进行文件系统调用。Rust Dispatcher 将通过查找相对于可执行文件或插件根目录的路径来定位 Node.js 脚本，这不仅保持了灵活性，也方便用户进行调试和自定义。
 
 ## Environment Availability
 
