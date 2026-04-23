@@ -6,12 +6,16 @@ Vibe scripts are thin deterministic helpers for project-local `.vibe` workspace 
 
 Scripts own exactly these six deterministic responsibilities:
 
-- initialize `.vibe` (initialize .vibe)
-- write task JSON
-- acquire and release file locks
-- launch configured Agent subprocesses
-- capture stdout/stderr/exit code/timestamps
-- generate local release summary drafts
+- `init.js`: Initialize `.vibe` workspace and copy templates.
+- `task.js`: Create and update task JSON artifacts.
+- `lock.js`: Acquire and release file-scope locks.
+- `run-task.js`: Launch configured Agent subprocesses and capture output logs/artifacts.
+- `status.js`: Unified task and run status management.
+- `release-summary.js` (Phase 24): Generate local release summary drafts.
+
+## Implementation Details
+
+All scripts are written in pure Node.js using native APIs to ensure maximum portability and minimal dependencies. They follow the contracts defined in `plugin/vibe/references/`.
 
 ## Not Script Responsibilities
 
