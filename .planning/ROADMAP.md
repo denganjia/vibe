@@ -84,7 +84,7 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 23-01-PLAN.md — Manifest & Dependency Enforcement (completed 2026-04-23)
-- [ ] 23-02-PLAN.md — Conductor Skill - Planning & Clarification
+- [x] 23-02-PLAN.md — Conductor Skill - Planning & Clarification (completed 2026-04-23)
 - [ ] 23-03-PLAN.md — Review Loop & Fix Logic
 - [ ] 23-04-PLAN.md — Recovery & Synchronization
 
@@ -109,5 +109,5 @@ Plans:
 | 20. Plugin-first 架构与迁移边界 | v6.0 | 3/4 | In Progress | - |
 | 21. `.vibe` 工作区与 Agent 定义 | v6.0 | 3/3 | Complete   | 2026-04-23 |
 | 22. 轻量 scripts runtime | v6.0 | 1/1 | Complete | 2026-04-23 |
-| 23. 多模型执行与审查闭环 | v6.0 | 1/4 | In Progress | - |
+| 23. 多模型执行与审查闭环 | v6.0 | 2/4 | In Progress | - |
 | 24. Release 总结与 CLI 瘦身收束 | v6.0 | 0/TBD | Not started | - |
