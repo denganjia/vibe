@@ -1,0 +1,6 @@
+{
+  "id": "{{id}}",
+  "goal": "{{goal}}",
+  "tasks": [],
+  "created_at": "{{created_at}}"
+}
