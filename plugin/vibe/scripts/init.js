@@ -22,8 +22,13 @@ function copyDirRecursive(src, dest, force) {
   }
 }
 
-function initWorkspace(targetDir, force) {
-  const resolvedTarget = path.resolve(process.cwd(), targetDir);
+function initWorkspace(targetDir, force, workspaceRoot = process.cwd()) {
+  const resolvedTarget = path.resolve(workspaceRoot, targetDir);
+  
+  if (!resolvedTarget.startsWith(workspaceRoot)) {
+    throw new Error("Target directory must be within the workspace root.");
+  }
+
   const vibeDir = path.join(resolvedTarget, '.vibe');
 
   // Directories to ensure exist
@@ -39,6 +44,11 @@ function initWorkspace(targetDir, force) {
       copyDirRecursive(templatesDir, vibeDir, force);
   }
 }
+
+module.exports = {
+  initWorkspace,
+  runSkill: (params, workspaceRoot) => initWorkspace(params.targetDir || '.', params.force || false, workspaceRoot)
+};
 
 if (require.main === module) {
   const args = process.argv.slice(2);
