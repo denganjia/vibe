@@ -5,8 +5,12 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "npm run test:manifests",
-    "test:manifests": "node --test scripts/manifests.test.js"
+    "test": "npm run test:manifests && npm run test:skills",
+    "test:manifests": "node --test scripts/manifests.test.js",
+    "test:skills": "node --test scripts/skills.test.js"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.1"
   },
   "engines": {
     "node": ">=22.0.0"
