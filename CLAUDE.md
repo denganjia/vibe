@@ -3,90 +3,87 @@
 
 **vibe-cli**
 
-`vibe-cli` 是一个基于 Rust 构建的物理调度层，专为终端（Wezterm/Tmux）中的 AI Agent 设计。它将 AI Agent 转化为能够自主操控多窗格协作、共享上下文并实现任务闭环的“终端虚拟操作员”，让开发者通过指挥 AI 团队在真实的窗口与文件系统中“并联作业”。
+`vibe-cli` 是一个 plugin-first 的多模型协作协议与轻量运行时，基于 Node.js 和 MCP (Model Context Protocol) 构建。它将 AI Agent 转化为能够自主操控任务协作、共享上下文并实现任务闭环的“终端虚拟操作员”，让开发者通过指挥 AI 团队在真实的窗口与文件系统中“并联作业”。
 
-**Core Value:** 打破 AI 与本地开发环境之间的“次元壁”，将终端从单纯的字符输入框升级为 AI 协作的物理调度室。
+**Core Value:** 打破 AI 与本地开发环境之间的“次元壁”，将当前 AI 终端模型升级为分布式 AI 协作的调度室，通过标准 MCP 工具开箱即用。
 
 ### Constraints
 
-- **Tech Stack**: Rust — 确保作为系统级工具的稳定性和分发效率。
-- **Dependency**: Wezterm/Tmux CLI — MVP 依赖于终端自带的 CLI 工具（如 `wezterm cli`）。
-- **Environment**: MacOS/Linux — 终端开发者集中的主流操作系统。
+- **Tech Stack**: Node.js & MCP SDK — 确保作为标准化 MCP 插件的跨端兼容性和生态集成。
+- **Architecture**: Plugin-first & MCP — 摒弃直接的 shell 注入，所有工作区交互均通过标准化的 MCP Tools 暴露。
+- **Environment**: Cross-platform — 支持运行 Node.js 的所有主流操作系统。
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:codebase/STACK.md -->
 ## Technology Stack
 
 ## Languages
-- Rust 2024 edition - Backend/CLI logic
+- JavaScript / Node.js - Core logic, MCP server implementation
 - None detected
 ## Runtime
-- Rust Toolchain
-- Cargo
-- Lockfile: missing (new project)
+- Node.js
+- npm
+- Lockfile: package-lock.json in plugin/vibe/
 ## Frameworks
-- None detected (Standard Library only)
-- Built-in `cargo test`
-- Cargo
+- MCP SDK (Model Context Protocol)
+- Zod
+- Node-based test runners
 ## Key Dependencies
-- None (Standard Library only)
-- None
+- @modelcontextprotocol/sdk
+- zod
 ## Configuration
-- Not configured
-- `Cargo.toml`
+- .vibe/ directory
+- package.json
 ## Platform Requirements
-- Rust SDK
-- Binary executable
+- Node.js Environment
+- Compatible AI Terminals
 <!-- GSD:stack-end -->
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
 ## Naming Patterns
-- snake_case for all Rust source files.
-- snake_case for function names (standard Rust).
-- snake_case for variable names.
-- PascalCase for structs, enums, and traits (standard Rust).
+- camelCase or kebab-case for file names.
+- camelCase for function and variable names.
+- PascalCase for classes and Zod schemas.
 ## Code Style
-- `rustfmt` (standard).
-- `clippy` (recommended standard).
+- Prettier/ESLint for formatting and linting.
 ## Import Organization
-- None detected.
+- ES Modules (`import`/`export`).
 ## Error Handling
-- Standard Rust Result and Option types.
+- try/catch blocks with custom error classes.
 ## Logging
-- `println!` for CLI output.
+- `console.log`/`console.error` for output, MCP logging utilities.
 ## Comments
-- Complexity documentation.
-- Rust doc comments (`///` and `//!`) for API documentation.
+- JSDoc for complex logic.
 ## Function Design
+- Small, focused tools exposed via MCP.
 ## Module Design
+- Encapsulated logic per MCP tool.
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
 ## Pattern Overview
-- Single entry point
-- Minimal footprint
-- Standard Rust structure
+- MCP Plugin Architecture
+- Tool-based action exposure
 ## Layers
-- Purpose: Entry point for the CLI
-- Location: `src/main.rs`
-- Contains: `main()` function
-- Depends on: Standard Library
-- Used by: User (via CLI)
+- Purpose: MCP Server for AI Terminals
+- Location: `plugin/vibe/mcp-server.js`
+- Depends on: `@modelcontextprotocol/sdk`
+- Used by: AI Terminals (Gemini, Claude, Codex)
 ## Data Flow
-- Stateless
+- Standard MCP protocol (JSON-RPC over stdio)
 ## Key Abstractions
-- No custom abstractions implemented yet.
+- Tools for workspace operations
 ## Entry Points
-- Location: `src/main.rs`
-- Triggers: Execution of the compiled binary
-- Responsibilities: Initialize and run the application logic
+- Location: `plugin/vibe/mcp-server.js`
+- Triggers: Started by host AI CLI
 ## Error Handling
-- None implemented yet
+- MCP standardized error responses
 ## Cross-Cutting Concerns
+- Authentication and authorization via host CLI
 <!-- GSD:architecture-end -->
 
 <!-- GSD:skills-start source:skills/ -->
