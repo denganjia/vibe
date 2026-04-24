@@ -1,6 +1,9 @@
 const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 const { z } = require("zod");
+const fs = require("fs");
+const path = require("path");
+const yaml = require("js-yaml");
 const packageJson = require("./package.json");
 const { acquireLocks, releaseLocks } = require("./scripts/lock.js");
 const { createTask } = require("./scripts/task.js");
@@ -18,6 +21,95 @@ const server = new McpServer({
   name: "vibe",
   version: packageJson.version,
 });
+
+/**
+ * Dynamic Skill Loading
+ * Scans the skills directory and registers tools based on SKILL.md metadata.
+ */
+async function loadSkills() {
+  const skillsDir = path.join(__dirname, 'skills');
+  if (!fs.existsSync(skillsDir)) return;
+
+  const skillFolders = fs.readdirSync(skillsDir, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory())
+    .map(dirent => dirent.name);
+
+  for (const folder of skillFolders) {
+    const skillMdPath = path.join(skillsDir, folder, 'SKILL.md');
+    if (!fs.existsSync(skillMdPath)) continue;
+
+    try {
+      const content = fs.readFileSync(skillMdPath, 'utf8');
+      const match = content.match(/^---\n([\s\S]*?)\n---/);
+      if (!match) continue;
+
+      const metadata = yaml.load(match[1]);
+      const skillName = metadata.name || folder;
+      const toolName = `vibe_skill_${skillName.replace(/^vibe-/, "").replace(/-/g, "_")}`;
+      const description = metadata.description || `Execute the ${folder} skill.`;
+
+      // Try to find corresponding script
+      const scriptPath = path.join(__dirname, 'scripts', `${folder}.js`);
+      
+      server.tool(
+        toolName,
+        description,
+        {
+          params: z.any().optional().describe("Skill-specific inputs as defined in SKILL.md"),
+          workspaceRoot: z.string().optional().describe("Optional override for the workspace root directory")
+        },
+        async ({ params = {}, workspaceRoot }) => {
+          try {
+            if (!fs.existsSync(scriptPath)) {
+              return {
+                content: [{ type: "text", text: `Error: Script for skill ${folder} not found at ${scriptPath}` }],
+                isError: true
+              };
+            }
+
+            // Security: validate workspaceRoot is within cwd
+            const cwd = process.cwd();
+            const root = workspaceRoot ? path.resolve(cwd, workspaceRoot) : cwd;
+            if (!root.startsWith(cwd)) {
+               return {
+                content: [{ type: "text", text: `Error: workspaceRoot must be within the current working directory` }],
+                isError: true
+              };
+            }
+
+            // Clear cache to allow for script updates during development
+            delete require.cache[require.resolve(scriptPath)];
+            const script = require(scriptPath);
+            
+            if (typeof script.runSkill !== 'function') {
+               return {
+                content: [{ type: "text", text: `Error: Script for skill ${folder} does not implement runSkill` }],
+                isError: true
+              };
+            }
+
+            const result = await script.runSkill(params, root);
+            const textOutput = typeof result === 'string' 
+              ? result 
+              : (result !== undefined ? JSON.stringify(result, null, 2) : "Skill executed successfully (no output).");
+              
+            return {
+              content: [{ type: "text", text: textOutput }]
+            };
+          } catch (error) {
+            return {
+              content: [{ type: "text", text: `Error executing skill ${skillName}: ${error.message}` }],
+              isError: true
+            };
+          }
+        }
+      );
+      console.error(`Registered dynamic tool: ${toolName} (${description})`);
+    } catch (error) {
+      console.error(`Failed to load skill from ${folder}:`, error.message);
+    }
+  }
+}
 
 /**
  * Tool: vibe_ping
@@ -150,19 +242,13 @@ server.tool(
   {},
   async () => {
     try {
-      // Capture listTasks output (it uses console.log which we've redirected)
       let output = "";
-      const originalError = console.error;
-      console.error = (...args) => {
-        output += args.join(" ") + "\n";
-      };
-      
-      listTasks(process.cwd());
-      
-      console.error = originalError;
+      listTasks(process.cwd(), (msg) => {
+        output += msg + "\n";
+      });
       
       return {
-        content: [{ type: "text", text: output || "No tasks found." }],
+        content: [{ type: "text", text: output.trim() || "No tasks found." }],
       };
     } catch (error) {
       return {
@@ -188,6 +274,7 @@ async function main() {
   };
 
   try {
+    await loadSkills();
     await server.connect(transport);
     console.error("Vibe MCP Server running on stdio");
   } catch (error) {

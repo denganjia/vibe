@@ -51,15 +51,15 @@ function getTaskStatus(workspaceRoot, taskId) {
   return task.status;
 }
 
-function listTasks(workspaceRoot) {
+function listTasks(workspaceRoot, logger = console.log) {
   const vibeDir = path.join(workspaceRoot, '.vibe');
   const planPath = path.join(vibeDir, 'plan.json');
   const tasksDir = path.join(vibeDir, 'tasks');
 
   if (fs.existsSync(planPath)) {
     const plan = JSON.parse(fs.readFileSync(planPath, 'utf8'));
-    console.log(`Plan: ${plan.id} - ${plan.goal}`);
-    console.log('Tasks:');
+    logger(`Plan: ${plan.id} - ${plan.goal}`);
+    logger('Tasks:');
     
     plan.tasks.forEach(taskId => {
       const taskPath = path.join(tasksDir, `${taskId}.json`);
@@ -68,9 +68,9 @@ function listTasks(workspaceRoot) {
         const deps = task.dependencies && task.dependencies.length > 0 
           ? ` [Depends on: ${task.dependencies.join(', ')}]` 
           : '';
-        console.log(`- [${task.status}] ${task.id}: ${task.name || ''}${deps}`);
+        logger(`- [${task.status}] ${task.id}: ${task.name || ''}${deps}`);
       } else {
-        console.log(`- [missing] ${taskId}`);
+        logger(`- [missing] ${taskId}`);
       }
     });
   } else if (fs.existsSync(tasksDir)) {
@@ -80,10 +80,10 @@ function listTasks(workspaceRoot) {
       const deps = task.dependencies && task.dependencies.length > 0 
         ? ` [Depends on: ${task.dependencies.join(', ')}]` 
         : '';
-      console.log(`- [${task.status}] ${task.id}: ${task.name || ''}${deps}`);
+      logger(`- [${task.status}] ${task.id}: ${task.name || ''}${deps}`);
     });
   } else {
-    console.log('No tasks or plan found.');
+    logger('No tasks or plan found.');
   }
 }
 
@@ -118,4 +118,12 @@ if (require.main === module) {
   }
 }
 
-module.exports = { setTaskStatus, getTaskStatus, listTasks };
+module.exports = {
+  setTaskStatus,
+  getTaskStatus,
+  listTasks,
+  runSkill: (params, workspaceRoot) => {
+    if (params.taskId) return getTaskStatus(workspaceRoot, params.taskId);
+    return listTasks(workspaceRoot);
+  }
+};
