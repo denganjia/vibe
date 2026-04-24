@@ -29,7 +29,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. All SKILL.md files include standardized cross-platform YAML frontmatter.
   2. Legacy `commands/` and `roles/` directories are removed or fully migrated into `skills/<skill-name>/SKILL.md` structures.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] `26-01-PLAN.md` — Setup TDD validation for skill standardization
+- [ ] `26-02-PLAN.md` — Migrate legacy `commands/` into standardized `skills/` structure
+- [ ] `26-03-PLAN.md` — Migrate legacy `roles/` into standardized `skills/` structure and update documentation
 
 ### Phase 27: MCP Server Integration
 **Goal**: Replace raw shell script executions with standard, safe Model Context Protocol (MCP) tool calls
@@ -55,6 +59,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete    | 2026-04-24 |
-| 26. Skill Standardization | 0/0 | Not started | - |
+| 26. Skill Standardization | 1/3 | In Progress|  |
 | 27. MCP Server Integration | 0/0 | Not started | - |
 | 28. Workflow & Documentation Alignment | 0/0 | Not started | - |

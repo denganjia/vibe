@@ -14,8 +14,8 @@
 
 ### Skills
 
-- [ ] **SKL-01**: Standardize SKILL.md files to include cross-platform YAML frontmatter
-- [ ] **SKL-02**: Reorganize and clean up legacy commands/ and roles/ to strictly follow skills/<skill-name>/SKILL.md structure
+- [x] **SKL-01**: Standardize SKILL.md files to include cross-platform YAML frontmatter
+- [x] **SKL-02**: Reorganize and clean up legacy commands/ and roles/ to strictly follow skills/<skill-name>/SKILL.md structure
 
 ### MCP Server
 
@@ -52,8 +52,8 @@ Milestone 7.0 requirements are mapped to phases below. Each v7.0 requirement bel
 | MAN-02 | Phase 25 | Complete |
 | MAN-03 | Phase 25 | Complete |
 | MAN-04 | Phase 25 | Complete |
-| SKL-01 | Phase 26 | Pending |
-| SKL-02 | Phase 26 | Pending |
+| SKL-01 | Phase 26 | Complete |
+| SKL-02 | Phase 26 | Complete |
 | MCP-01 | Phase 27 | Pending |
 | MCP-02 | Phase 27 | Pending |
 | MCP-03 | Phase 27 | Pending |
