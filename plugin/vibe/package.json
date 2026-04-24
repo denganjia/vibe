@@ -1,0 +1,14 @@
+{
+  "name": "vibe",
+  "version": "0.1.0",
+  "description": "Plugin-first multi-model collaboration for Vibe workspaces.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "npm run test:manifests",
+    "test:manifests": "node --test scripts/manifests.test.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
