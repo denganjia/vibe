@@ -1,63 +1,39 @@
----
-gsd_state_version: 1.0
-milestone: v7.0
-milestone_name: Universal Plugin & MCP Integration
-status: planning
-stopped_at: Defining requirements
-last_updated: "2026-04-23T15:00:00.000Z"
-last_activity: 2026-04-23
-progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
----
-
-# Project State
+# STATE
 
 ## Project Reference
-
-See: .planning/PROJECT.md (updated 2026-04-23)
-
-**Core value:** 打破 AI 与本地开发环境之间的“次元壁”，将终端从单纯的字符输入框升级为分布式 AI 协作的物理调度室。
-**Current focus:** Milestone v7.0 - Universal Plugin & MCP Integration
+**Core Value**: 打破 AI 与本地开发环境之间的“次元壁”，将终端从单纯的字符输入框升级为分布式 AI 协作的物理调度室。
+**Current Focus**: v7.0 Universal Plugin & MCP Integration - 将底层协作原语暴露给大语言模型，实现真正的开箱即用。
 
 ## Current Position
+**Phase**: Phase 25: Universal Manifests & Packaging
+**Plan**: None
+**Status**: Planning phase 25
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-23 — Milestone v7.0 started
+## Progress Table
 
-Progress: [░░░░░░░░░░] 0%
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 25. Universal Manifests & Packaging | 0/0 | Not started | - |
+| 26. Skill Standardization | 0/0 | Not started | - |
+| 27. MCP Server Integration | 0/0 | Not started | - |
+| 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
+
+## Performance Metrics
+- **Completion Time**: N/A
+- **Plan Adjustments**: 0
+- **Validation Issues**: 0
 
 ## Accumulated Context
+**Decisions**:
+- 采用 MCP Server 替代 raw scripts 来进行底层工作区状态操作，避免直接 shell 执行的脆弱性。
+- 将 Vibe 彻底重构为支持三大主流 AI 终端（Gemini, Claude, Codex）的插件，而不再仅将其作为单一运行时的 CLI 包装。
 
-### Decisions
+**Todos**:
+- TBD during planning
 
-- [Phase 23]: 引入 `.vibe/plan.json` 记录当前 Plan 的元数据（ID, tasks[], goal）。
-- [Phase 23]: 任务修复循环上限设为 3 次。
-- [Phase 23]: 引入 `interrupted` 状态处理异常中断。
-- [Phase 23]: 核心脚本 run.js 重命名为 run-task.js 以对齐计划命名并更准确描述其功能。
-- [Phase 23]: 任务依赖检查失败时，任务状态将自动更新为 'blocked'。
-- [Phase 23]: 引入 Conservative Planning Checklist，强制执行二元可验证目标、显式文件范围和可运行验证命令的检查。
-- [Phase 23]: plan.js 负责验证任务拓扑结构，防止循环依赖并生成标准化的 .vibe 任务清单。
-- [Phase 23]: 引入 'interrupted' 状态标记无锁运行的任务。
-- [Phase 23]: sync.js 负责自动清理孤儿锁文件以防止死锁。
-- [Phase 24]: use-heuristic-categorization: 使用 Conventional Commits 匹配和关键字启发式匹配（fuzzy match）结合的方式分类 commit。
-- [Phase 24]: task-association-pattern: 使用 (task: <id>) 模式在 commit message 中关联 Vibe 任务。
-
-### Pending Todos
-
-None.
-
-### Blockers/Concerns
-
-- [Phase 23]: Conductor 必须确保澄清充分，避免生成无效任务。
+**Blockers**:
+- None currently
 
 ## Session Continuity
-
-Last session: 2026-04-23T15:00:00.000Z
-Stopped at: Defining requirements
-Resume file: None
+- Last action: Created v7.0 ROADMAP.md
+- Next step: Run `/gsd-plan-phase 25` to decompose Phase 25 into executable plans.

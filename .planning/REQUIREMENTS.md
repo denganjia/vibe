@@ -48,24 +48,24 @@ Milestone 7.0 requirements are mapped to phases below. Each v7.0 requirement bel
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MAN-01 | TBD | Pending |
-| MAN-02 | TBD | Pending |
-| MAN-03 | TBD | Pending |
-| MAN-04 | TBD | Pending |
-| SKL-01 | TBD | Pending |
-| SKL-02 | TBD | Pending |
-| MCP-01 | TBD | Pending |
-| MCP-02 | TBD | Pending |
-| MCP-03 | TBD | Pending |
-| MCP-04 | TBD | Pending |
-| MCP-05 | TBD | Pending |
-| WF-01 | TBD | Pending |
-| WF-02 | TBD | Pending |
+| MAN-01 | Phase 25 | Pending |
+| MAN-02 | Phase 25 | Pending |
+| MAN-03 | Phase 25 | Pending |
+| MAN-04 | Phase 25 | Pending |
+| SKL-01 | Phase 26 | Pending |
+| SKL-02 | Phase 26 | Pending |
+| MCP-01 | Phase 27 | Pending |
+| MCP-02 | Phase 27 | Pending |
+| MCP-03 | Phase 27 | Pending |
+| MCP-04 | Phase 27 | Pending |
+| MCP-05 | Phase 27 | Pending |
+| WF-01 | Phase 28 | Pending |
+| WF-02 | Phase 28 | Pending |
 
 **Coverage:**
 - v7.0 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-23*
