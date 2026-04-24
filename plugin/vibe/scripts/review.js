@@ -10,8 +10,65 @@
 
 const fs = require('fs');
 const path = require('path');
+const { sanitizeId } = require('./utils');
 
-function main() {
+function saveReviewResult(taskId, runId, reviewInput, workspaceRoot = process.cwd()) {
+  let reviewResult;
+  try {
+    if (typeof reviewInput === 'string') {
+      // Try to extract JSON from the input (might contain markdown or extra text)
+      const jsonMatch = reviewInput.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        reviewResult = JSON.parse(jsonMatch[0]);
+      } else {
+        reviewResult = JSON.parse(reviewInput);
+      }
+    } else {
+      reviewResult = reviewInput;
+    }
+  } catch (e) {
+    throw new Error(`Failed to parse review input as JSON: ${e.message}`);
+  }
+
+  // Validate format
+  if (!reviewResult.status) {
+    throw new Error('Review result missing "status".');
+  }
+
+  const vibeDir = path.resolve(workspaceRoot, '.vibe');
+  const reviewsDir = path.join(vibeDir, 'reviews');
+  if (!fs.existsSync(reviewsDir)) fs.mkdirSync(reviewsDir, { recursive: true });
+
+  const safeTaskId = sanitizeId(taskId);
+  const safeRunId = sanitizeId(runId);
+  const fileName = `${safeTaskId}_${safeRunId}.json`;
+  const filePath = path.join(reviewsDir, fileName);
+
+  const findings = (reviewResult.findings || []).map(f => ({
+    file: f.file || 'unknown',
+    line: f.line || 0,
+    severity: f.severity || 'low',
+    message: f.message || 'No message provided'
+  }));
+
+  const structuredOutput = {
+    task_id: taskId,
+    run_id: runId,
+    status: reviewResult.status, // 'pass' or 'fail'
+    findings: findings,
+    reviewed_at: new Date().toISOString()
+  };
+
+  fs.writeFileSync(filePath, JSON.stringify(structuredOutput, null, 2));
+  return structuredOutput;
+}
+
+module.exports = {
+  saveReviewResult,
+  runSkill: (params, workspaceRoot) => saveReviewResult(params.taskId, params.runId, params.reviewInput, workspaceRoot)
+};
+
+if (require.main === module) {
   const args = process.argv.slice(2);
   let taskId = '';
   let runId = '';
@@ -38,55 +95,12 @@ function main() {
     }
   }
 
-  let reviewResult;
   try {
-    // Try to extract JSON from the input (might contain markdown or extra text)
-    const jsonMatch = inputStr.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      reviewResult = JSON.parse(jsonMatch[0]);
-    } else {
-      reviewResult = JSON.parse(inputStr);
-    }
+    const result = saveReviewResult(taskId, runId, inputStr);
+    console.log(`Structured review saved to .vibe/reviews/${taskId}_${runId}.json`);
+    console.log(JSON.stringify(result));
   } catch (e) {
-    console.error('Error: Failed to parse review input as JSON.');
-    console.error('Input received:', inputStr);
+    console.error(`Error: ${e.message}`);
     process.exit(1);
   }
-
-  // Validate format
-  if (!reviewResult.status) {
-    console.error('Error: Review result missing "status".');
-    process.exit(1);
-  }
-
-  const vibeDir = path.resolve(process.cwd(), '.vibe');
-  const reviewsDir = path.join(vibeDir, 'reviews');
-  if (!fs.existsSync(reviewsDir)) fs.mkdirSync(reviewsDir, { recursive: true });
-
-  const fileName = `${taskId}_${runId}.json`;
-  const filePath = path.join(reviewsDir, fileName);
-
-  const findings = (reviewResult.findings || []).map(f => ({
-    file: f.file || 'unknown',
-    line: f.line || 0,
-    severity: f.severity || 'low',
-    message: f.message || 'No message provided'
-  }));
-
-  const structuredOutput = {
-    task_id: taskId,
-    run_id: runId,
-    status: reviewResult.status, // 'pass' or 'fail'
-    findings: findings,
-    reviewed_at: new Date().toISOString()
-  };
-
-  fs.writeFileSync(filePath, JSON.stringify(structuredOutput, null, 2));
-
-  console.log(`Structured review saved to ${filePath}`);
-  
-  // Also print to stdout for piping if needed
-  console.log(JSON.stringify(structuredOutput));
 }
-
-main();

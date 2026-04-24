@@ -8,74 +8,86 @@
  * node review-task.js <task_id> [--mock-input=<json>]
  */
 
-const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { sanitizeId } = require('./utils');
+const { saveReviewResult } = require('./review');
+const { processReview } = require('./plan');
 
-function main() {
-  const args = process.argv.slice(2);
-  const taskId = args.find(a => !a.startsWith('--')) || '';
-  const mockInputArg = args.find(a => a.startsWith('--mock-input='));
-  
-  if (!taskId) {
-    console.error('Usage: node review-task.js <task_id> [--mock-input=<json>]');
-    process.exit(1);
-  }
-
-  const vibeDir = path.resolve(process.cwd(), '.vibe');
-  const taskPath = path.join(vibeDir, 'tasks', `${taskId}.json`);
+function runReviewPhase(taskId, mockInput, workspaceRoot = process.cwd()) {
+  const safeTaskId = sanitizeId(taskId);
+  const vibeDir = path.resolve(workspaceRoot, '.vibe');
+  const taskPath = path.join(vibeDir, 'tasks', `${safeTaskId}.json`);
 
   if (!fs.existsSync(taskPath)) {
-    console.error(`Error: Task ${taskId} not found.`);
-    process.exit(1);
+    throw new Error(`Task ${taskId} not found.`);
   }
 
-  const task = JSON.parse(fs.readFileSync(taskPath, 'utf8'));
-  
   // 1. Get runId (latest run)
   const runsDir = path.join(vibeDir, 'runs');
+  if (!fs.existsSync(runsDir)) {
+      throw new Error(`No runs found for task ${taskId}.`);
+  }
+  
   const runs = fs.readdirSync(runsDir)
     .filter(f => f.endsWith('.json'))
-    .map(f => JSON.parse(fs.readFileSync(path.join(runsDir, f), 'utf8')))
-    .filter(r => r.task_id === taskId)
+    .map(f => {
+        try {
+            return JSON.parse(fs.readFileSync(path.join(runsDir, f), 'utf8'));
+        } catch (e) {
+            return null;
+        }
+    })
+    .filter(r => r && r.task_id === taskId)
     .sort((a, b) => new Date(b.finished_at) - new Date(a.finished_at));
 
   if (runs.length === 0) {
-    console.error(`Error: No runs found for task ${taskId}.`);
-    process.exit(1);
+    throw new Error(`No runs found for task ${taskId}.`);
   }
 
   const runId = runs[0].id;
 
   // 2. Process review findings
-  const reviewArgs = [
-    path.join(__dirname, 'review.js'),
-    `--task-id=${taskId}`,
-    `--run-id=${runId}`
-  ];
-  if (mockInputArg) reviewArgs.push(mockInputArg);
-
   console.log(`Processing review for task ${taskId} (run ${runId})...`);
-  const reviewProc = spawnSync('node', reviewArgs, { stdio: 'inherit' });
-  
-  if (reviewProc.status !== 0) {
-    console.error('Error: review.js failed.');
-    process.exit(1);
-  }
+  saveReviewResult(taskId, runId, mockInput, workspaceRoot);
 
   // 3. Update task status and aggregate findings
   console.log(`Updating task ${taskId} state...`);
-  const planProc = spawnSync('node', [
-    path.join(__dirname, 'plan.js'),
-    `--process-review=${taskId}`
-  ], { stdio: 'inherit' });
+  processReview(taskId, workspaceRoot);
 
-  if (planProc.status !== 0) {
-    console.error('Error: plan.js --process-review failed.');
+  console.log(`Review phase for task ${taskId} completed.`);
+  return { success: true };
+}
+
+module.exports = {
+  runReviewPhase,
+  runSkill: (params, workspaceRoot) => runReviewPhase(params.taskId, params.mockInput, workspaceRoot)
+};
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  const taskId = args.find(a => !a.startsWith('--')) || '';
+  const mockInputArg = args.find(a => a.startsWith('--mock-input='));
+  let mockInput = '';
+
+  if (!taskId) {
+    console.error('Usage: node review-task.js <task_id> [--mock-input=<json>]');
     process.exit(1);
   }
 
-  console.log(`Review phase for task ${taskId} completed.`);
-}
+  if (mockInputArg) {
+    mockInput = mockInputArg.split('=')[1];
+  } else {
+      // Read from stdin if not mock-input
+      try {
+          mockInput = fs.readFileSync(0, 'utf8');
+      } catch (e) {}
+  }
 
-main();
+  try {
+    runReviewPhase(taskId, mockInput);
+  } catch (e) {
+    console.error(`Error: ${e.message}`);
+    process.exit(1);
+  }
+}

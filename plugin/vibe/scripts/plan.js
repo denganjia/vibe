@@ -10,42 +10,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const { sanitizeId } = require('./utils');
 
-function main() {
-  const args = process.argv.slice(2);
-  let inputStr = '';
-
-  const processReviewArg = args.find(a => a.startsWith('--process-review='));
-  if (processReviewArg) {
-    const taskId = processReviewArg.split('=')[1];
-    return processReview(taskId);
-  }
-
-  const mockInputArg = args.find(a => a.startsWith('--mock-input='));
-  if (mockInputArg) {
-    inputStr = mockInputArg.split('=')[1];
-  } else {
-    // If not mock-input, check if there's a positional argument that is valid JSON
-    if (args[0] && args[0].startsWith('{')) {
-      inputStr = args[0];
-    } else {
-      console.error('Usage: node plan.js --mock-input=\'{"goal":"...", "tasks":[]}\'');
-      process.exit(1);
-    }
-  }
-
-  let plan;
-  try {
-    plan = JSON.parse(inputStr);
-  } catch (e) {
-    console.error('Error: Failed to parse input JSON.');
-    console.error(e.message);
-    process.exit(1);
-  }
-
+function generatePlan(plan, workspaceRoot = process.cwd()) {
   if (!plan.goal || !plan.tasks || !Array.isArray(plan.tasks)) {
-    console.error('Error: Invalid plan format. Must include "goal" and "tasks" array.');
-    process.exit(1);
+    throw new Error('Invalid plan format. Must include "goal" and "tasks" array.');
   }
 
   // Topological check for circular dependencies
@@ -59,11 +28,10 @@ function main() {
   }
 
   if (hasCircularDependencies(plan.tasks)) {
-    console.error('Error: Circular dependencies detected in tasks.');
-    process.exit(1);
+    throw new Error('Circular dependencies detected in tasks.');
   }
 
-  const vibeDir = path.resolve(process.cwd(), '.vibe');
+  const vibeDir = path.resolve(workspaceRoot, '.vibe');
   const tasksDir = path.join(vibeDir, 'tasks');
 
   if (!fs.existsSync(vibeDir)) fs.mkdirSync(vibeDir, { recursive: true });
@@ -81,6 +49,7 @@ function main() {
 
   // Generate .vibe/tasks/*.json
   plan.tasks.forEach(task => {
+    const safeTaskId = sanitizeId(task.id);
     const taskContent = {
       id: task.id,
       goal: task.goal || '',
@@ -91,7 +60,7 @@ function main() {
       created_at: new Date().toISOString(),
       ...task
     };
-    fs.writeFileSync(path.join(tasksDir, `${task.id}.json`), JSON.stringify(taskContent, null, 2));
+    fs.writeFileSync(path.join(tasksDir, `${safeTaskId}.json`), JSON.stringify(taskContent, null, 2));
   });
 
   // Generate .vibe/planning_notes.md
@@ -99,29 +68,28 @@ function main() {
   const notesContent = plan.notes || `# Planning Notes\n\n**Goal:** ${plan.goal}\n\n*Generated on ${new Date().toISOString()}*`;
   fs.writeFileSync(notesPath, notesContent);
 
-  console.log('Successfully generated plan manifest and task files.');
+  return { success: true, message: 'Successfully generated plan manifest and task files.' };
 }
 
-function processReview(taskId) {
-  const vibeDir = path.resolve(process.cwd(), '.vibe');
-  const taskPath = path.join(vibeDir, 'tasks', `${taskId}.json`);
+function processReview(taskId, workspaceRoot = process.cwd()) {
+  const safeTaskId = sanitizeId(taskId);
+  const vibeDir = path.resolve(workspaceRoot, '.vibe');
+  const taskPath = path.join(vibeDir, 'tasks', `${safeTaskId}.json`);
   const reviewsDir = path.join(vibeDir, 'reviews');
 
   if (!fs.existsSync(taskPath)) {
-    console.error(`Error: Task ${taskId} not found.`);
-    process.exit(1);
+    throw new Error(`Task ${taskId} not found.`);
   }
 
   const task = JSON.parse(fs.readFileSync(taskPath, 'utf8'));
 
   // Find latest review for this task
   if (!fs.existsSync(reviewsDir)) {
-    console.error(`Error: No reviews found for task ${taskId}.`);
-    process.exit(1);
+    throw new Error(`No reviews found for task ${taskId}.`);
   }
 
   const reviews = fs.readdirSync(reviewsDir)
-    .filter(f => f.startsWith(`${taskId}_`) && f.endsWith('.json'))
+    .filter(f => f.startsWith(`${safeTaskId}_`) && f.endsWith('.json'))
     .map(f => ({
       name: f,
       time: fs.statSync(path.join(reviewsDir, f)).mtime.getTime()
@@ -129,8 +97,7 @@ function processReview(taskId) {
     .sort((a, b) => b.time - a.time);
 
   if (reviews.length === 0) {
-    console.error(`Error: No reviews found for task ${taskId}.`);
-    process.exit(1);
+    throw new Error(`No reviews found for task ${taskId}.`);
   }
 
   const latestReviewPath = path.join(reviewsDir, reviews[0].name);
@@ -159,6 +126,7 @@ function processReview(taskId) {
   }
 
   fs.writeFileSync(taskPath, JSON.stringify(task, null, 2));
+  return { success: true, message: `Task ${taskId} processed.` };
 }
 
 function hasCircularDependencies(tasks) {
@@ -192,4 +160,47 @@ function hasCircularDependencies(tasks) {
   return false;
 }
 
-main();
+module.exports = {
+  generatePlan,
+  processReview,
+  runSkill: (params, workspaceRoot) => generatePlan(params, workspaceRoot)
+};
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  let inputStr = '';
+
+  const processReviewArg = args.find(a => a.startsWith('--process-review='));
+  if (processReviewArg) {
+    const taskId = processReviewArg.split('=')[1];
+    try {
+      processReview(taskId);
+    } catch (e) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+    process.exit(0);
+  }
+
+  const mockInputArg = args.find(a => a.startsWith('--mock-input='));
+  if (mockInputArg) {
+    inputStr = mockInputArg.split('=')[1];
+  } else {
+    if (args[0] && args[0].startsWith('{')) {
+      inputStr = args[0];
+    } else {
+      console.error('Usage: node plan.js --mock-input=\'{"goal":"...", "tasks":[]}\'');
+      process.exit(1);
+    }
+  }
+
+  let plan;
+  try {
+    plan = JSON.parse(inputStr);
+    generatePlan(plan);
+    console.log('Successfully generated plan manifest and task files.');
+  } catch (e) {
+    console.error(`Error: ${e.message}`);
+    process.exit(1);
+  }
+}
