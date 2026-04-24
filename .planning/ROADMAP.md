@@ -18,7 +18,9 @@
   2. `gemini-extension.json` exists for Gemini CLI integration.
   3. `.claude-plugin/plugin.json` exists for Claude Code integration.
   4. `.codex-plugin/plugin.json` is correctly structured for Codex CLI standards.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] `25-01-PLAN.md` — Establish `plugin/vibe/package.json` as the source of truth, add Gemini/Claude manifests, align the Codex manifest, and lock local discovery with a deterministic Node.js smoke test.
 
 ### Phase 26: Skill Standardization
 **Goal**: Unify skill and command definitions across platforms using YAML frontmatter
