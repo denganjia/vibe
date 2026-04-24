@@ -1,3 +1,9 @@
+---
+name: vibe-status
+version: 0.1.0
+description: Execute the status workflow logic.
+---
+
 # vibe status
 
 ## Command Contract Only

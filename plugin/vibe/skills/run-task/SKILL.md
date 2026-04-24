@@ -1,3 +1,9 @@
+---
+name: vibe-run-task
+version: 0.1.0
+description: Execute the run-task workflow logic.
+---
+
 # vibe run-task
 
 ## Command Contract Only

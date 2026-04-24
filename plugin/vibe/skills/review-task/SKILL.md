@@ -1,3 +1,9 @@
+---
+name: vibe-review-task
+version: 0.1.0
+description: Execute the review-task workflow logic.
+---
+
 # vibe review-task
 
 ## Command Contract Only
