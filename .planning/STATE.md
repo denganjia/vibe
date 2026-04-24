@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In progress
-last_updated: "2026-04-24T08:30:00.000Z"
+last_updated: "2026-04-24T09:00:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 8
-  completed_plans: 5
-  percent: 62.5
+  completed_plans: 6
+  percent: 75
 ---
 
 # STATE
@@ -22,7 +22,7 @@ progress:
 ## Current Position
 
 **Phase**: 27. MCP Server Integration
-**Plan**: 27-01 Complete
+**Plan**: 27-02 Complete
 **Status**: In progress
 
 ## Progress Table
@@ -31,7 +31,7 @@ progress:
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete | 2026-04-24 |
-| 27. MCP Server Integration | 1/3 | In progress | - |
+| 27. MCP Server Integration | 2/2 | Complete | 2026-04-24 |
 | 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
 
 ## Performance Metrics
@@ -43,6 +43,7 @@ progress:
 | 26    | 02   | 10 min   | 2     | 6     |
 | 26    | 03   | 10 min   | 2     | 5     |
 | 27    | 01   | 15 min   | 3     | 7     |
+| 27    | 02   | 15 min   | 3     | 2     |
 
 ## Decisions
 
@@ -57,9 +58,11 @@ progress:
 - Updated README.md to reflect that workflow entry contracts are now in skills/ instead of commands/.
 - Implemented MCP Server using `@modelcontextprotocol/sdk` and `stdio` transport.
 - Unified MCP server registration across Gemini, Claude, and Codex manifests.
+- [Phase 27]: 使用 Zod 对所有 MCP 工具输入进行严格校验，确保路径安全和类型安全。
+- [Phase 27]: 劫持 console.error 来捕获遗留脚本的输出，确保 MCP 工具能返回完整的文本信息。
 
 ## Session
 
-- **Last session**: 2026-04-24T08:00:00.000Z
-- **Stopped at**: Completed 27-01-PLAN.md
-- **Next step**: 27-02-PLAN.md (Migrate core workspace operations to MCP)
+- **Last session**: 2026-04-24T09:00:00.000Z
+- **Stopped at**: Completed 27-02-PLAN.md
+- **Next step**: Phase 28 (Workflow & Documentation Alignment)

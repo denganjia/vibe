@@ -20,9 +20,9 @@
 ### MCP Server
 
 - [ ] **MCP-01**: Implement a lightweight Node.js MCP server inside plugin/vibe/
-- [ ] **MCP-02**: Convert file locking logic to an MCP tool (e.g. vibe_acquire_lock, vibe_release_lock)
-- [ ] **MCP-03**: Convert task creation logic to an MCP tool (e.g. vibe_write_task)
-- [ ] **MCP-04**: Convert release summary generation to an MCP tool (e.g. vibe_generate_release)
+- [x] **MCP-02**: Convert file locking logic to an MCP tool (e.g. vibe_acquire_lock, vibe_release_lock)
+- [x] **MCP-03**: Convert task creation logic to an MCP tool (e.g. vibe_write_task)
+- [x] **MCP-04**: Convert release summary generation to an MCP tool (e.g. vibe_generate_release)
 - [ ] **MCP-05**: Register the MCP server in all three plugin manifest files
 
 ### Workflow
@@ -55,9 +55,9 @@ Milestone 7.0 requirements are mapped to phases below. Each v7.0 requirement bel
 | SKL-01 | Phase 26 | Complete |
 | SKL-02 | Phase 26 | Complete |
 | MCP-01 | Phase 27 | Pending |
-| MCP-02 | Phase 27 | Pending |
-| MCP-03 | Phase 27 | Pending |
-| MCP-04 | Phase 27 | Pending |
+| MCP-02 | Phase 27 | Complete |
+| MCP-03 | Phase 27 | Complete |
+| MCP-04 | Phase 27 | Complete |
 | MCP-05 | Phase 27 | Pending |
 | WF-01 | Phase 28 | Pending |
 | WF-02 | Phase 28 | Pending |
