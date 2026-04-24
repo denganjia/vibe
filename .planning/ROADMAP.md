@@ -43,12 +43,11 @@ Plans:
   1. A local lightweight Node.js MCP server is running and accessible within the workspace.
   2. File locking, task creation, and release summary operations are exposed as MCP tools rather than independent shell scripts.
   3. The MCP server is correctly registered in the manifests for Gemini, Claude, and Codex extensions.
-**Plans**: 4 plans
+**Plans**: 3 plans
 Plans:
-- [ ] `27-01-PLAN.md` — 建立 MCP 服务器基础架构并实现 Ping 工具及清单注册。
-- [ ] `27-02-PLAN.md` — 将文件锁定逻辑转换为 MCP 工具 (MCP-02)
-- [ ] `27-03-PLAN.md` — 将任务创建逻辑转换为 MCP 工具 (MCP-03)
-- [ ] `27-04-PLAN.md` — 将发布总结生成转换为 MCP 工具 (MCP-04)
+- [x] `27-01-PLAN.md` — 建立 MCP 服务器基础架构并实现 Ping 工具及清单注册。
+- [ ] `27-02-PLAN.md` — 迁移核心工作区操作 (锁定、任务、状态) 到 MCP 工具 (MCP-02, MCP-03, MCP-04)
+- [ ] `27-03-PLAN.md` — 实现 Skill 定义与 MCP 工具的自动映射 (MCP-05)
 
 ### Phase 28: Workflow & Documentation Alignment
 **Goal**: Ensure the AI Conductor uses the new MCP tools and all documentation reflects the new architecture
@@ -65,5 +64,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete    | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete   | 2026-04-24 |
-| 27. MCP Server Integration | 0/4 | In progress | - |
+| 27. MCP Server Integration | 1/3 | In progress | - |
 | 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
