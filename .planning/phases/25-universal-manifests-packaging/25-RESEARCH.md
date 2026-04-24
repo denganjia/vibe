@@ -449,17 +449,17 @@ Source basis: Codex docs require local marketplace entries to include `policy.in
 | A4 | `plugin/vibe/scripts/manifests.test.js` is the best file name and location for the smoke test. | Recommended Project Structure | 低；可替换为附近等价位置，但 planner 需要保持与 `package.json` scripts 一致。 |
 | A5 | 用 smoke test 约束多份 manifest 一致性，比引入生成器更适合当前 phase。 | Alternatives / Key insight | 中；如果团队偏好 codegen，需要为生成流程额外设计可读性与验证面。 |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`engines.node` 是否要锁到 Node 22？**
-   - What we know: 本机 Node 版本是 `22.16.0`，现有脚本与测试都是纯 Node.js / CommonJS。[VERIFIED: node --version][VERIFIED: plugin/vibe/scripts/init.test.js][VERIFIED: plugin/vibe/scripts/release-summary.test.js]
-   - What's unclear: 项目是否希望 Phase 25 就兼容 Node 20 或更低版本。[ASSUMED]
-   - Recommendation: 计划里先用 `>=22.0.0` 作为默认建议；如果用户明确要求更低版本兼容，再单独收窄脚本与验证选择。[ASSUMED]
+   - What we know: 本机 Node 版本是 `22.16.0`，现有脚本与测试都是纯 Node.js / CommonJS；research 的 standard stack 也以 Node 22 为 Phase 25 执行基线。[VERIFIED: node --version][VERIFIED: plugin/vibe/scripts/init.test.js][VERIFIED: plugin/vibe/scripts/release-summary.test.js]
+   - Resolution: 是。Phase 25 将 `engines.node` 明确收敛为 `>=22.0.0`，与当前 plugin scripts/tests 和已选 standard stack 保持一致，避免在仅做 manifest/package skeleton 的阶段额外扩展兼容面。
+   - Plan alignment: `25-01-PLAN.md` Task 1 已使用 `engines.node: ">=22.0.0"` 作为最终计划值。
 
 2. **是否要把 package name 固定为未加 scope 的 `vibe`？**
-   - What we know: 现有 Codex manifest 名称是 `vibe`，Gemini 要求名称合法且最好匹配目录名，当前目录也叫 `vibe`。[VERIFIED: plugin/vibe/.codex-plugin/plugin.json][CITED: https://github.com/google-gemini/gemini-cli/blob/main/docs/extensions/reference.md]
-   - What's unclear: 团队未来若考虑 npm 发布，是否会想改成 scope package name；但 Phase 25 明确不做外部发布。[VERIFIED: .planning/phases/25-universal-manifests-packaging/25-CONTEXT.md][ASSUMED]
-   - Recommendation: Phase 25 保持 `vibe`，把外部命名策略留给未来发布 phase。[ASSUMED]
+   - What we know: 现有 Codex manifest 名称是 `vibe`，Gemini 要求名称合法且最好匹配目录名，当前目录也叫 `vibe`；同时 D-09 明确 Phase 25 不做外部 registry/marketplace 发布工作。[VERIFIED: plugin/vibe/.codex-plugin/plugin.json][CITED: https://github.com/google-gemini/gemini-cli/blob/main/docs/extensions/reference.md][VERIFIED: .planning/phases/25-universal-manifests-packaging/25-CONTEXT.md]
+   - Resolution: 是。Phase 25 保持未加 scope 的本地插件标识 `vibe`，用于本地 manifest identity 与 repo-level discovery；任何 npm scope 或外部发布命名策略都延后到未来外部发布工作。
+   - Plan alignment: `25-01-PLAN.md` Task 1/Task 2 已以 `name: "vibe"` 作为最终计划值。
 
 ## Environment Availability
 
