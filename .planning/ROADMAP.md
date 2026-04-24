@@ -31,9 +31,9 @@ Plans:
   2. Legacy `commands/` and `roles/` directories are removed or fully migrated into `skills/<skill-name>/SKILL.md` structures.
 **Plans**: 3 plans
 Plans:
-- [ ] `26-01-PLAN.md` — Setup TDD validation for skill standardization
-- [ ] `26-02-PLAN.md` — Migrate legacy `commands/` into standardized `skills/` structure
-- [ ] `26-03-PLAN.md` — Migrate legacy `roles/` into standardized `skills/` structure and update documentation
+- [x] `26-01-PLAN.md` — Setup TDD validation for skill standardization
+- [x] `26-02-PLAN.md` — Migrate legacy `commands/` into standardized `skills/` structure
+- [x] `26-03-PLAN.md` — Migrate legacy `roles/` into standardized `skills/` structure and update documentation
 
 ### Phase 27: MCP Server Integration
 **Goal**: Replace raw shell script executions with standard, safe Model Context Protocol (MCP) tool calls
@@ -43,7 +43,12 @@ Plans:
   1. A local lightweight Node.js MCP server is running and accessible within the workspace.
   2. File locking, task creation, and release summary operations are exposed as MCP tools rather than independent shell scripts.
   3. The MCP server is correctly registered in the manifests for Gemini, Claude, and Codex extensions.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] `27-01-PLAN.md` — 建立 MCP 服务器基础架构并实现 Ping 工具及清单注册。
+- [ ] `27-02-PLAN.md` — 将文件锁定逻辑转换为 MCP 工具 (MCP-02)
+- [ ] `27-03-PLAN.md` — 将任务创建逻辑转换为 MCP 工具 (MCP-03)
+- [ ] `27-04-PLAN.md` — 将发布总结生成转换为 MCP 工具 (MCP-04)
 
 ### Phase 28: Workflow & Documentation Alignment
 **Goal**: Ensure the AI Conductor uses the new MCP tools and all documentation reflects the new architecture
@@ -60,5 +65,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete    | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete   | 2026-04-24 |
-| 27. MCP Server Integration | 0/0 | Not started | - |
+| 27. MCP Server Integration | 0/4 | In progress | - |
 | 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
