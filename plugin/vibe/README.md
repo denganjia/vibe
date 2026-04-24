@@ -8,7 +8,7 @@ Vibe is the product name per D-18. `plugin/vibe/` is the plugin package root per
 
 - `.codex-plugin/plugin.json` declares the Codex-compatible plugin identity.
 - `skills/` will teach the current model to act as the Conductor.
-- `commands/` will expose workflow entry contracts.
+- `skills/` will expose workflow entry contracts.
 - `references/` will hold collaboration, task, Agent, review, workspace, and migration contracts.
 - `scripts/` holds thin deterministic helpers.
 - `templates/` holds `.vibe` workspace scaffolds.

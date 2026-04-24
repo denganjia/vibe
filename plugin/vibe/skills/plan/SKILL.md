@@ -17,7 +17,7 @@ reviewer Agents can run through the Vibe collaboration protocol.
 
 ## Execution Pattern
 
-1. **Clarify**: The Conductor uses the Conservative Planning Checklist (in `plugin/vibe/roles/Conductor.md`) to ensure the goal, scope, and verification are clear.
+1. **Clarify**: The Conductor uses the Conservative Planning Checklist (in `plugin/vibe/skills/conductor/SKILL.md`) to ensure the goal, scope, and verification are clear.
 2. **Decompose**: Split the objective into discrete tasks with explicit dependencies.
 3. **Artifact Generation**: Call `plugin/vibe/scripts/plan.js` with a structured JSON payload containing the goal, tasks, and planning notes.
 
@@ -29,8 +29,7 @@ reviewer Agents can run through the Vibe collaboration protocol.
 
 ## Reads
 
-- `plugin/vibe/roles/Conductor.md`
-- `plugin/vibe/skills/Conductor.md`
+- `plugin/vibe/skills/conductor/SKILL.md`
 - `plugin/vibe/references/task-contract.md`
 - `.vibe/config.json`
 
