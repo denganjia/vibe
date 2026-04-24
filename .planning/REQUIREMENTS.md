@@ -27,8 +27,8 @@
 
 ### Workflow
 
-- [ ] **WF-01**: Update Conductor SOP to utilize MCP tools instead of raw shell commands
-- [ ] **WF-02**: Update project README.md and architecture documentation to reflect MCP transition
+- [x] **WF-01**: Update Conductor SOP to utilize MCP tools instead of raw shell commands
+- [x] **WF-02**: Update project README.md and architecture documentation to reflect MCP transition
 
 ## Future Requirements
 
@@ -59,8 +59,8 @@ Milestone 7.0 requirements are mapped to phases below. Each v7.0 requirement bel
 | MCP-03 | Phase 27 | Complete |
 | MCP-04 | Phase 27 | Complete |
 | MCP-05 | Phase 27 | Pending |
-| WF-01 | Phase 28 | Pending |
-| WF-02 | Phase 28 | Pending |
+| WF-01 | Phase 28 | Complete |
+| WF-02 | Phase 28 | Complete |
 
 **Coverage:**
 - v7.0 requirements: 13 total

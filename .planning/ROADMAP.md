@@ -5,7 +5,7 @@
 - [x] **Phase 25: Universal Manifests & Packaging** - Set up plugin structure and manifest files for major AI CLIs (completed 2026-04-24)
 - [x] **Phase 26: Skill Standardization** - Unify skill metadata and folder structures across platforms (completed 2026-04-24)
 - [ ] **Phase 27: MCP Server Integration** - Replace raw shell scripts with a standardized MCP server and tools
-- [ ] **Phase 28: Workflow & Documentation Alignment** - Update AI instructions and project docs to leverage MCP tools
+- [x] **Phase 28: Workflow & Documentation Alignment** - Update AI instructions and project docs to leverage MCP tools
 
 ## Phase Details
 
