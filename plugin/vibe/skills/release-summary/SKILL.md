@@ -1,3 +1,9 @@
+---
+name: vibe-release-summary
+version: 0.1.0
+description: Execute the release-summary workflow logic.
+---
+
 # vibe release-summary
 
 ## Command Contract Only

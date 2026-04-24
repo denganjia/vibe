@@ -1,3 +1,9 @@
+---
+name: vibe-init
+version: 0.1.0
+description: Execute the init workflow logic.
+---
+
 # vibe init
 
 ## Command Contract Only

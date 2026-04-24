@@ -1,3 +1,9 @@
+---
+name: vibe-plan
+version: 0.1.0
+description: Execute the plan workflow logic.
+---
+
 # vibe plan
 
 ## Command Contract Only
