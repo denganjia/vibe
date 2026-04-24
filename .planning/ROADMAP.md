@@ -2,7 +2,7 @@
 
 ## Phases
 
-- [ ] **Phase 25: Universal Manifests & Packaging** - Set up plugin structure and manifest files for major AI CLIs
+- [x] **Phase 25: Universal Manifests & Packaging** - Set up plugin structure and manifest files for major AI CLIs (completed 2026-04-24)
 - [ ] **Phase 26: Skill Standardization** - Unify skill metadata and folder structures across platforms
 - [ ] **Phase 27: MCP Server Integration** - Replace raw shell scripts with a standardized MCP server and tools
 - [ ] **Phase 28: Workflow & Documentation Alignment** - Update AI instructions and project docs to leverage MCP tools
@@ -20,7 +20,7 @@
   4. `.codex-plugin/plugin.json` is correctly structured for Codex CLI standards.
 **Plans**: 1 plan
 Plans:
-- [ ] `25-01-PLAN.md` — Establish `plugin/vibe/package.json` as the source of truth, add Gemini/Claude manifests, align the Codex manifest, and lock local discovery with a deterministic Node.js smoke test.
+- [x] `25-01-PLAN.md` — Establish `plugin/vibe/package.json` as the source of truth, add Gemini/Claude manifests, align the Codex manifest, and lock local discovery with a deterministic Node.js smoke test.
 
 ### Phase 26: Skill Standardization
 **Goal**: Unify skill and command definitions across platforms using YAML frontmatter
@@ -54,7 +54,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 25. Universal Manifests & Packaging | 0/0 | Not started | - |
+| 25. Universal Manifests & Packaging | 1/1 | Complete   | 2026-04-24 |
 | 26. Skill Standardization | 0/0 | Not started | - |
 | 27. MCP Server Integration | 0/0 | Not started | - |
 | 28. Workflow & Documentation Alignment | 0/0 | Not started | - |

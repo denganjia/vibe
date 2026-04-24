@@ -7,10 +7,10 @@
 
 ### Manifests
 
-- [ ] **MAN-01**: Initialize package.json in plugin/vibe/ to manage MCP SDK dependencies
-- [ ] **MAN-02**: Create gemini-extension.json for Gemini CLI compatibility
-- [ ] **MAN-03**: Create .claude-plugin/plugin.json for Claude Code compatibility
-- [ ] **MAN-04**: Ensure .codex-plugin/plugin.json aligns with Codex CLI standards
+- [x] **MAN-01**: Initialize package.json in plugin/vibe/ to manage MCP SDK dependencies
+- [x] **MAN-02**: Create gemini-extension.json for Gemini CLI compatibility
+- [x] **MAN-03**: Create .claude-plugin/plugin.json for Claude Code compatibility
+- [x] **MAN-04**: Ensure .codex-plugin/plugin.json aligns with Codex CLI standards
 
 ### Skills
 
@@ -48,10 +48,10 @@ Milestone 7.0 requirements are mapped to phases below. Each v7.0 requirement bel
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MAN-01 | Phase 25 | Pending |
-| MAN-02 | Phase 25 | Pending |
-| MAN-03 | Phase 25 | Pending |
-| MAN-04 | Phase 25 | Pending |
+| MAN-01 | Phase 25 | Complete |
+| MAN-02 | Phase 25 | Complete |
+| MAN-03 | Phase 25 | Complete |
+| MAN-04 | Phase 25 | Complete |
 | SKL-01 | Phase 26 | Pending |
 | SKL-02 | Phase 26 | Pending |
 | MCP-01 | Phase 27 | Pending |
