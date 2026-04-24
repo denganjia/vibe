@@ -6,120 +6,50 @@
 
 ```
 vibe-cli/
-├── apps/
-│   └── vibe-cli/           # Main CLI Application
-│       └── src/
-│           ├── main.rs     # CLI Entry point, Subcommands, spawn_role logic
-│           └── tui.rs      # Ratatui-based Monitoring UI (isolated)
-├── crates/
-│   └── vibe-core/          # Core logic and abstractions
-│       └── src/
-│           ├── adapter/    # Terminal Multiplexer Adapters
-│           ├── ipc/        # Communication Protocols
-│           ├── os/         # OS-specific helpers
-│           ├── state/      # Persistence, Config & Stacks Management
-│           ├── env.rs      # Path & Environment Resolution
-│           ├── error.rs    # Error types
-│           └── lib.rs      # Core Library Entry
+├── plugin/
+│   └── vibe/               # Active Core: MCP Server and Scripts
+│       ├── mcp-server.js   # MCP Server Entry Point
+│       ├── package.json    # Node.js dependencies
+│       └── scripts/        # Core logic scripts (Node.js)
 ├── .vibe/                  # Project-local runtime data
-│   ├── config.json         # Project Config (includes Stacks definitions)
-│   ├── roles/              # Role templates (Markdown)
-│   └── state/
-│       └── panes.json      # Active Agent State Mapping
-└── scripts/                # Installation & Test scripts
+│   ├── config.json         # Project Config
+│   ├── roles/              # Role templates (Markdown, Conductor/Worker SOPs)
+│   ├── tasks/              # Generated JSON tasks
+│   └── locks/              # Resource locks
+├── apps/                   # [Archive/Legacy] Old Rust CLI Application
+├── crates/                 # [Archive/Legacy] Old Rust Core Library
+└── scripts/                # Utility scripts
 ```
 
 ## Directory Purposes
 
-**apps/vibe-cli/:**
-- Purpose: The user-facing command-line tool.
-- Contains: Command logic, separated UI rendering, and orchestration of core features (like batch spawning via `Stacks`).
+**plugin/vibe/:**
+- Purpose: The active core of the Vibe project. Implements the MCP server and underlying logic.
 - Key files: 
-  - `apps/vibe-cli/src/main.rs`: Subcommands and `spawn_role` centralized refactoring.
-  - `apps/vibe-cli/src/tui.rs`: Isolated Ratatui UI components and state logic.
-
-**crates/vibe-core/src/adapter/:**
-- Purpose: Abstraction layer for different terminal multiplexers.
-- Contains: `TerminalAdapter` trait and implementations for WezTerm and Tmux.
-- Key files: `crates/vibe-core/src/adapter/mod.rs`, `crates/vibe-core/src/adapter/wezterm.rs`, `crates/vibe-core/src/adapter/tmux.rs`.
-
-**crates/vibe-core/src/state/:**
-- Purpose: Persistent storage for agent metadata and project configuration.
-- Contains: `StateStore` for tracking agents, `ConfigManager` (managing default commands and Stacks), `RoleManager` (persona management).
-- Key files: `crates/vibe-core/src/state/mod.rs`.
-
-**crates/vibe-core/src/ipc/:**
-- Purpose: Logic for inter-process communication between agents and the controller.
-- Contains: Protocol definitions and messaging structures.
-- Key files: `crates/vibe-core/src/ipc/protocol.rs`.
+  - `plugin/vibe/mcp-server.js`: Exposes MCP tools.
+  - `plugin/vibe/scripts/`: Implementations for tasks, locks, and summaries.
 
 **.vibe/:**
 - Purpose: Project-specific configuration and runtime state.
-- Contains: JSON state files, Stack declarations, and Markdown persona templates.
-- Key files: `.vibe/state/panes.json`, `.vibe/config.json`.
+- Contains: Task JSONs, lock files, and Markdown persona templates.
+
+**apps/ & crates/:**
+- Purpose: Archived legacy Rust implementation of the original vibe-cli.
 
 ## Key File Locations
 
 **Entry Points:**
-- `apps/vibe-cli/src/main.rs`: Main CLI entry point.
-
-**Configuration:**
-- `Cargo.toml`: Workspace definition and dependencies.
-- `.vibe/config.json`: Project-level settings, default commands, and Stack definitions (batch deployments).
-
-**Core Logic:**
-- `crates/vibe-core/src/adapter/mod.rs`: Definition of `WindowTarget` and `TerminalAdapter`.
-- `crates/vibe-core/src/state/mod.rs`: `StateStore`, `ProjectConfig` (with `stacks` HashMap).
-- `apps/vibe-cli/src/main.rs`: `spawn_role` function for robust environment/persona injection.
+- `plugin/vibe/mcp-server.js`: MCP Server entry point.
 
 **Testing:**
-- `crates/vibe-core/tests/`: Integration tests for core logic.
-- `scripts/e2e_test.sh`: End-to-end testing script.
-
-## Naming Conventions
-
-**Files:**
-- Rust Source: `snake_case.rs`
-- Configuration: `snake_case.json`
-- Roles: `PascalCase.md`
-
-**Directories:**
-- Rust Crates/Apps: `kebab-case`
-- Modules: `snake_case`
-
-## Where to Add New Code
-
-**New CLI Subcommand:**
-- Primary code: `apps/vibe-cli/src/main.rs` (add to `Commands` enum and `match` block).
-
-**New UI Views/Components:**
-- Implementation: `apps/vibe-cli/src/tui.rs` (extend the `App` state and `ui` rendering function).
-
-**New Terminal Adapter:**
-- Implementation: `crates/vibe-core/src/adapter/[name].rs`.
-- Registration: Add to `TerminalAdapter` trait and update factory logic in `vibe-cli`.
-
-**New Stack Configuration:**
-- Definition: Add a new key-value pair to the `stacks` object in `.vibe/config.json`.
-
-**New State Metadata:**
-- Implementation: Update `PaneRecord` in `crates/vibe-core/src/state/mod.rs`.
-
-**Utilities:**
-- Shared helpers: `crates/vibe-core/src/os/` (for OS-level) or `crates/vibe-core/src/lib.rs` (for general).
+- `plugin/vibe/scripts/test-mcp.js`: Basic tests for the MCP server.
 
 ## Special Directories
 
 **.vibe/:**
-- Purpose: Stores project-local state, roles, and stack config.
-- Generated: Yes (via `vibe init` or implicitly on spawn).
-- Committed: `config.json` and `roles/` should be committed; `state/` should be ignored.
-
-**target/:**
-- Purpose: Rust build artifacts.
-- Generated: Yes.
-- Committed: No.
+- Purpose: Stores project-local state, roles, tasks, and locks.
+- Committed: `config.json` and `roles/` should be committed; `tasks/` and `locks/` might be ignored depending on project needs.
 
 ---
 
-*Structure analysis: 2024-10-24*
+*Structure analysis: Updated for Phase 28*
