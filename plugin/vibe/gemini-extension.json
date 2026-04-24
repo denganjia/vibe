@@ -1,5 +1,13 @@
 {
   "name": "vibe",
   "version": "0.1.0",
-  "description": "Plugin-first multi-model collaboration for Vibe workspaces."
+  "description": "Plugin-first multi-model collaboration for Vibe workspaces.",
+  "mcpServers": {
+    "vibe": {
+      "command": "node",
+      "args": [
+        "${extensionPath}/mcp-server.js"
+      ]
+    }
+  }
 }

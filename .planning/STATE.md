@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: In progress
-last_updated: "2026-04-24T08:34:52.760Z"
+status: Complete
+last_updated: "2026-04-24T12:00:00.000Z"
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_phases: 4
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
 ---
 
 # STATE
@@ -22,8 +22,8 @@ progress:
 ## Current Position
 
 **Phase**: 27. MCP Server Integration
-**Plan**: 27-02 Complete
-**Status**: In progress
+**Plan**: 27-03 Complete
+**Status**: Complete
 
 ## Progress Table
 
@@ -31,8 +31,8 @@ progress:
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete | 2026-04-24 |
-| 27. MCP Server Integration | 2/3 | In Progress | - |
-| 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
+| 27. MCP Server Integration | 3/3 | Complete | 2026-04-24 |
+| 28. Workflow & Documentation Alignment | 2/2 | Complete | 2026-04-24 |
 
 ## Performance Metrics
 
@@ -44,7 +44,9 @@ progress:
 | 26    | 03   | 10 min   | 2     | 5     |
 | 27    | 01   | 15 min   | 3     | 7     |
 | 27    | 02   | 15 min   | 3     | 2     |
-| Phase 28-workflow-alignment P01 | 5m | 3 tasks | 8 files |
+| 27    | 03   | 15 min   | 3     | 7     |
+| 28    | 01   | 5 min    | 3     | 7     |
+| 28    | 02   | 3 min    | 3     | 5     |
 
 ## Decisions
 
@@ -61,10 +63,12 @@ progress:
 - Unified MCP server registration across Gemini, Claude, and Codex manifests.
 - [Phase 27]: 使用 Zod 对所有 MCP 工具输入进行严格校验，确保路径安全和类型安全。
 - [Phase 27]: 劫持 console.error 来捕获遗留脚本的输出，确保 MCP 工具能返回完整的文本信息。
-- [Phase 27]: 计划通过解析 `SKILL.md` 的前置物质动态注册 MCP 工具，实现技能与工具的自动发现和映射。
+- [Phase 27]: 成功通过解析 `SKILL.md` 的前置物质动态注册 MCP 工具，实现技能与工具的自动发现和映射。
+- [Phase 28]: Replaced legacy `vibe` shell command mentions in Conductor and Worker SOPs with their MCP equivalents.
+- [Phase 28]: Completely removed legacy Rust `vibe-core` / `vibe-cli` references from architecture, shifting entirely to Node.js `plugin/vibe/` based architecture.
 
 ## Session
 
-- **Last session**: 2026-04-24T10:00:00.000Z
-- **Stopped at**: Created 27-03-PLAN.md
-- **Next step**: Execute Phase 27-03
+- **Last session**: 2026-04-24T12:00:00.000Z
+- **Stopped at**: Milestone Complete
+- **Next step**: Complete Milestone and archive.

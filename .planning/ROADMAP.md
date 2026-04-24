@@ -30,11 +30,11 @@ Plans:
   1. All SKILL.md files include standardized cross-platform YAML frontmatter.
   2. Legacy `commands/` and `roles/` directories are removed or fully migrated into `skills/<skill-name>/SKILL.md` structures.
 **Plans**: 3 plans
-Plans:
-- [x] `26-01-PLAN.md` — Setup TDD validation for skill standardization
-- [x] `26-02-PLAN.md` — Migrate legacy `commands/` into standardized `skills/` structure
-- [x] `26-03-PLAN.md` — Migrate legacy `roles/` into standardized `skills/` structure and update documentation
+- [x] **Phase 27: MCP Server Integration** - Replace raw shell scripts with a standardized MCP server and tools
+- [x] **Phase 28: Workflow & Documentation Alignment** - Update AI instructions and project docs to leverage MCP tools
 
+## Phase Details
+...
 ### Phase 27: MCP Server Integration
 **Goal**: Replace raw shell script executions with standard, safe Model Context Protocol (MCP) tool calls
 **Depends on**: Phase 26
@@ -47,7 +47,7 @@ Plans:
 Plans:
 - [x] `27-01-PLAN.md` — 建立 MCP 服务器基础架构并实现 Ping 工具及清单注册。
 - [x] `27-02-PLAN.md` — 迁移核心工作区操作 (锁定、任务、状态) 到 MCP 工具 (MCP-02, MCP-03, MCP-04)
-- [ ] `27-03-PLAN.md` — 实现 Skill 定义与 MCP 工具的自动映射 (MCP-05)
+- [x] `27-03-PLAN.md` — 实现 Skill 定义与 MCP 工具的自动映射 (MCP-05)
 
 ### Phase 28: Workflow & Documentation Alignment
 **Goal**: Ensure the AI Conductor uses the new MCP tools and all documentation reflects the new architecture
@@ -58,8 +58,8 @@ Plans:
   2. Project `README.md` and `.planning/` architecture docs accurately describe the MCP-based plugin-first model.
 **Plans**: 2 plans
 Plans:
-- [x] `28-01-PLAN.md` — 更新 AI Conductor 和 Worker 的 SOP 及其相关架构文档，使之全面支持并优先使用 Phase 27 引入的 MCP 工具集。
-- [ ] `28-02-PLAN.md` — Close gaps from Phase 28 verification: update core documentation to reflect the Node.js MCP transition and correct MCP tool names in Conductor SOP.
+- [x] `28-01-PLAN.md` — 更新 AI Conductor 和 Worker 的 SOP 及其相关架构文档，使之全面支持并优先使用 Phase 27 引入s MCP 工具集。
+- [x] `28-02-PLAN.md` — Close gaps from Phase 28 verification: update core documentation to reflect the Node.js MCP transition and correct MCP tool names in Conductor SOP.
 
 ## Progress
 
@@ -67,5 +67,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete    | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete   | 2026-04-24 |
-| 27. MCP Server Integration | 2/3 | In Progress | - |
-| 28. Workflow & Documentation Alignment | 1/2 | In Progress | - |
+| 27. MCP Server Integration | 3/3 | Complete | 2026-04-24 |
+| 28. Workflow & Documentation Alignment | 2/2 | Complete | 2026-04-24 |
+

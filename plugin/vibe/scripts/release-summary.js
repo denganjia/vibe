@@ -68,7 +68,7 @@ function getTaskInfo(msg) {
  * @param {string} to 
  * @returns {string[]}
  */
-function getGitLog(from, to) {
+function getGitLog(from, to, workspaceRoot = process.cwd()) {
   try {
     let range = '';
     if (from && to) {
@@ -78,7 +78,7 @@ function getGitLog(from, to) {
     } else {
       // Try to find latest tag
       try {
-        const latestTag = execSync('git describe --tags --abbrev=0', { encoding: 'utf8' }).trim();
+        const latestTag = execSync('git describe --tags --abbrev=0', { cwd: workspaceRoot, encoding: 'utf8' }).trim();
         range = `${latestTag}..HEAD`;
       } catch (e) {
         // No tags found, get all logs
@@ -86,7 +86,7 @@ function getGitLog(from, to) {
       }
     }
 
-    const log = execSync(`git log ${range} --pretty=format:"%s"`, { encoding: 'utf8' });
+    const log = execSync(`git log ${range} --pretty=format:"%s"`, { cwd: workspaceRoot, encoding: 'utf8' });
     return log.split('\n').filter(Boolean);
   } catch (e) {
     console.error('Failed to get git log:', e.message);
@@ -194,9 +194,24 @@ if (require.main === module) {
   }
 }
 
+function generateReleaseSummary(workspaceRoot, from, to) {
+  const logs = getGitLog(from, to, workspaceRoot);
+  const md = generateMarkdown(logs);
+  const outputPath = path.join(workspaceRoot, '.vibe', 'RELEASE_DRAFT.md');
+  
+  if (!fs.existsSync(path.dirname(outputPath))) {
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  }
+  
+  fs.writeFileSync(outputPath, md);
+  return { success: true, path: outputPath, content: md };
+}
+
 module.exports = {
   categorize,
   getTaskInfo,
   getGitLog,
-  generateMarkdown
+  generateMarkdown,
+  generateReleaseSummary,
+  runSkill: (params, workspaceRoot) => generateReleaseSummary(workspaceRoot, params.from, params.to)
 };

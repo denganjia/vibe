@@ -40,19 +40,20 @@ test('package.json defines the shared plugin identity and smoke test entrypoint'
   assert.equal(pkg.private, true);
   assert.equal(pkg.type, 'commonjs');
   assert.deepEqual(pkg.scripts, {
-    test: 'npm run test:manifests && npm run test:skills',
+    test: 'npm run test:manifests && npm run test:skills && npm run test:mcp',
     'test:manifests': 'node --test scripts/manifests.test.js',
-    'test:skills': 'node --test scripts/skills.test.js'
+    'test:skills': 'node --test scripts/skills.test.js',
+    'test:mcp': 'node scripts/test-mcp.js'
   });
   assert.deepEqual(pkg.engines, { node: '>=22.0.0' });
   assert.ok(!('mcpServers' in pkg), 'package.json should not declare mcpServers');
 
   const dependencies = { ...pkg.dependencies, ...pkg.devDependencies };
   assert.ok(
-    !Object.prototype.hasOwnProperty.call(dependencies, '@modelcontextprotocol/sdk'),
-    'package.json should not include the MCP SDK before Phase 27'
+    Object.prototype.hasOwnProperty.call(dependencies, '@modelcontextprotocol/sdk'),
+    'package.json should include the MCP SDK in Phase 27'
   );
-  assert.equal(pkg.devDependencies['js-yaml'], '^4.1.1');
+  assert.equal(pkg.dependencies['js-yaml'], '^4.1.1');
 });
 
 test('provider manifests stay aligned with package identity and phase boundaries', () => {
@@ -65,11 +66,14 @@ test('provider manifests stay aligned with package identity and phase boundaries
     assert.equal(manifest.name, pkg.name);
     assert.equal(manifest.version, pkg.version);
     assert.equal(manifest.description, pkg.description);
-    assert.ok(!('mcpServers' in manifest), 'provider manifests should not declare mcpServers yet');
   }
 
-  assert.deepEqual(Object.keys(gemini).sort(), ['description', 'name', 'version']);
-  assert.deepEqual(Object.keys(claude).sort(), ['description', 'name', 'version']);
+  assert.ok('mcpServers' in gemini, 'gemini manifest should declare mcpServers');
+  assert.ok('mcpServers' in claude, 'claude manifest should declare mcpServers');
+  assert.ok('mcpServers' in codex.capabilities, 'codex manifest should declare mcpServers in capabilities');
+
+  assert.deepEqual(Object.keys(gemini).sort(), ['description', 'mcpServers', 'name', 'version']);
+  assert.deepEqual(Object.keys(claude).sort(), ['description', 'mcpServers', 'name', 'version']);
 
   assertSafeRelativePath(codex.skills, './skills/', 'codex skills path');
   assert.deepEqual(codex.interface, {

@@ -172,4 +172,7 @@ if (require.main === module) {
     });
 }
 
-module.exports = { runTask: runTaskSync };
+module.exports = {
+  runTask: runTaskSync,
+  runSkill: (params, workspaceRoot) => runTaskSync(workspaceRoot, params.taskId, params.agentId)
+};

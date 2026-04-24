@@ -3,3 +3,5 @@
 .planning/phases/*/*-DISCUSS-CHECKPOINT.json
 e2e_test_workdir/
 .vibe/
+node_modules/
+.DS_Store
