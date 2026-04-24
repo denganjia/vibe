@@ -56,7 +56,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Conductor SOP explicitly instructs the model to use MCP tools for workspace operations.
   2. Project `README.md` and `.planning/` architecture docs accurately describe the MCP-based plugin-first model.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] `28-01-PLAN.md` — 更新 AI Conductor 和 Worker 的 SOP 及其相关架构文档，使之全面支持并优先使用 Phase 27 引入的 MCP 工具集。
+- [ ] `28-02-PLAN.md` — Close gaps from Phase 28 verification: update core documentation to reflect the Node.js MCP transition and correct MCP tool names in Conductor SOP.
 
 ## Progress
 
@@ -65,4 +68,4 @@ Plans:
 | 25. Universal Manifests & Packaging | 1/1 | Complete    | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete   | 2026-04-24 |
 | 27. MCP Server Integration | 2/3 | In Progress | - |
-| 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
+| 28. Workflow & Documentation Alignment | 1/2 | In Progress | - |
