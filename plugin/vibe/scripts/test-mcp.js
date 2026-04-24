@@ -110,10 +110,59 @@ async function testMcp() {
     });
   };
 
+  const listTools = (id) => {
+    return new Promise((resolve, reject) => {
+      console.log("Requesting tool list...");
+      const request = JSON.stringify({
+        jsonrpc: "2.0",
+        id,
+        method: "tools/list",
+        params: {}
+      }) + "\n";
+      
+      server.stdin.write(request);
+
+      const timeout = setTimeout(() => reject(new Error("Timeout waiting for tools/list response")), 5000);
+      const interval = setInterval(() => {
+        const lines = outputBuffer.split('\n');
+        for (const line of lines) {
+          if (line.trim() === '') continue;
+          try {
+            const response = JSON.parse(line);
+            if (response.id === id) {
+              clearInterval(interval);
+              clearTimeout(timeout);
+              outputBuffer = lines.filter(l => l !== line).join('\n');
+              resolve(response);
+              return;
+            }
+          } catch (e) {}
+        }
+      }, 100);
+    });
+  };
+
   try {
     // 1. Initialize
     await sendInitialize(1);
     console.log("Initialization successful.");
+
+    // 1.5 List Tools
+    const toolsRes = await listTools(10);
+    if (!toolsRes.result) {
+        console.error("Full MCP Error Response:", JSON.stringify(toolsRes, null, 2));
+        throw new Error("tools/list failed - check output for error details");
+    }
+    const toolNames = toolsRes.result.tools.map(t => t.name);
+    console.log("Available tools:", toolNames.join(", "));
+
+    const requiredTools = ["vibe_ping", "vibe_create_task", "vibe_skill_init", "vibe_skill_plan", "vibe_skill_status"];
+    for (const tool of requiredTools) {
+      if (!toolNames.includes(tool)) {
+        throw new Error(`Required tool ${tool} missing from tool list`);
+      }
+    }
+    console.log("Tool list verification successful.");
 
     // 2. vibe_ping
     const pingRes = await callTool("vibe_ping", {}, 2);
@@ -169,6 +218,18 @@ async function testMcp() {
       throw new Error(`Lock file still exists at ${lockFile}`);
     }
     console.log("vibe_release_lock successful.");
+
+    // 7. vibe_skill_init (Dynamic Skill)
+    console.log("Verifying dynamic tool: vibe_skill_init...");
+    const initRes = await callTool("vibe_skill_init", { params: { targetDir: "test-init" } }, 7);
+    if (initRes.error) {
+      throw new Error("vibe_skill_init failed: " + JSON.stringify(initRes.error));
+    }
+    const testInitDir = path.join(workspaceRoot, 'test-init', '.vibe');
+    if (!fs.existsSync(testInitDir)) {
+      throw new Error(`Initialization failed, directory not found: ${testInitDir}`);
+    }
+    console.log("vibe_init successful.");
 
     console.log("\nAll MCP tool verifications passed!");
 
