@@ -70,7 +70,10 @@ async function loadSkills() {
             // Security: validate workspaceRoot is within cwd
             const cwd = process.cwd();
             const root = workspaceRoot ? path.resolve(cwd, workspaceRoot) : cwd;
-            if (!root.startsWith(cwd)) {
+            const relative = path.relative(cwd, root);
+            const isOutside = relative.startsWith('..') || path.isAbsolute(relative);
+            
+            if (isOutside) {
                return {
                 content: [{ type: "text", text: `Error: workspaceRoot must be within the current working directory` }],
                 isError: true
