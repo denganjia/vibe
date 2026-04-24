@@ -40,8 +40,9 @@ test('package.json defines the shared plugin identity and smoke test entrypoint'
   assert.equal(pkg.private, true);
   assert.equal(pkg.type, 'commonjs');
   assert.deepEqual(pkg.scripts, {
-    test: 'npm run test:manifests',
-    'test:manifests': 'node --test scripts/manifests.test.js'
+    test: 'npm run test:manifests && npm run test:skills',
+    'test:manifests': 'node --test scripts/manifests.test.js',
+    'test:skills': 'node --test scripts/skills.test.js'
   });
   assert.deepEqual(pkg.engines, { node: '>=22.0.0' });
   assert.ok(!('mcpServers' in pkg), 'package.json should not declare mcpServers');
@@ -51,6 +52,7 @@ test('package.json defines the shared plugin identity and smoke test entrypoint'
     !Object.prototype.hasOwnProperty.call(dependencies, '@modelcontextprotocol/sdk'),
     'package.json should not include the MCP SDK before Phase 27'
   );
+  assert.equal(pkg.devDependencies['js-yaml'], '^4.1.1');
 });
 
 test('provider manifests stay aligned with package identity and phase boundaries', () => {
