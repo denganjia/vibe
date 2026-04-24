@@ -81,7 +81,9 @@ async function loadSkills() {
             }
 
             // Clear cache to allow for script updates during development
-            delete require.cache[require.resolve(scriptPath)];
+            if (process.env.NODE_ENV !== 'production') {
+              delete require.cache[require.resolve(scriptPath)];
+            }
             const script = require(scriptPath);
             
             if (typeof script.runSkill !== 'function') {
