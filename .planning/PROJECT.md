@@ -39,10 +39,10 @@
 - ✓ **轻量 scripts runtime** — v6.0
 - ✓ **多模型执行与审查闭环** — v6.0
 - ✓ **GitHub release commit 总结** — v6.0
+- ✓ **统一插件入口与包管理** — v7.0 Phase 25
 
 ### Active
 
-- [ ] **统一插件入口与包管理**: 在 plugin/vibe/ 中初始化 package.json，并补充 Gemini CLI、Claude Code 和 Codex CLI 所需的扩展清单文件。
 - [ ] **技能元数据标准化**: 确保所有协作角色均符合各平台兼容的 YAML Frontmatter 解析规范，统一 `skills/` 目录。
 - [ ] **底层脚本向 MCP 重构**: 实现轻量级本地 MCP Server，将任务落盘、加锁、生成总结等操作重构为 Tools，摒弃脆弱的 shell 注入方式。
 - [ ] **协作工作流与文档对齐**: 引导主控模型 (Conductor) 使用 MCP Tools 操作工作区，并同步更新相关的系统和产品文档。
@@ -59,6 +59,7 @@
 Shipped Milestone 6.0 (Plugin-first 多模型协作转型).
 Existing JS scripts and `.vibe` workspace demonstrated the viability of a lightweight runtime for plugin-based collaboration.
 New v7.0 direction: Universal Plugin & MCP Integration. We are replacing the raw shell script invocation pattern with a standardized Model Context Protocol (MCP) server. This makes Vibe directly compatible with major AI CLIs (Gemini, Claude, Codex) without requiring the Conductor model to write fragile shell commands to manipulate the workspace.
+Phase 25 complete: `plugin/vibe/` now has package metadata, Gemini/Claude/Codex manifest coverage, local Codex discovery validation, and a deterministic Node.js smoke test for manifest consistency.
 
 ## Key Decisions
 
@@ -70,6 +71,7 @@ New v7.0 direction: Universal Plugin & MCP Integration. We are replacing the raw
 | 无状态信号总线 | 移除守护进程，通过终端注入和 stdin 轮询实现轻量级通信。 | ✓ Good |
 | 转向 plugin-first | 主流 AI CLI 已支持 skills/commands/plugins，用户不应先学习独立编排 CLI。 | ✓ Good (v6.0) |
 | CLI 瘦身为 plugin/scripts runtime | 初始化、任务落盘、锁、Agent 启动和结果收集代码量小，适合放进 plugin scripts。 | ✓ Good (v6.0) |
+| package.json 作为插件 identity source | Phase 25 需要 Gemini、Claude、Codex manifests 保持一致，避免三套元数据漂移。 | ✓ Good (v7.0 Phase 25) |
 | 采用 MCP 替代 raw scripts | 提升跨端兼容性与工具调用安全性，避免 shell 注入脆弱性。 | — Pending (v7.0) |
 
 ## Evolution
@@ -90,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 after v7.0 MCP integration pivot*
+*Last updated: 2026-04-24 after Phase 25 universal manifests packaging*
