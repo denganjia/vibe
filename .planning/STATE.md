@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In progress
-last_updated: "2026-04-24T09:00:00.000Z"
+last_updated: "2026-04-24T10:00:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 8
+  total_plans: 9
   completed_plans: 6
-  percent: 75
+  percent: 66
 ---
 
 # STATE
@@ -31,7 +31,7 @@ progress:
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete | 2026-04-24 |
-| 27. MCP Server Integration | 2/2 | Complete | 2026-04-24 |
+| 27. MCP Server Integration | 2/3 | In Progress | - |
 | 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
 
 ## Performance Metrics
@@ -60,9 +60,10 @@ progress:
 - Unified MCP server registration across Gemini, Claude, and Codex manifests.
 - [Phase 27]: 使用 Zod 对所有 MCP 工具输入进行严格校验，确保路径安全和类型安全。
 - [Phase 27]: 劫持 console.error 来捕获遗留脚本的输出，确保 MCP 工具能返回完整的文本信息。
+- [Phase 27]: 计划通过解析 `SKILL.md` 的前置物质动态注册 MCP 工具，实现技能与工具的自动发现和映射。
 
 ## Session
 
-- **Last session**: 2026-04-24T09:00:00.000Z
-- **Stopped at**: Completed 27-02-PLAN.md
-- **Next step**: Phase 28 (Workflow & Documentation Alignment)
+- **Last session**: 2026-04-24T10:00:00.000Z
+- **Stopped at**: Created 27-03-PLAN.md
+- **Next step**: Execute Phase 27-03

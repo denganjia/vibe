@@ -4,7 +4,7 @@
 
 - [x] **Phase 25: Universal Manifests & Packaging** - Set up plugin structure and manifest files for major AI CLIs (completed 2026-04-24)
 - [x] **Phase 26: Skill Standardization** - Unify skill metadata and folder structures across platforms (completed 2026-04-24)
-- [x] **Phase 27: MCP Server Integration** - Replace raw shell scripts with a standardized MCP server and tools (completed 2026-04-24)
+- [ ] **Phase 27: MCP Server Integration** - Replace raw shell scripts with a standardized MCP server and tools
 - [ ] **Phase 28: Workflow & Documentation Alignment** - Update AI instructions and project docs to leverage MCP tools
 
 ## Phase Details
@@ -46,7 +46,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] `27-01-PLAN.md` — 建立 MCP 服务器基础架构并实现 Ping 工具及清单注册。
-- [ ] `27-02-PLAN.md` — 迁移核心工作区操作 (锁定、任务、状态) 到 MCP 工具 (MCP-02, MCP-03, MCP-04)
+- [x] `27-02-PLAN.md` — 迁移核心工作区操作 (锁定、任务、状态) 到 MCP 工具 (MCP-02, MCP-03, MCP-04)
 - [ ] `27-03-PLAN.md` — 实现 Skill 定义与 MCP 工具的自动映射 (MCP-05)
 
 ### Phase 28: Workflow & Documentation Alignment
@@ -64,5 +64,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 25. Universal Manifests & Packaging | 1/1 | Complete    | 2026-04-24 |
 | 26. Skill Standardization | 3/3 | Complete   | 2026-04-24 |
-| 27. MCP Server Integration | 2/2 | Complete   | 2026-04-24 |
+| 27. MCP Server Integration | 2/3 | In Progress | - |
 | 28. Workflow & Documentation Alignment | 0/0 | Not started | - |
