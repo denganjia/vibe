@@ -1,0 +1,22 @@
+{
+  "name": "vibe-official",
+  "interface": {
+    "displayName": "Vibe Official Plugins"
+  },
+  "plugins": [
+    {
+      "name": "vibe",
+      "source": {
+        "source": "github",
+        "repository": "anjia/vibe-cli",
+        "branch": "master",
+        "path": "plugin/vibe"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

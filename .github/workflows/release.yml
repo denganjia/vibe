@@ -36,7 +36,9 @@ jobs:
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: vibe-plugin.zip
+          files: |
+            vibe-plugin.zip
+            .agents/plugins/codex-marketplace.json
           draft: false
           prerelease: false
           generate_release_notes: true
