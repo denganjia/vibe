@@ -7,14 +7,12 @@
     "displayName": "Vibe",
     "shortDescription": "Coordinate AI Agents through project-local tasks, reviews, and logs."
   },
-  "capabilities": {
-    "mcpServers": {
-      "vibe": {
-        "command": "node",
-        "args": [
-          "mcp-server.js"
-        ]
-      }
+  "mcpServers": {
+    "vibe": {
+      "command": "node",
+      "args": [
+        "mcp-server.js"
+      ]
     }
   }
 }
